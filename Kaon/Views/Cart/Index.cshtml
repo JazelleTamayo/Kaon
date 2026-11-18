@@ -1,0 +1,50 @@
+@model List<Kaon.Helpers.CartLine>
+@{
+    ViewData["Title"] = "Your cart";
+    var subtotal = Model.Sum(c => c.Price * c.Quantity);
+    var fee = (decimal)ViewBag.DeliveryFee;
+}
+
+<h1>Your cart</h1>
+
+@if (!Model.Any())
+{
+    <p class="muted">Your cart is empty.</p>
+    <a class="btn" asp-controller="Menu" asp-action="Index">View menu</a>
+}
+else
+{
+    foreach (var line in Model)
+    {
+        <div class="card item">
+            <div>
+                <div class="item-name">@line.Name</div>
+                @if (!string.IsNullOrEmpty(line.OptionLabel)) { <div class="muted">@line.OptionLabel</div> }
+                <div class="price">₱@((line.Price * line.Quantity).ToString("N2"))</div>
+            </div>
+            <div class="qty">
+                <form asp-action="Change" method="post">
+                    <input type="hidden" name="id" value="@line.MenuItemId" />
+                    <input type="hidden" name="optionId" value="@line.OptionId" />
+                    <input type="hidden" name="delta" value="-1" />
+                    <button aria-label="Less">−</button>
+                </form>
+                <strong>@line.Quantity</strong>
+                <form asp-action="Change" method="post">
+                    <input type="hidden" name="id" value="@line.MenuItemId" />
+                    <input type="hidden" name="optionId" value="@line.OptionId" />
+                    <input type="hidden" name="delta" value="1" />
+                    <button aria-label="More">+</button>
+                </form>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="row"><span>Subtotal</span><strong>₱@subtotal.ToString("N2")</strong></div>
+        <div class="row muted"><span>Delivery fee (only if you choose delivery)</span><span>₱@fee.ToString("N2")</span></div>
+    </div>
+
+    <a class="btn" asp-controller="Order" asp-action="Checkout">Checkout</a>
+    <a class="link" asp-controller="Menu" asp-action="Index">+ Add more items</a>
+}

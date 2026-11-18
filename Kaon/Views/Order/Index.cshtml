@@ -1,0 +1,33 @@
+﻿@model List<Order>
+@using Kaon.Helpers
+@{
+    ViewData["Title"] = "My orders";
+}
+
+<h1>My orders</h1>
+<p class="muted">Tap an order to see its status.</p>
+
+@if (!Model.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">You haven't ordered yet.</p></div>
+    <a class="btn" asp-controller="Menu" asp-action="Index">View menu</a>
+}
+else
+{
+    foreach (var o in Model)
+    {
+        <a class="card order-link" asp-action="Status" asp-route-id="@o.Id">
+            <div class="row">
+                <strong>Order #@o.Id</strong>
+                <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
+            </div>
+            <div class="muted">
+                @(o.OrderType == OrderType.Pickup ? "Pickup" : "Home delivery") · @o.CreatedAt.ToString("MMM d, h:mm tt")
+            </div>
+            <div class="row" style="margin-top:6px">
+                <span class="muted">@o.Items.Sum(i => i.Quantity) item(s)</span>
+                <strong>₱@o.Total.ToString("N2")</strong>
+            </div>
+        </a>
+    }
+}

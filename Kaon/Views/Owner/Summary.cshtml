@@ -1,0 +1,85 @@
+@model SummaryVm
+@using Kaon.Helpers
+@{
+    ViewData["Title"] = "End-of-day summary";
+    ViewData["Wide"] = true;
+    var isToday = Model.Date.Date == DateTime.Today;
+}
+
+<div class="page-head no-print">
+    <div>
+        <h1>End-of-day summary</h1>
+        <p class="muted">@Model.Date.ToString("dddd, MMMM d, yyyy")@(isToday ? " (today)" : "")</p>
+    </div>
+    <form method="get" class="date-form">
+        <input class="input" type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="this.form.submit()" aria-label="Pick a day" />
+        <button type="button" class="btn btn-sm" onclick="window.print()">Print</button>
+    </form>
+</div>
+
+<div class="print-title"><strong>@Model.Store.Name</strong> · End-of-day summary · @Model.Date.ToString("MMMM d, yyyy")</div>
+
+<div class="stats">
+    <div class="stat"><span class="stat-num">₱@Model.Sales.ToString("N2")</span><span class="stat-label">Sales (completed orders)</span></div>
+    <div class="stat"><span class="stat-num">@Model.Completed.Count</span><span class="stat-label">Completed</span></div>
+    <div class="stat"><span class="stat-num">@Model.PickupCount / @Model.DeliveryCount</span><span class="stat-label">Pickup / Delivery</span></div>
+    <div class="stat"><span class="stat-num">₱@Model.DeliveryFees.ToString("N2")</span><span class="stat-label">Delivery fees</span></div>
+</div>
+
+@if (Model.StillOpenCount > 0)
+{
+    <div class="banner">@Model.StillOpenCount order(s) are still open and not counted in sales yet.</div>
+}
+@if (Model.CancelledCount > 0)
+{
+    <p class="muted">@Model.CancelledCount cancelled order(s) are not counted.</p>
+}
+
+<div class="two-col">
+    <div class="card">
+        <h2 class="section" style="margin-top:0">What sold</h2>
+        @if (!Model.TopItems.Any())
+        {
+            <p class="muted">No completed orders for this day.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Amount</th></tr></thead>
+                <tbody>
+                    @foreach (var t in Model.TopItems)
+                    {
+                        <tr><td>@t.Name</td><td class="num">@t.Qty</td><td class="num">₱@t.Amount.ToString("N2")</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="card">
+        <h2 class="section" style="margin-top:0">All orders</h2>
+        @if (!Model.Orders.Any())
+        {
+            <p class="muted">No orders for this day.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead><tr><th>#</th><th>Time</th><th>Customer</th><th>Type</th><th>Status</th><th class="num">Total</th></tr></thead>
+                <tbody>
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr>
+                            <td>@o.Id</td>
+                            <td>@o.CreatedAt.ToString("h:mm tt")</td>
+                            <td>@o.CustomerName</td>
+                            <td>@(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")</td>
+                            <td><span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span></td>
+                            <td class="num">₱@o.Total.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

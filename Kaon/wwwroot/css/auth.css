@@ -1,0 +1,79 @@
+/* Login and sign-up: photo on one side, form on the other. */
+.auth-body { background: var(--cream); }
+.auth-split { display: grid; grid-template-columns: 1.05fr 1fr; min-height: calc(100vh - 68px); }
+
+/* Photo panel */
+.auth-photo {
+    position: relative; display: flex; align-items: flex-end;
+    margin: 16px 0 16px 16px; border-radius: 32px; overflow: hidden;
+    background: #e9c79a url("../img/carinderia.webp") 38% center / cover no-repeat;
+    /* Same size on login and sign-up, no matter how tall the form is */
+    position: sticky; top: 84px; align-self: start;
+    height: calc(100vh - 100px); min-height: 520px; max-height: 780px;
+}
+.auth-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(43,24,16,.9) 8%, rgba(43,24,16,.15) 62%); }
+.auth-photo-copy { position: relative; z-index: 1; padding: 36px; color: #fff; max-width: 520px; }
+.auth-photo-copy h2 { font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 700; line-height: 1.15; letter-spacing: -.02em; margin: 0; }
+.auth-photo-copy p { margin: 12px 0 18px; color: rgba(255,255,255,.88); font-size: .95rem; }
+.auth-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Form side */
+.auth-main { display: grid; place-items: center; padding: 32px 20px 48px; }
+.auth-box { width: 100%; max-width: 460px; }
+.auth-title { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+.auth-sub { color: var(--muted); margin: 8px 0 24px; font-size: .95rem; }
+.auth-form { background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 8px 30px rgba(43,24,16,.08); }
+.auth-form .label { margin-top: 14px; }
+.auth-form .label:first-of-type { margin-top: 0; }
+.auth-form .btn { margin-top: 22px; }
+.auth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.auth-alt { text-align: center; margin: 18px 0 0; font-size: .92rem; color: var(--muted); }
+.auth-alt a { color: var(--orange); font-weight: 600; text-decoration: none; }
+.auth-alt a:hover { text-decoration: underline; }
+.auth-note { display: flex; gap: 10px; align-items: flex-start; background: var(--cream-deep); border-radius: 14px; padding: 12px 14px; font-size: .85rem; margin-top: 18px; color: var(--muted); }
+.auth-note svg { flex: 0 0 18px; width: 18px; height: 18px; fill: none; stroke: var(--orange); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; margin-top: 2px; }
+
+/* Fancier fields: icon, glow on focus, show/hide password, strength bar */
+.auth-kicker { display: inline-block; font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); background: #fde9cc; padding: 4px 12px; border-radius: 999px; margin-bottom: 10px; }
+.auth-form { position: relative; overflow: hidden; }
+.auth-form::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: linear-gradient(90deg, var(--orange), var(--yellow)); }
+.form-alert { color: #b3261e; background: #fbe9e7; border-radius: 12px; padding: 10px 14px; font-weight: 600; font-size: .9rem; margin-bottom: 14px; }
+.form-alert:empty { display: none; }
+.fld { margin-top: 16px; min-width: 0; }
+.fld:first-of-type { margin-top: 0; }
+.auth-grid .fld { margin-top: 16px; min-width: 0; }
+.fld-label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 6px; }
+.fld-box { position: relative; display: flex; align-items: center; background: #fff8ee; border: 2px solid transparent; border-radius: 16px; transition: border-color .2s, box-shadow .2s, background .2s; }
+.fld-box:hover { border-color: #f1dcc0; }
+.fld-box:focus-within { background: #fff; border-color: var(--orange); box-shadow: 0 0 0 4px rgba(255,183,3,.35); }
+.fld-ico { flex: 0 0 22px; width: 22px; height: 22px; margin-left: 14px; fill: none; stroke: #b9a898; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: stroke .2s; }
+.fld-box:focus-within .fld-ico { stroke: var(--orange); }
+.fld-input { flex: 1; width: 100%; min-width: 0; border: 0; background: transparent; padding: 14px 14px 14px 10px; font: 500 1rem 'Poppins', Arial, sans-serif; color: var(--brown); outline: none; }
+.fld-input::placeholder { color: #b9a898; font-weight: 400; }
+.fld-input:-webkit-autofill, .fld-input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 40px #fff8ee inset; -webkit-text-fill-color: var(--brown); font-family: 'Poppins', Arial, sans-serif; }
+.fld-eye { border: 0; background: transparent; cursor: pointer; padding: 0 14px; height: 100%; display: grid; place-items: center; }
+.fld-eye svg { width: 22px; height: 22px; fill: none; stroke: #b9a898; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.fld-eye:hover svg, .fld-eye.on svg { stroke: var(--orange); }
+.meter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
+.meter i { height: 5px; border-radius: 99px; background: #eadfce; transition: background .25s; }
+.meter i.s1 { background: #d9534f; }
+.meter i.s2 { background: var(--yellow); }
+.meter i.s3 { background: #7bbf6a; }
+.meter i.s4 { background: var(--green); }
+.meter-text { display: block; font-size: .72rem; font-weight: 600; min-height: 1.1em; margin-top: 3px; color: #7a6a60; }
+.btn-go { display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s, transform .12s, box-shadow .15s; }
+.btn-go svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+.btn-go:hover { background: #c93f13; box-shadow: 0 10px 22px rgba(232,80,31,.3); transform: translateY(-1px); }
+.btn-go:hover svg { transform: translateX(4px); }
+
+@media (max-width: 860px) {
+    .auth-split { grid-template-columns: 1fr; min-height: 0; }
+    .auth-photo { position: static; margin: 12px; height: 150px; min-height: 0; max-height: none; border-radius: 24px; }
+    .auth-photo-copy { display: none; }
+    .auth-main { padding: 12px 16px 40px; }
+    .auth-title { font-size: 1.6rem; }
+}
+@media (max-width: 480px) {
+    .auth-grid { grid-template-columns: 1fr; }
+    .auth-form { padding: 22px; }
+}

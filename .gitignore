@@ -1,0 +1,26 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio / editors
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Local database (contains accounts and orders; never commit)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Secrets
+*.pfx
+secrets.json
+appsettings.Production.json

@@ -1,0 +1,110 @@
+﻿@model List<MenuItem>
+@using Kaon.Helpers
+@{
+    ViewData["Title"] = "Daily menu";
+    ViewData["Wide"] = true;
+    var store = (StoreSettings)ViewBag.Store;
+    var packageCount = (int)ViewBag.PackageCount;
+    var cart = CartHelper.Get(Context.Session);
+    var cartTotal = cart.Sum(c => c.Price * c.Quantity);
+    var seriesInMenu = Model.GroupBy(m => m.SeriesName).OrderBy(g => Array.IndexOf(MenuSeries.All, g.Key)).ToList();
+}
+
+<section class="store-head">
+    <div>
+        <span class="store-open @(store.IsOpen ? "is-open" : "is-closed")"><span class="dot"></span>@(store.IsOpen ? "Open now" : "Closed")</span>
+        <h1>@store.Name</h1>
+        <p class="muted">
+            @if (!string.IsNullOrWhiteSpace(store.Hours)) { <span>@store.Hours</span> }
+            @if (!string.IsNullOrWhiteSpace(store.DeliveryArea)) { <span> · Delivers to @store.DeliveryArea</span> }
+            @if (store.PickupEnabled && store.DeliveryEnabled) { <span> · Pickup or delivery</span> }
+            else if (store.DeliveryEnabled) { <span> · Delivery only</span> }
+            else { <span> · Pickup only</span> }
+        </p>
+    </div>
+    <a class="btn btn-sm btn-head" asp-action="Packages">Food package order <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</section>
+
+@if (!store.IsOpen)
+{
+    <div class="banner banner-closed">We're closed right now. You can look at the menu, but ordering is paused.</div>
+}
+
+@if (packageCount > 0)
+{
+    <a class="promo" asp-action="Packages">
+        <span class="promo-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
+        <span class="promo-text"><strong>Planning a party or gathering?</strong><span>Order party trays and lechon by size. Choose small, medium or large, or by the kilo.</span></span>
+        <span class="promo-go">See food packages <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+}
+
+<h2 class="section">Daily menu</h2>
+
+<div class="filters" role="group" aria-label="Filter by series" data-filters>
+    <button type="button" class="fchip on" data-series="all">All <span>@Model.Count</span></button>
+    @foreach (var g in seriesInMenu)
+    {
+        <button type="button" class="fchip" data-series="@g.Key">@g.Key <span>@g.Count()</span></button>
+    }
+</div>
+
+<div class="dish-grid" data-grid>
+    @foreach (var item in Model)
+    {
+        var canBuy = item.CanOrder && store.IsOpen;
+        <article class="dish-card @(item.CanOrder ? "" : "is-out")" id="item-@item.Id" data-series="@item.SeriesName">
+            <div class="dish-img">
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
+                }
+                else
+                {
+                    <span class="dish-ph" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg>
+                    </span>
+                }
+                @if (!item.CanOrder)
+                {
+                    <span class="dish-badge badge-out">Sold out</span>
+                }
+                else if (item.Stock is > 0 and <= 5)
+                {
+                    <span class="dish-badge badge-low">Only @item.Stock left</span>
+                }
+            </div>
+            <div class="dish-body">
+                <span class="series-tag">@item.SeriesName</span>
+                <h3 class="dish-name">@item.Name</h3>
+                @if (!string.IsNullOrEmpty(item.Description))
+                {
+                    <p class="dish-desc">@item.Description</p>
+                }
+                <div class="dish-foot">
+                    <span class="price">₱@item.Price.ToString("N2")</span>
+                    @if (canBuy)
+                    {
+                        <form asp-action="Add" method="post">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button class="dish-add" aria-label="Add @item.Name to cart">+ Add</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </article>
+    }
+</div>
+<p class="muted filter-empty" data-empty hidden>Nothing in this series today.</p>
+
+@if (cart.Any())
+{
+    <a class="cartbar" asp-controller="Cart" asp-action="Index">
+        <span>@cart.Sum(c => c.Quantity) item(s)</span>
+        <span>View cart · ₱@cartTotal.ToString("N2")</span>
+    </a>
+}
+
+@section Scripts {
+    <script src="~/js/menu.js" asp-append-version="true"></script>
+}

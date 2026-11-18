@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#FFF4E3" />
+    <title>@ViewData["Title"] - Kaon</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body class="lp auth-body">
+    <partial name="_PublicNav" />
+
+    <main class="auth-split">
+        <aside class="auth-photo" aria-hidden="true">
+            <div class="auth-photo-copy">
+                <h2>@(ViewData["PanelTitle"] ?? "Order ahead. Skip the line.")</h2>
+                <p>@(ViewData["PanelText"] ?? "Browse the daily menu, choose pickup or home delivery, and follow your order in real time.")</p>
+                <div class="auth-chips">
+                    <span class="chip c-pend">Pending</span>
+                    <span class="chip c-prep">Preparing</span>
+                    <span class="chip c-ready">Ready</span>
+                    <span class="chip c-del">Out for Delivery</span>
+                </div>
+            </div>
+        </aside>
+
+        <section class="auth-main">
+            <div class="auth-box">
+                @RenderBody()
+            </div>
+        </section>
+    </main>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

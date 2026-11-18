@@ -1,0 +1,129 @@
+@model List<MenuItem>
+@{
+    ViewData["Title"] = "Menu";
+    ViewData["Wide"] = true;
+    var foods = Model.Where(m => !m.IsPackage).OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList();
+    var packages = Model.Where(m => m.IsPackage).OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList();
+    string Pesos(decimal d) => "₱" + d.ToString("N0");
+}
+
+<div class="page-head">
+    <div>
+        <h1>Menu</h1>
+        <p class="muted">Switch on what you're cooking today. Food packages are party trays and lechon with sizes.</p>
+    </div>
+    <div class="head-actions">
+        <a class="btn btn-sm" asp-action="Create">+ Add food</a>
+        <a class="btn btn-sm btn-outline" asp-action="Create" asp-route-package="true">+ Add food package</a>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat"><span class="stat-num">@foods.Count(f => f.CanOrder)</span><span class="stat-label">Foods cooking today</span></div>
+    <div class="stat"><span class="stat-num">@(foods.Count - foods.Count(f => f.CanOrder))</span><span class="stat-label">Not cooking / sold out</span></div>
+    <div class="stat"><span class="stat-num">@packages.Count(p => p.CanOrder)</span><span class="stat-label">Food packages offered</span></div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">Nothing on the menu yet. Add your first food.</p></div>
+}
+
+@if (foods.Any())
+{
+    <h2 class="section">Daily foods</h2>
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead>
+                <tr><th>Food</th><th>Series</th><th class="num">Price</th><th class="num">Portions left</th><th>Cooking today</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var m in foods)
+                {
+                    <tr>
+                        <td>
+                            <div class="menu-cell">
+                                @if (!string.IsNullOrEmpty(m.ImageUrl)) { <img class="thumb" src="@m.ImageUrl" alt="" /> }
+                                else { <span class="thumb thumb-ph"></span> }
+                                <div>
+                                    <strong>@m.Name</strong>
+                                    @if (!string.IsNullOrEmpty(m.Description)) { <div class="muted">@m.Description</div> }
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Series"><span class="series-tag">@m.SeriesName</span></td>
+                        <td class="num" data-label="Price">@Pesos(m.Price)</td>
+                        <td class="num" data-label="Portions left">@(m.Stock?.ToString() ?? "No limit")</td>
+                        <td data-label="Cooking today">
+                            <form asp-action="Toggle" asp-route-id="@m.Id" method="post" class="switch-form">
+                                <label class="switch">
+                                    <input type="checkbox" @(m.IsAvailable ? "checked" : "") onchange="this.form.submit()" aria-label="Cooking today: @m.Name" />
+                                    <span class="slider"></span>
+                                </label>
+                                @if (!m.IsAvailable) { <span class="chip chip-soldout">Not cooking</span> }
+                                else if (!m.CanOrder) { <span class="chip chip-soldout">Sold out</span> }
+                                else { <span class="chip chip-ready">Cooking</span> }
+                            </form>
+                        </td>
+                        <td class="actions">
+                            <a class="btn-ghost" asp-action="Edit" asp-route-id="@m.Id">Edit</a>
+                            <form asp-action="Delete" asp-route-id="@m.Id" method="post"
+                                  onsubmit="return confirm('Delete @Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(m.Name))?');">
+                                <button class="btn-ghost danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="section">Food packages <span class="muted" style="font-weight:400">(party trays and lechon)</span></h2>
+@if (!packages.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">No food packages yet. Tap "Add food package" to offer trays or lechon with sizes.</p></div>
+}
+else
+{
+    <div class="pkg-list">
+        @foreach (var p in packages)
+        {
+            <article class="card pkg-card">
+                <div class="menu-cell">
+                    @if (!string.IsNullOrEmpty(p.ImageUrl)) { <img class="thumb thumb-lg" src="@p.ImageUrl" alt="" /> }
+                    else { <span class="thumb thumb-lg thumb-ph"></span> }
+                    <div style="flex:1">
+                        <div class="row">
+                            <strong>@p.Name</strong>
+                            <span class="series-tag">@p.SeriesName</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(p.Description)) { <div class="muted">@p.Description</div> }
+                    </div>
+                </div>
+                <ul class="size-list">
+                    @foreach (var o in p.Options.OrderBy(o => o.SortOrder))
+                    {
+                        <li><span>@o.Label</span><strong>@Pesos(o.Price)</strong></li>
+                    }
+                </ul>
+                <div class="pkg-foot">
+                    <form asp-action="Toggle" asp-route-id="@p.Id" method="post" class="switch-form">
+                        <label class="switch">
+                            <input type="checkbox" @(p.IsAvailable ? "checked" : "") onchange="this.form.submit()" aria-label="Offer today: @p.Name" />
+                            <span class="slider"></span>
+                        </label>
+                        @if (p.CanOrder) { <span class="chip chip-ready">Offered</span> } else { <span class="chip chip-soldout">Not offered</span> }
+                    </form>
+                    <div class="order-actions" style="margin:0">
+                        <a class="btn-ghost" asp-action="Edit" asp-route-id="@p.Id">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@p.Id" method="post"
+                              onsubmit="return confirm('Delete @Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(p.Name))?');">
+                            <button class="btn-ghost danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

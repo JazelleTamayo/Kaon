@@ -1,0 +1,110 @@
+@model BoardVm
+@using Kaon.Helpers
+@{
+    ViewData["Title"] = "Orders";
+    ViewData["Wide"] = true;
+
+    var columns = new[]
+    {
+        (OrderStatus.Pending, "Pending"),
+        (OrderStatus.Preparing, "Preparing"),
+        (OrderStatus.Ready, "Ready"),
+        (OrderStatus.OutForDelivery, "Out for Delivery")
+    };
+}
+
+<div class="page-head">
+    <div>
+        <h1>Today's orders</h1>
+        <p class="muted">@Model.Store.Name · @DateTime.Today.ToString("dddd, MMM d")</p>
+    </div>
+    <form asp-action="ToggleOpen" method="post">
+        <button class="open-toggle @(Model.Store.IsOpen ? "is-open" : "is-closed")"
+                title="Tap to switch">
+            <span class="dot"></span> @(Model.Store.IsOpen ? "Open for orders" : "Closed")
+        </button>
+    </form>
+</div>
+
+<div class="stats">
+    <div class="stat"><span class="stat-num">@Model.Active.Count</span><span class="stat-label">Active now</span></div>
+    <div class="stat"><span class="stat-num">@Model.OrdersToday</span><span class="stat-label">Orders today</span></div>
+    <div class="stat"><span class="stat-num">₱@Model.SalesToday.ToString("N0")</span><span class="stat-label">Sales (completed)</span></div>
+</div>
+
+<div class="board">
+    @foreach (var (status, title) in columns)
+    {
+        var orders = Model.Active.Where(o => o.Status == status).ToList();
+        <section class="board-col" aria-label="@title">
+            <div class="board-head">
+                <span>@title</span>
+                <span class="chip chip-@status.ToString().ToLower()">@orders.Count</span>
+            </div>
+
+            @if (!orders.Any())
+            {
+                <p class="board-empty">No orders</p>
+            }
+
+            @foreach (var o in orders)
+            {
+                var mins = (int)(DateTime.Now - o.CreatedAt).TotalMinutes;
+                <article class="order-card">
+                    <div class="row">
+                        <strong>#@o.Id</strong>
+                        <span class="tag @(o.OrderType == OrderType.Delivery ? "tag-delivery" : "tag-pickup")">
+                            @(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")
+                        </span>
+                    </div>
+                    <div class="order-who">@o.CustomerName · @o.Phone</div>
+                    @if (o.ScheduledFor != null)
+                    {
+                        <div class="order-when">Needed: @o.ScheduledFor.Value.ToString("MMM d, h:mm tt")</div>
+                    }
+                    @if (o.OrderType == OrderType.Delivery && !string.IsNullOrWhiteSpace(o.Address))
+                    {
+                        <div class="order-addr">@o.Address</div>
+                    }
+                    <ul class="order-lines">
+                        @foreach (var i in o.Items)
+                        {
+                            <li>@i.Quantity × @i.ItemName</li>
+                        }
+                    </ul>
+                    <div class="row order-foot">
+                        <span class="muted">@(mins < 1 ? "Just now" : mins + " min ago")</span>
+                        <strong>₱@o.Total.ToString("N2")</strong>
+                    </div>
+                    <div class="order-actions">
+                        <form asp-action="Advance" asp-route-id="@o.Id" method="post">
+                            <button class="btn btn-sm">@OrderText.NextLabel(o)</button>
+                        </form>
+                        <form asp-action="Cancel" asp-route-id="@o.Id" method="post"
+                              onsubmit="return confirm('Cancel order #@o.Id?');">
+                            <button class="btn-ghost">Cancel</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Refresh the board when a new order or status change comes in
+        let last = null;
+        async function check() {
+            try {
+                const r = await fetch('@Url.Action("BoardState")', { cache: 'no-store' });
+                if (!r.ok) return;
+                const d = await r.json();
+                if (last !== null && d.sig !== last) { location.reload(); return; }
+                last = d.sig;
+            } catch (e) { }
+        }
+        check();
+        setInterval(check, 8000);
+    </script>
+}

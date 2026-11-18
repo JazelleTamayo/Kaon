@@ -1,0 +1,142 @@
+@using Kaon.Helpers
+@using System.Security.Claims
+@{
+    var isCustomer = User.IsInRole("Customer");
+    var isOwner = User.IsInRole("Owner");
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var cartCount = isCustomer ? CartHelper.Get(Context.Session).Sum(c => c.Quantity) : 0;
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var act = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string On(bool yes) => yes ? "active" : "";
+    var wide = ViewData["Wide"] as bool? == true;
+
+    var fullName = User.Identity?.Name ?? "";
+    var initials = string.Concat(fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpper(w[0])));
+    if (initials == "") initials = "K";
+    var email = User.FindFirstValue(ClaimTypes.Email);
+    var roleLabel = isOwner ? "Carinderia owner" : "Customer";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <title>@ViewData["Title"] - Kaon</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/owner.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="app-nav">
+        <div class="app-nav-in">
+            <button type="button" class="app-burger" aria-label="Open menu" aria-expanded="false" aria-controls="appLinks" data-burger>
+                <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+
+            <a class="app-brand" asp-controller="Home" asp-action="Index" aria-label="Kaon home">
+                <partial name="_Mark" /><span>kaon</span>
+            </a>
+
+            <nav class="app-links" id="appLinks" aria-label="Main">
+                @if (isCustomer)
+                {
+                    <a class="@On(ctrl == "Menu" && act != "Packages")" asp-controller="Menu" asp-action="Index">Menu</a>
+                    <a class="@On(ctrl == "Menu" && act == "Packages")" asp-controller="Menu" asp-action="Packages">Food packages</a>
+                    <a class="@On(ctrl == "Order" && act != "Checkout")" asp-controller="Order" asp-action="Index">My orders</a>
+                }
+                else if (isOwner)
+                {
+                    <a class="@On(ctrl == "Owner" && act != "Summary")" asp-controller="Owner" asp-action="Index">Orders</a>
+                    <a class="@On(ctrl == "OwnerMenu")" asp-controller="OwnerMenu" asp-action="Index">Menu</a>
+                    <a class="@On(ctrl == "Owner" && act == "Summary")" asp-controller="Owner" asp-action="Summary">Summary</a>
+                    <a class="@On(ctrl == "OwnerSettings")" asp-controller="OwnerSettings" asp-action="Index">Store</a>
+                }
+                else
+                {
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                }
+            </nav>
+
+            <div class="app-right">
+                @if (isCustomer)
+                {
+                    <a class="cart-btn @On(ctrl == "Cart")" asp-controller="Cart" asp-action="Index" aria-label="Cart, @cartCount items">
+                        <svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 11a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
+                        @if (cartCount > 0) { <span class="badge">@cartCount</span> }
+                    </a>
+                }
+
+                @if (signedIn)
+                {
+                    <div class="user-menu">
+                        <button type="button" class="avatar" aria-label="Account menu" aria-expanded="false" aria-haspopup="true" data-avatar>@initials</button>
+                        <div class="dropdown" id="userMenu">
+                            <div class="dd-head">
+                                <strong>@fullName</strong>
+                                <span>@roleLabel</span>
+                                @if (!string.IsNullOrEmpty(email)) { <span>@email</span> }
+                            </div>
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                <button class="dd-item">
+                                    <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                                    Log out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a class="btn btn-sm" asp-controller="Account" asp-action="Login">Log in</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main class="page @(wide ? "page-wide" : "")">
+        @if (TempData["Saved"] is string saved)
+        {
+            <div class="flash" role="status">@saved</div>
+        }
+        @if (TempData["Warn"] is string warn)
+        {
+            <div class="banner banner-closed" role="alert">@warn</div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">Kaon · Order ahead. Skip the line.</footer>
+
+    <script>
+        (function () {
+            var burger = document.querySelector('[data-burger]');
+            var links = document.getElementById('appLinks');
+            var av = document.querySelector('[data-avatar]');
+            var dd = document.getElementById('userMenu');
+            if (burger) burger.addEventListener('click', function () {
+                var open = links.classList.toggle('open');
+                burger.setAttribute('aria-expanded', open);
+            });
+            if (av) av.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var open = dd.classList.toggle('open');
+                av.setAttribute('aria-expanded', open);
+            });
+            document.addEventListener('click', function (e) {
+                if (dd && !dd.contains(e.target)) { dd.classList.remove('open'); if (av) av.setAttribute('aria-expanded', false); }
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    if (dd) dd.classList.remove('open');
+                    if (links) links.classList.remove('open');
+                }
+            });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,127 @@
+@model MenuForm
+@{
+    var isNew = Model.Id == 0;
+    var isPackage = Model.Category == MenuItem.PackageCategory;
+    ViewData["Title"] = isNew ? (isPackage ? "Add food package" : "Add food") : "Edit item";
+    var categories = (string[])ViewBag.Categories;
+    var seriesList = (string[])ViewBag.SeriesList;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="Save" method="post" id="menuForm">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="form-alert"></div>
+
+    <div class="card">
+        <label class="label" asp-for="Name">Name</label>
+        <input class="input" asp-for="Name" />
+        <span class="error" asp-validation-for="Name"></span>
+
+        <label class="label" asp-for="Description">Description (optional)</label>
+        <input class="input" asp-for="Description" placeholder="For example: with rice" />
+        <span class="error" asp-validation-for="Description"></span>
+
+        <div class="two-fields">
+            <div>
+                <label class="label" asp-for="Category">Type</label>
+                <select class="input" asp-for="Category" asp-items="@(new SelectList(categories))"></select>
+                <span class="error" asp-validation-for="Category"></span>
+            </div>
+            <div>
+                <label class="label" asp-for="Series">Series</label>
+                <select class="input" asp-for="Series" asp-items="@(new SelectList(seriesList))"></select>
+                <span class="hint">Customers can filter by Chicken, Pork, Beef and so on.</span>
+            </div>
+        </div>
+
+        <div id="mealFields">
+            <div class="two-fields">
+                <div>
+                    <label class="label" asp-for="Price">Price (₱)</label>
+                    <input class="input" asp-for="Price" type="number" step="0.01" min="0" inputmode="decimal" />
+                    <span class="error" asp-validation-for="Price"></span>
+                </div>
+                <div>
+                    <label class="label" asp-for="Stock">Portions available today</label>
+                    <input class="input" asp-for="Stock" type="number" min="0" inputmode="numeric" placeholder="No limit" />
+                    <span class="hint">Shows "Sold out" at 0.</span>
+                    <span class="error" asp-validation-for="Stock"></span>
+                </div>
+            </div>
+        </div>
+
+        <label class="check">
+            <input type="checkbox" asp-for="IsAvailable" />
+            <span id="availText">Cooking / offering today</span>
+        </label>
+    </div>
+
+    <div class="card" id="sizeFields">
+        <strong>Sizes and portions</strong>
+        <p class="muted" style="margin:2px 0 12px">
+            Add each size with its price. Examples: "Small tray (6-8 people)", "Whole lechon, 8 kg", "Per kilo".
+            Customers pick one when they order.
+        </p>
+        <div id="sizeRows">
+            @for (var i = 0; i < Model.Options.Count; i++)
+            {
+                <div class="size-row">
+                    <input class="input" name="Options[@i].Label" value="@Model.Options[i].Label" placeholder="Size or portion, for example Small tray (6-8 people)" aria-label="Size name" />
+                    <input class="input price-in" name="Options[@i].Price" value="@(Model.Options[i].Price == 0 ? "" : Model.Options[i].Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" type="number" step="0.01" min="0" placeholder="Price ₱" aria-label="Price" />
+                    <button type="button" class="btn-ghost danger" data-remove aria-label="Remove size">Remove</button>
+                </div>
+            }
+        </div>
+        <button type="button" class="btn-ghost" id="addSize">+ Add a size</button>
+    </div>
+
+    <button class="btn">Save</button>
+    <a class="link" asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+        const cat = document.getElementById('Category');
+        const meal = document.getElementById('mealFields');
+        const sizes = document.getElementById('sizeFields');
+        const rows = document.getElementById('sizeRows');
+        const form = document.getElementById('menuForm');
+
+        function sync() {
+            const pkg = cat.value === '@MenuItem.PackageCategory';
+            meal.style.display = pkg ? 'none' : '';
+            sizes.style.display = pkg ? '' : 'none';
+            if (pkg && !rows.children.length) addRow();
+        }
+
+        function addRow() {
+            const d = document.createElement('div');
+            d.className = 'size-row';
+            d.innerHTML =
+                '<input class="input" name="Options[0].Label" placeholder="Size or portion, for example Small tray (6-8 people)" aria-label="Size name" />' +
+                '<input class="input price-in" name="Options[0].Price" type="number" step="0.01" min="0" placeholder="Price ₱" aria-label="Price" />' +
+                '<button type="button" class="btn-ghost danger" data-remove aria-label="Remove size">Remove</button>';
+            rows.appendChild(d);
+        }
+
+        document.getElementById('addSize').addEventListener('click', addRow);
+        rows.addEventListener('click', e => {
+            if (e.target.matches('[data-remove]')) e.target.closest('.size-row').remove();
+        });
+
+        // Number the rows 0,1,2... so the server reads them all
+        form.addEventListener('submit', () => {
+            [...rows.querySelectorAll('.size-row')].forEach((r, i) => {
+                r.querySelectorAll('input').forEach(inp => {
+                    inp.name = inp.name.replace(/Options\[\d+\]/, 'Options[' + i + ']');
+                });
+            });
+            // Hidden section must not send a stale price
+            if (cat.value === '@MenuItem.PackageCategory') document.getElementById('Price').value = 0;
+        });
+
+        cat.addEventListener('change', sync);
+        sync();
+    </script>
+}

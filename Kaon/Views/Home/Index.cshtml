@@ -1,0 +1,220 @@
+﻿@{
+    Layout = "_Landing";
+    ViewData["Title"] = "Kaon";
+}
+
+
+<partial name="_PublicNav" />
+
+<main>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="wrap hero-grid">
+            <div class="hero-copy">
+                <span class="eyebrow">For local carinderias and their neighbors</span>
+                <h1>Order ahead.<br /><span class="hl">Skip the line.</span></h1>
+                <p class="lead">
+                    Kaon gives every carinderia its own simple ordering system. Browse the daily menu,
+                    choose pickup or home delivery, and follow your order in real time.
+                </p>
+                <div class="cta-row">
+                    <a class="lp-btn lp-btn-lg" asp-controller="Account" asp-action="Register">Order now</a>
+                    <a class="lp-btn lp-btn-lg lp-btn-outline" asp-controller="Account" asp-action="Login">Carinderia owner? Log in</a>
+                </div>
+                <ul class="hero-points">
+                    <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> No commissions</li>
+                    <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Small, fixed delivery fee</li>
+                    <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Real-time order status</li>
+                </ul>
+            </div>
+
+            <div class="hero-art" aria-hidden="true">
+                <div class="photo-wrap"><div class="photo" role="img" aria-label="Trays of home-cooked viands at a carinderia counter"></div></div>
+                <div class="phone">
+                    <div class="phone-top"><span class="dotbar"></span></div>
+                    <div class="ph-title">Order #210 <span class="chip c-prep">Preparing</span></div>
+                    <div class="ph-steps">
+                        <span class="done"></span><span class="now"></span><span></span><span></span>
+                    </div>
+                    <div class="ph-labels"><span>Pending</span><span>Preparing</span><span>Ready</span><span>On the way</span></div>
+                    <div class="ph-item"><span>1 × Chicken Adobo</span><b>₱70</b></div>
+                    <div class="ph-item"><span>1 × Pork Sinigang</span><b>₱80</b></div>
+                    <div class="ph-item muted"><span>Delivery fee</span><b>₱30</b></div>
+                    <div class="ph-total"><span>Total</span><b>₱180</b></div>
+                    <div class="ph-msg">Your order is being prepared.</div>
+                </div>
+                <div class="float f1"><span class="chip c-ready">Ready</span> Order #214</div>
+                <div class="float f2"><span class="chip c-del">Out for Delivery</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sample daily menu -->
+    <section class="menu-sec">
+        <div class="wrap">
+            <div class="menu-head">
+                <div>
+                    <span class="eyebrow">Fresh from the counter</span>
+                    <h2>Today's menu, before you even leave home</h2>
+                </div>
+                <p class="menu-note">Sample menu. Each carinderia posts its own meals and food packages every day.</p>
+            </div>
+            <div class="menu-row">
+                <article class="dish">
+                    <div class="dish-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></div>
+                    <h3>Chicken Adobo</h3><p>With rice</p>
+                    <div class="dish-foot"><b>₱70</b><span class="chip c-ready">Available</span></div>
+                </article>
+                <article class="dish">
+                    <div class="dish-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></div>
+                    <h3>Pork Sinigang</h3><p>Sour soup, with rice</p>
+                    <div class="dish-foot"><b>₱80</b><span class="chip c-ready">Available</span></div>
+                </article>
+                <article class="dish">
+                    <div class="dish-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></div>
+                    <h3>Pancit Canton</h3><p>Stir-fried noodles</p>
+                    <div class="dish-foot"><b>₱60</b><span class="chip c-ready">Available</span></div>
+                </article>
+                <article class="dish">
+                    <div class="dish-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></div>
+                    <h3>Family Food Package</h3><p>3 viands + 4 rice</p>
+                    <div class="dish-foot"><b>₱350</b><span class="chip c-pend">Only 4 left</span></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="sec">
+        <div class="wrap">
+            <span class="eyebrow">For customers</span>
+            <h2>Order in three easy steps</h2>
+            <div class="steps3">
+                <article class="step3">
+                    <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M11 18h2"/></svg></div>
+                    <h3>1. Look at the daily menu</h3>
+                    <p>See today's meals and food packages, with prices and what is still available, before you leave home.</p>
+                </article>
+                <article class="step3">
+                    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></div>
+                    <h3>2. Order ahead</h3>
+                    <p>Pick up your order, or have it delivered to your door for a small, fixed delivery fee.</p>
+                </article>
+                <article class="step3">
+                    <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></svg></div>
+                    <h3>3. Follow your order</h3>
+                    <p>Know when it is Ready or Out for Delivery. No more waiting in line to find out.</p>
+                </article>
+            </div>
+            <div class="status-strip" aria-label="Order status">
+                <span class="chip c-pend">Pending</span><i></i>
+                <span class="chip c-prep">Preparing</span><i></i>
+                <span class="chip c-ready">Ready</span><i></i>
+                <span class="chip c-del">Out for Delivery</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- For owners -->
+    <section id="owners" class="sec sec-owner">
+        <div class="wrap owner-grid">
+            <div>
+                <span class="eyebrow eyebrow-light">For carinderia owners</span>
+                <h2>Your own ordering system. One simple dashboard.</h2>
+                <p class="lead-light">
+                    Stop juggling paper notes, verbal orders and Messenger threads. Every order lands in one list,
+                    with pickup and delivery kept apart.
+                </p>
+                <ul class="checks">
+                    <li>Post the day's menu and set how many portions you have. Sold out is automatic.</li>
+                    <li>Move each order from Pending to Ready with one tap. Customers see it right away.</li>
+                    <li>See your sales and top sellers in an end-of-day summary.</li>
+                    <li>A low, fixed monthly fee. No commissions.</li>
+                </ul>
+                <div class="cta-row">
+                    <a class="lp-btn lp-btn-yellow lp-btn-lg" href="mailto:jazellet5@gmail.com?subject=Kaon%20for%20my%20carinderia">Get Kaon for your carinderia</a>
+                    <a class="lp-btn lp-btn-lg lp-btn-ghost" asp-controller="Account" asp-action="Login">Owner log in</a>
+                </div>
+            </div>
+            <div class="board-art" aria-hidden="true">
+                <div class="mini-col"><b>Pending</b>
+                    <div class="mini-card"><span>#210</span><em>Pickup</em></div>
+                    <div class="mini-card"><span>#211</span><em class="t">Delivery</em></div>
+                </div>
+                <div class="mini-col"><b>Preparing</b>
+                    <div class="mini-card"><span>#212</span><em>Pickup</em></div>
+                </div>
+                <div class="mini-col"><b>Ready</b>
+                    <div class="mini-card"><span>#214</span><em>Pickup</em></div>
+                    <div class="mini-card"><span>#216</span><em class="t">Delivery</em></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why -->
+    <section id="why" class="sec">
+        <div class="wrap">
+            <span class="eyebrow">Why Kaon</span>
+            <h2>Built for one small eatery at a time</h2>
+            <div class="why3">
+                <article class="why">
+                    <div class="ico ico-y"><svg viewBox="0 0 24 24"><path d="M3 12l9-9h8v8l-9 9z"/><circle cx="15.5" cy="8.5" r="1.2"/></svg></div>
+                    <h3>Affordable</h3>
+                    <p>A low, fixed monthly subscription. Delivery fees are small, fixed and kept separate, so costs stay predictable.</p>
+                </article>
+                <article class="why">
+                    <div class="ico ico-y"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg></div>
+                    <h3>Easy to use</h3>
+                    <p>A simple dashboard for owners with little or no digital tools, and a simple ordering flow for customers.</p>
+                </article>
+                <article class="why">
+                    <div class="ico ico-y"><svg viewBox="0 0 24 24"><path d="M4 10l1.5-5h13L20 10M4 10v10h16V10M4 10h16"/></svg></div>
+                    <h3>Independent</h3>
+                    <p>Your own page and your own orders. No competing with other eateries on a shared marketplace.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section class="final">
+        <div class="wrap final-in">
+            <h2>Hungry? Skip the line.</h2>
+            <p>Create a free customer account in under a minute.</p>
+            <a class="lp-btn lp-btn-yellow lp-btn-lg" asp-controller="Account" asp-action="Register">Create my account</a>
+        </div>
+    </section>
+</main>
+
+<footer class="lp-foot">
+    <div class="wrap foot-in">
+        <a class="lp-brand" href="/" aria-label="Kaon home"><partial name="_Mark" /><span>kaon</span></a>
+        <span>Order ahead. Skip the line.</span>
+        <span>Team Kaon · IT-FRELEAN · 2026</span>
+    </div>
+</footer>
+
+<script>
+    // Scroll reveal. Content stays visible if this script does not run.
+    (function () {
+        document.documentElement.classList.add('js');
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var groups = ['.steps3 > *', '.why3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.final-in', '.sec h2', '.menu-head', '.owner-grid > div:first-child .cta-row'];
+        var els = [];
+        groups.forEach(function (sel) {
+            document.querySelectorAll(sel).forEach(function (el, i) {
+                el.classList.add('reveal');
+                el.style.transitionDelay = (i * 90) + 'ms';
+                els.push(el);
+            });
+        });
+        if (reduce || !('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (en) {
+                if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        els.forEach(function (e) { io.observe(e); });
+    })();
+</script>
