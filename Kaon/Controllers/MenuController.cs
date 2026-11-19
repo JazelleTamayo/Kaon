@@ -16,7 +16,7 @@ public class MenuController : Controller
     // The daily menu: today's picks from the owner's dish catalog
     public async Task<IActionResult> Index()
     {
-        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await StoreGate.ForCustomersAsync(_db);
         ViewBag.Store = store;
         var today = DateTime.Today;
         var entries = store.OffersDailyMenu
@@ -28,7 +28,7 @@ public class MenuController : Controller
     // Food packages: party trays and lechon, with sizes
     public async Task<IActionResult> Packages()
     {
-        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await StoreGate.ForCustomersAsync(_db);
         if (!store.OffersPackages)
         {
             TempData["Warn"] = "Food packages aren't offered right now.";
@@ -46,7 +46,7 @@ public class MenuController : Controller
     public async Task<IActionResult> Add(int id, int? optionId, int qty = 1, string? returnTo = null)
     {
         var back = returnTo == "Packages" ? nameof(Packages) : nameof(Index);
-        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await StoreGate.ForCustomersAsync(_db);
         var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id);
         if (!store.IsOpen || item == null)
             return RedirectToAction(back);

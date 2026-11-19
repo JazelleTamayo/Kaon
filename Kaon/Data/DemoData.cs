@@ -65,6 +65,21 @@ public static class DemoData
         }
 
         db.SaveChanges();
+
+        // Upgrading from before the daily menu existed: customers would suddenly see an empty
+        // menu. Carry the meals that were available over to today, ONCE (never again, so an owner
+        // who clears today's menu on purpose does not get it back at the next restart).
+        if (!store.DailyMenuSeeded)
+        {
+            if (!db.DailyMenuEntries.Any())
+            {
+                var today = DateTime.Today;
+                foreach (var m in db.MenuItems.Where(m => m.Category != MenuItem.PackageCategory && m.IsAvailable).ToList())
+                    db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = m.Id, Date = today, Stock = m.Stock });
+            }
+            store.DailyMenuSeeded = true;
+            db.SaveChanges();
+        }
     }
 
     // Day-one "today's menu" so a fresh demo isn't empty. Crispy Bola-Bola is left off today's

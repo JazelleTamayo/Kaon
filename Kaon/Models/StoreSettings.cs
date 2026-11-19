@@ -59,6 +59,13 @@ public class StoreSettings
     [StringLength(200)]
     public string? PaymentNote { get; set; }
 
+    // Set while a customer is looking (never saved): ordering is paused because no owner can handle orders
+    [NotMapped]
+    public bool PausedByBilling { get; set; }
+
+    // Internal: today's menu was carried over from the old menu once (see DemoData)
+    public bool DailyMenuSeeded { get; set; }
+
     // Does the carinderia have at least one way to be paid in advance?
     [NotMapped]
     public bool HasCashlessDetails =>

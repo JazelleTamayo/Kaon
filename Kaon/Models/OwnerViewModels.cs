@@ -40,6 +40,9 @@ public class OwnerMenuVm
     public List<DailyMenuEntry> TodayEntries { get; set; } = new();
     public List<MenuItem> Packages { get; set; } = new();
     public StoreSettings Store { get; set; } = new();
+
+    // The most recent earlier day that had a menu (so "Copy yesterday's menu" can be offered)
+    public DateTime? LastMenuDate { get; set; }
 }
 
 public class OptionForm

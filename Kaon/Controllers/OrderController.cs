@@ -37,7 +37,7 @@ public class OrderController : Controller
 
     private async Task FillCheckoutView()
     {
-        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await StoreGate.ForCustomersAsync(_db);
         ViewBag.Cart = CartHelper.Get(HttpContext.Session);
         ViewBag.Store = store;
         ViewBag.DeliveryFee = store.DeliveryFee;
@@ -70,7 +70,7 @@ public class OrderController : Controller
         var cart = CartHelper.Get(HttpContext.Session);
         if (!cart.Any()) return RedirectToAction("Index", "Menu");
 
-        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await StoreGate.ForCustomersAsync(_db);
 
         if (!store.IsOpen)
             ModelState.AddModelError("", "Sorry, " + store.Name + " is closed right now. Please try again later.");

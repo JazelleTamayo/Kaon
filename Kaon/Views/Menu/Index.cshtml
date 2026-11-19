@@ -30,13 +30,30 @@
 
 @if (!store.IsOpen)
 {
-    <div class="banner banner-closed">We're closed right now. You can look at the menu, but ordering is paused.</div>
+    <div class="banner banner-closed">
+        @(store.PausedByBilling
+            ? store.Name + " isn't taking orders right now. Please check back soon."
+            : "We're closed right now. You can look at the menu, but ordering is paused.")
+    </div>
 }
 
 @if (store.OffersDailyMenu)
 {
 <h2 class="section">Daily menu</h2>
 
+@if (!Model.Any())
+{
+    <div class="card off-card">
+        <strong>Today's menu isn't posted yet.</strong>
+        <p class="muted" style="margin:6px 0 0">@store.Name hasn't picked today's dishes. Please check back soon@(store.OffersPackages ? ", or order a food package ahead." : ".")</p>
+        @if (store.OffersPackages)
+        {
+            <a class="btn btn-sm" style="margin-top:14px" asp-action="Packages">See food packages</a>
+        }
+    </div>
+}
+else
+{
 <div class="filters" role="group" aria-label="Filter by series" data-filters>
     <button type="button" class="fchip on" data-series="all">All <span>@Model.Count</span></button>
     @foreach (var g in seriesInMenu)
@@ -106,6 +123,7 @@
     }
 </div>
 <p class="muted filter-empty" data-empty hidden>Nothing in this series today.</p>
+}
 }
 else
 {

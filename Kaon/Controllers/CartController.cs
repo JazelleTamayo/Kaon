@@ -1,4 +1,4 @@
-﻿using Kaon.Data;
+using Kaon.Data;
 using Kaon.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,7 @@ public class CartController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await StoreGate.ForCustomersAsync(_db);
         ViewBag.Store = store;
         ViewBag.DeliveryFee = store.DeliveryFee;
         return View(CartHelper.Get(HttpContext.Session));

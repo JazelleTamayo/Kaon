@@ -43,7 +43,8 @@ public class OwnerMenuController : Controller
             CatalogMeals = catalogMeals,
             TodayEntries = todayEntries,
             Packages = packages,
-            Store = await _db.StoreSettings.AsNoTracking().FirstAsync()
+            Store = await _db.StoreSettings.AsNoTracking().FirstAsync(),
+            LastMenuDate = await _db.DailyMenuEntries.Where(e => e.Date < today).MaxAsync(e => (DateTime?)e.Date)
         });
     }
 
@@ -208,6 +209,34 @@ public class OwnerMenuController : Controller
             m.IsAvailable = !m.IsAvailable;
             await _db.SaveChangesAsync();
         }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Copy the dishes of the most recent earlier menu into today's menu (only dishes not already there)
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> CopyYesterday()
+    {
+        var today = DateTime.Today;
+        var lastDay = await _db.DailyMenuEntries.Where(e => e.Date < today).MaxAsync(e => (DateTime?)e.Date);
+        if (lastDay == null)
+        {
+            TempData["Warn"] = "There is no earlier menu to copy yet. Pick today's dishes below.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var have = await _db.DailyMenuEntries.Where(e => e.Date == today).Select(e => e.MenuItemId).ToListAsync();
+        var earlier = await _db.DailyMenuEntries.Include(e => e.MenuItem)
+            .Where(e => e.Date == lastDay && !have.Contains(e.MenuItemId) && e.MenuItem != null && e.MenuItem.Category != MenuItem.PackageCategory)
+            .ToListAsync();
+
+        // Portions are not copied (yesterday's number is what was LEFT). The owner sets them if they limit portions.
+        foreach (var e in earlier)
+            _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = e.MenuItemId, Date = today });
+        await _db.SaveChangesAsync();
+
+        TempData["Saved"] = earlier.Count == 0
+            ? "Today's menu already has all of " + lastDay.Value.ToString("MMM d") + "'s dishes."
+            : "Copied " + earlier.Count + " dish" + (earlier.Count == 1 ? "" : "es") + " from " + lastDay.Value.ToString("MMM d") + ". Set today's portions if you limit them.";
         return RedirectToAction(nameof(Index));
     }
 

@@ -21,7 +21,11 @@
 
 @if (!store.IsOpen)
 {
-    <div class="banner banner-closed">We're closed right now. You can look at the packages, but ordering is paused.</div>
+    <div class="banner banner-closed">
+        @(store.PausedByBilling
+            ? store.Name + " isn't taking orders right now. Please check back soon."
+            : "We're closed right now. You can look at the packages, but ordering is paused.")
+    </div>
 }
 
 @if (!Model.Any())

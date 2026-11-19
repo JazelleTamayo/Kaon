@@ -20,8 +20,22 @@
         <p>Pick today's dishes from your catalog below. Food packages are party trays and lechon with sizes.</p>
         <div class="cook-meter" role="img" aria-label="@today.Count of @catalog.Count dishes picked for today"><div style="width:@pickedPct%"></div></div>
         <span class="cook-text">@today.Count of @catalog.Count catalog dishes picked for today</span>
+        @if (Model.LastMenuDate != null)
+        {
+            <form asp-action="CopyYesterday" method="post" class="o-hero-actions">
+                <button class="btn btn-sm btn-yellow">Copy @(Model.LastMenuDate.Value.Date == DateTime.Today.AddDays(-1) ? "yesterday's" : Model.LastMenuDate.Value.ToString("MMM d") + "'s") menu</button>
+            </form>
+        }
     </div>
 </section>
+
+@if (!today.Any())
+{
+    <div class="banner banner-closed">
+        <strong>No dishes are picked for today.</strong> Customers see an empty menu until you add some.
+        @(Model.LastMenuDate != null ? "Tap \"Copy yesterday's menu\" above, or pick dishes from your catalog below." : "Pick dishes from your catalog below.")
+    </div>
+}
 
 @{ var store = Model.Store; }
 <div class="offer-grid">

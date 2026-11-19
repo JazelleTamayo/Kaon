@@ -360,6 +360,9 @@ namespace Kaon.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("DailyMenuSeeded")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("DeliveryArea")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");

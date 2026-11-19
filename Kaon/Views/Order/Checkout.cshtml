@@ -12,7 +12,11 @@
 <h1>Checkout</h1>
 @if (!store.IsOpen)
 {
-    <div class="banner banner-closed">We're closed right now. You can't place an order until we open.</div>
+    <div class="banner banner-closed">
+        @(store.PausedByBilling
+            ? store.Name + " isn't taking orders right now. Please try again later."
+            : "We're closed right now. You can't place an order until we open.")
+    </div>
 }
 
 <form asp-action="Checkout" method="post" enctype="multipart/form-data">
