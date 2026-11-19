@@ -1,11 +1,11 @@
 @model List<StoreSettings>
 @{
-    ViewData["Title"] = "My carinderias";
+    ViewData["Title"] = "Choose a carinderia";
     var currentId = (int?)ViewBag.CurrentId;
 }
 
-<h1>My carinderias</h1>
-<p class="muted">The carinderias you joined with their link or QR code. To join another one, open its link or scan its QR code.</p>
+<h1>Where do you want to order?</h1>
+<p class="muted">Your account works at every carinderia you joined with their link or QR code. To join another one, open its link or scan its QR code.</p>
 
 <div class="card">
     @foreach (var s in Model)

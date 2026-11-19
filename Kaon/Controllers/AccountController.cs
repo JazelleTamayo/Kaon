@@ -120,10 +120,16 @@ public class AccountController : Controller
         if (user.Role == "Customer" && await LinkedStore() is { } linked)
             await _stores.JoinAsync(user.Id, linked.Id);
 
+        // A customer who did not come from a carinderia's link, and has joined more than one,
+        // chooses where to order now instead of being sent to a "default" one
+        var chooseStore = user.Role == "Customer" && await LinkedStore() == null &&
+                          await _db.CustomerStores.CountAsync(c => c.UserId == user.Id) > 1;
+        if (chooseStore) HttpContext.Session.Remove("storeId");
+
         await SignInUser(user);
         return user.MustChangePassword
             ? RedirectToAction(nameof(ChangePassword))
-            : GoHome(user.Role);
+            : chooseStore ? RedirectToAction("Mine", "Store") : GoHome(user.Role);
     }
 
     // "Forgot password": we email a one-time link. The answer is always the same, so nobody can

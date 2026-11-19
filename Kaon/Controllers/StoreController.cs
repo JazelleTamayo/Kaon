@@ -53,7 +53,7 @@ public class StoreController : Controller
             .Where(c => c.UserId == uid)
             .Join(_db.StoreSettings.AsNoTracking(), c => c.StoreId, s => s.Id, (c, s) => new { s, c.JoinedAt })
             .OrderBy(x => x.s.Name).ToListAsync();
-        ViewBag.CurrentId = await _stores.IdAsync();
+        ViewBag.CurrentId = HttpContext.Session.GetInt32("storeId");
         return View(joined.Select(x => x.s).ToList());
     }
 
