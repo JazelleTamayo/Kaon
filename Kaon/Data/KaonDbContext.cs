@@ -16,20 +16,19 @@ public class KaonDbContext : DbContext
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
     public DbSet<DailyMenuEntry> DailyMenuEntries => Set<DailyMenuEntry>();
     public DbSet<CarinderiaRequest> CarinderiaRequests => Set<CarinderiaRequest>();
-    public DbSet<CustomerStore> CustomerStores => Set<CustomerStore>();
     public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<SubscriptionPayment> SubscriptionPayments => Set<SubscriptionPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
+        // The same email can be a customer at two different carinderias (separate accounts); never twice at one
+        modelBuilder.Entity<AppUser>().HasIndex(u => new { u.Email, u.StoreId }).IsUnique();
 
         modelBuilder.Entity<StoreSettings>().HasIndex(s => s.Slug).IsUnique();
         modelBuilder.Entity<MenuItem>().HasIndex(m => m.StoreId);
         modelBuilder.Entity<Order>().HasIndex(o => o.StoreId);
         modelBuilder.Entity<AppUser>().HasIndex(u => u.StoreId);
-        modelBuilder.Entity<CustomerStore>().HasIndex(c => new { c.UserId, c.StoreId }).IsUnique();
 
         modelBuilder.Entity<PasswordToken>().HasIndex(t => t.TokenHash).IsUnique();
         modelBuilder.Entity<PasswordToken>()

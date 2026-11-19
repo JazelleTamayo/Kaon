@@ -1,0 +1,13 @@
+@{
+    Layout = "_Auth";
+    ViewData["Title"] = "Sign up";
+    ViewData["PanelTitle"] = "Order ahead. Skip the line.";
+    ViewData["PanelText"] = "Every carinderia on Kaon has its own page for its own customers.";
+}
+
+<span class="auth-kicker">Customers</span>
+<h1 class="auth-title">Open your carinderia's link</h1>
+<p class="auth-sub">Each carinderia has its own link and QR code, and its own customers. Scan the QR code at the carinderia, or open the link they shared with you, then create your account there.</p>
+
+<p class="auth-alt">Already have an account? <a asp-action="Login">Log in</a></p>
+<p class="auth-alt">Own a carinderia? <a asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a></p>

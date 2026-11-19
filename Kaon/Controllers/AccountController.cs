@@ -77,32 +77,51 @@ public class AccountController : Controller
         if (!ModelState.IsValid) return View(form);
 
         var email = form.Email.Trim().ToLower();
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        // Customers belong to one carinderia each. Arriving from a carinderia's link, only that
+        // carinderia's customers (and staff) are considered. Without a link, any account with this email.
+        var linked = await LinkedStore();
+        var candidates = await _db.Users
+            .Where(u => u.Email == email && (u.Role != "Customer" || linked == null || u.StoreId == linked.Id))
+            .ToListAsync();
 
         // Too many wrong passwords: the account rests for a few minutes
-        if (user?.LockoutUntil != null && user.LockoutUntil > DateTime.UtcNow)
+        if (candidates.Any(c => c.LockoutUntil != null && c.LockoutUntil > DateTime.UtcNow))
         {
             ModelState.AddModelError("", "Too many tries. Please wait a few minutes and try again, or reset your password.");
             return View(form);
         }
 
-        if (user == null || string.IsNullOrEmpty(user.PasswordHash) ||
-            _hasher.VerifyHashedPassword(user, user.PasswordHash, form.Password) == PasswordVerificationResult.Failed)
+        var matches = candidates
+            .Where(u => !string.IsNullOrEmpty(u.PasswordHash) &&
+                        _hasher.VerifyHashedPassword(u, u.PasswordHash, form.Password) != PasswordVerificationResult.Failed)
+            .ToList();
+
+        if (matches.Count == 0)
         {
-            if (user != null)
+            foreach (var u in candidates)
             {
-                user.FailedLogins++;
-                if (user.FailedLogins >= 5)
+                u.FailedLogins++;
+                if (u.FailedLogins >= 5)
                 {
-                    user.LockoutUntil = DateTime.UtcNow.AddMinutes(10);
-                    user.FailedLogins = 0;
+                    u.LockoutUntil = DateTime.UtcNow.AddMinutes(10);
+                    u.FailedLogins = 0;
                 }
-                await _db.SaveChangesAsync();
             }
-            ModelState.AddModelError("", "Wrong email or password.");
+            if (candidates.Count > 0) await _db.SaveChangesAsync();
+            ModelState.AddModelError("", linked == null
+                ? "Wrong email or password."
+                : "Wrong email or password. Accounts are separate for each carinderia: if you signed up at another one, open its link instead.");
             return View(form);
         }
 
+        if (matches.Count > 1)
+        {
+            ModelState.AddModelError("", "This email has accounts at more than one carinderia. Please open your carinderia's link or scan its QR code, then log in there.");
+            return View(form);
+        }
+
+        var user = matches[0];
         if (user.FailedLogins != 0 || user.LockoutUntil != null)
         {
             user.FailedLogins = 0;
@@ -115,10 +134,6 @@ public class AccountController : Controller
             ModelState.AddModelError("", "This account is turned off. Please contact the Kaon team.");
             return View(form);
         }
-
-        // A customer who opened a carinderia's link first is now one of that carinderia's customers
-        if (user.Role == "Customer" && await LinkedStore() is { } linked)
-            await _stores.JoinAsync(user.Id, linked.Id);
 
         await SignInUser(user);
         return user.MustChangePassword
@@ -137,28 +152,36 @@ public class AccountController : Controller
         if (!ModelState.IsValid) return View(form);
 
         var email = form.Email.Trim().ToLower();
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user != null && user.IsActive && user.PasswordHash != "")
+        var linked = await LinkedStore();
+        // One email per account (the same email can be a customer at several carinderias)
+        var users = await _db.Users
+            .Where(u => u.Email == email && u.IsActive && u.PasswordHash != "" &&
+                        (u.Role != "Customer" || linked == null || u.StoreId == linked.Id))
+            .ToListAsync();
+        var storeNames = await _db.StoreSettings.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name);
+
+        foreach (var user in users)
         {
             // Not more than one email every 2 minutes per account
             var recent = await _db.PasswordTokens.AnyAsync(t =>
                 t.UserId == user.Id && t.Purpose == "Reset" && t.CreatedAt > DateTime.UtcNow.AddMinutes(-2));
-            if (!recent)
+            if (recent) continue;
+
+            var old = await _db.PasswordTokens.Where(t => t.UserId == user.Id && t.UsedAt == null).ToListAsync();
+            foreach (var o in old) o.UsedAt = DateTime.UtcNow;
+
+            var (token, hash) = InviteTokens.New();
+            _db.PasswordTokens.Add(new PasswordToken
             {
-                var old = await _db.PasswordTokens.Where(t => t.UserId == user.Id && t.UsedAt == null).ToListAsync();
-                foreach (var o in old) o.UsedAt = DateTime.UtcNow;
+                UserId = user.Id, TokenHash = hash, Purpose = "Reset",
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            });
+            await _db.SaveChangesAsync();
 
-                var (token, hash) = InviteTokens.New();
-                _db.PasswordTokens.Add(new PasswordToken
-                {
-                    UserId = user.Id, TokenHash = hash, Purpose = "Reset",
-                    ExpiresAt = DateTime.UtcNow.AddHours(1)
-                });
-                await _db.SaveChangesAsync();
-
-                var link = Url.Action(nameof(SetPassword), "Account", new { token }, Request.Scheme)!;
-                await _email.SendAsync(user.Email, "Reset your Kaon password", EmailTemplates.Reset(user.FullName, link, 60));
-            }
+            var link = Url.Action(nameof(SetPassword), "Account", new { token }, Request.Scheme)!;
+            var who = user.Role == "Customer" && user.StoreId is int sid && storeNames.TryGetValue(sid, out var sn)
+                ? user.FullName + " (" + sn + ")" : user.FullName;
+            await _email.SendAsync(user.Email, "Reset your Kaon password", EmailTemplates.Reset(who, link, 60));
         }
 
         ViewBag.Sent = true;
@@ -253,6 +276,8 @@ public class AccountController : Controller
     public async Task<IActionResult> Register()
     {
         if (User.Identity?.IsAuthenticated == true) return GoHome();
+        // Customers sign up at a carinderia, from its link or QR code
+        if (await LinkedStore() == null) return View("NoLink");
         await ShowLinkedStore();
         return View(new RegisterForm());
     }
@@ -260,13 +285,16 @@ public class AccountController : Controller
     [HttpPost]
     public async Task<IActionResult> Register(RegisterForm form)
     {
+        var linked = await LinkedStore();
+        if (linked == null) return View("NoLink");
         await ShowLinkedStore();
         if (!ModelState.IsValid) return View(form);
 
         var email = form.Email.Trim().ToLower();
-        if (await _db.Users.AnyAsync(u => u.Email == email))
+        // Customers are separate at each carinderia, so only staff emails and this carinderia's customers count
+        if (await _db.Users.AnyAsync(u => u.Email == email && (u.Role != "Customer" || u.StoreId == linked.Id)))
         {
-            ModelState.AddModelError(nameof(form.Email), "That email is already registered.");
+            ModelState.AddModelError(nameof(form.Email), "That email is already registered here. Please log in instead.");
             return View(form);
         }
 
@@ -276,13 +304,12 @@ public class AccountController : Controller
             Phone = form.Phone.Trim(),
             Email = email,
             Role = "Customer",
-            JoinedStoreId = (await LinkedStore())?.Id
+            StoreId = linked.Id
         };
         user.PasswordHash = _hasher.HashPassword(user, form.Password);
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
-        if (user.JoinedStoreId is int joined) await _stores.JoinAsync(user.Id, joined);
 
         await SignInUser(user);
         return GoHome(user.Role);

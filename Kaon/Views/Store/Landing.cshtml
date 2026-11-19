@@ -5,6 +5,7 @@
     ViewData["PanelTitle"] = Model.Name;
     ViewData["PanelText"] = "Order ahead from " + Model.Name + ". Choose pickup or home delivery and follow your order in real time.";
     var signedIn = User.Identity?.IsAuthenticated == true;
+    var other = ViewBag.OtherStore as string;
 }
 
 <span class="auth-kicker">Welcome to</span>
@@ -14,14 +15,21 @@
     @if (!string.IsNullOrWhiteSpace(Model.Phone)) { <span> · @Model.Phone</span> }
 </p>
 
-@if (signedIn)
+@if (other != null)
+{
+    <p class="auth-sub">You are signed in as a customer of <strong>@other</strong>. Each carinderia has its own accounts, so log out to sign up or log in here.</p>
+    <form asp-controller="Account" asp-action="Logout" method="post">
+        <button class="btn btn-go">Log out</button>
+    </form>
+}
+else if (signedIn)
 {
     <p class="auth-sub">You are signed in with a different kind of account. Customers open this page to order.</p>
     <a class="btn btn-go" asp-controller="Account" asp-action="Login">Go to my account</a>
 }
 else
 {
-    <p class="auth-sub">Log in or create a free account to see today's menu and order from @Model.Name. One Kaon account works at every carinderia that uses Kaon.</p>
+    <p class="auth-sub">Log in or create a free account to see today's menu and order from @Model.Name.</p>
     <div style="display:grid;gap:.75rem;margin-top:1rem">
         <a class="btn btn-go" asp-controller="Account" asp-action="Login">Log in</a>
         <a class="btn btn-go" asp-controller="Account" asp-action="Register">Create an account</a>

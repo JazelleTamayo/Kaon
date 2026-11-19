@@ -27,8 +27,7 @@ public class PaymentController : Controller
     {
         int? sid;
         if (User.IsInRole("Owner")) sid = await _stores.IdAsync();
-        else if (User.IsInRole("Customer") && storeId != null &&
-                 await _db.CustomerStores.AnyAsync(c => c.UserId == _stores.UserId && c.StoreId == storeId))
+        else if (User.IsInRole("Customer") && storeId != null && storeId == await _stores.IdAsync())
             sid = storeId;
         else return NotFound();
         if (sid == null) return NotFound();
