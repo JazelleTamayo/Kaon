@@ -87,6 +87,7 @@
                 else if (isAdmin)
                 {
                     <a class="@On(ctrl == "Admin" && act != "Users")" asp-controller="Admin" asp-action="Index">Overview</a>
+                    <a class="@On(ctrl == "Admin" && act == "Requests")" asp-controller="Admin" asp-action="Requests">Requests</a>
                     <a class="@On(ctrl == "Admin" && act == "Users")" asp-controller="Admin" asp-action="Users">Accounts</a>
                     <a class="@On(ctrl == "AdminBilling")" asp-controller="AdminBilling" asp-action="Index">Billing</a>
                 }

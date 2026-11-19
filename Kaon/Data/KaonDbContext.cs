@@ -15,6 +15,7 @@ public class KaonDbContext : DbContext
     public DbSet<ItemOption> ItemOptions => Set<ItemOption>();
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
     public DbSet<DailyMenuEntry> DailyMenuEntries => Set<DailyMenuEntry>();
+    public DbSet<CarinderiaRequest> CarinderiaRequests => Set<CarinderiaRequest>();
     public DbSet<CustomerStore> CustomerStores => Set<CustomerStore>();
     public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();

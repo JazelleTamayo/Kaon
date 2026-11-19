@@ -1,0 +1,61 @@
+@model ApplyForm
+@{
+    Layout = "_Auth";
+    ViewData["Title"] = "Get Kaon for your carinderia";
+    ViewData["PanelTitle"] = "Your own ordering system.";
+    ViewData["PanelText"] = "Customers order ahead from your own link and QR code. You manage every order from one dashboard. 30 days free, then a low monthly fee, with no commissions.";
+}
+
+<span class="auth-kicker">For carinderia owners</span>
+<h1 class="auth-title">Get Kaon for your carinderia</h1>
+<p class="auth-sub">Tell us about your carinderia. The Kaon team will contact you, then send a private link where you choose your own password.</p>
+
+<form asp-action="Index" method="post" class="auth-form" novalidate>
+    <div asp-validation-summary="ModelOnly" class="form-alert"></div>
+
+    <div class="fld">
+        <label class="fld-label" asp-for="CarinderiaName">Carinderia name</label>
+        <div class="fld-box"><input class="fld-input" asp-for="CarinderiaName" autocomplete="off" placeholder="e.g. Aling Nena's Carinderia" /></div>
+        <span class="error" asp-validation-for="CarinderiaName"></span>
+    </div>
+    <div class="auth-grid">
+        <div class="fld">
+            <label class="fld-label" asp-for="OwnerName">Owner's full name</label>
+            <div class="fld-box"><input class="fld-input" asp-for="OwnerName" autocomplete="name" /></div>
+            <span class="error" asp-validation-for="OwnerName"></span>
+        </div>
+        <div class="fld">
+            <label class="fld-label" asp-for="Phone">Mobile number</label>
+            <div class="fld-box"><input class="fld-input" asp-for="Phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XX XXX XXXX" /></div>
+            <span class="error" asp-validation-for="Phone"></span>
+        </div>
+    </div>
+    <div class="fld">
+        <label class="fld-label" asp-for="Email">Email (your login will use this)</label>
+        <div class="fld-box"><input class="fld-input" asp-for="Email" type="email" autocomplete="email" /></div>
+        <span class="error" asp-validation-for="Email"></span>
+    </div>
+    <div class="fld">
+        <label class="fld-label" asp-for="Address">Carinderia address</label>
+        <div class="fld-box"><input class="fld-input" asp-for="Address" autocomplete="street-address" /></div>
+        <span class="error" asp-validation-for="Address"></span>
+    </div>
+    <div class="fld">
+        <label class="fld-label" asp-for="Message">Anything you'd like us to know (optional)</label>
+        <div class="fld-box"><input class="fld-input" asp-for="Message" /></div>
+    </div>
+
+    <div style="position:absolute;left:-9999px" aria-hidden="true">
+        <label>Leave this empty <input asp-for="Website" tabindex="-1" autocomplete="off" /></label>
+    </div>
+
+    <label class="check">
+        <input type="checkbox" asp-for="AcceptPrivacy" value="true" />
+        <span>I agree to the <a asp-controller="Home" asp-action="Privacy" target="_blank">Privacy Notice</a>.</span>
+    </label>
+    <span class="error" asp-validation-for="AcceptPrivacy"></span>
+
+    <button class="btn btn-go">Send my request</button>
+</form>
+
+<p class="auth-alt">Already a Kaon owner? <a asp-controller="Account" asp-action="Login">Log in</a></p>

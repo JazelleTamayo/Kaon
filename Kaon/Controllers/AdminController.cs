@@ -44,7 +44,8 @@ public class AdminController : Controller
         return View(new AdminDashVm
         {
             Owners = await _db.Users.AsNoTracking().Where(u => u.Role == "Owner").OrderBy(u => u.FullName).ToListAsync(),
-            CustomerCount = await _db.Users.CountAsync(u => u.Role == "Customer"),   // a number only
+            CustomerCount = await _db.Users.CountAsync(u => u.Role == "Customer"),
+            NewRequests = await _db.CarinderiaRequests.CountAsync(r => r.Status == "New"),   // a number only
             OrdersToday = orders.Count(c => c >= today && c < today.AddDays(1)),
             OrdersTotal = orders.Count,
             Stores = await _db.StoreSettings.AsNoTracking().OrderBy(s => s.Name).ToListAsync(),
@@ -66,10 +67,34 @@ public class AdminController : Controller
         ViewBag.Stores = await _db.StoreSettings.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
 
     [HttpGet]
-    public async Task<IActionResult> CreateOwner()
+    public async Task<IActionResult> CreateOwner(int? requestId)
     {
         await FillStores();
-        return View(new CreateOwnerForm());
+        var form = new CreateOwnerForm();
+        // From a request: the details are filled in already
+        if (requestId != null && await _db.CarinderiaRequests.FirstOrDefaultAsync(r => r.Id == requestId && r.Status == "New") is { } r)
+        {
+            form.RequestId = r.Id; form.FullName = r.OwnerName; form.Email = r.Email;
+            form.Phone = r.Phone; form.CarinderiaName = r.CarinderiaName;
+        }
+        return View(form);
+    }
+
+    // Carinderias that asked to join. The admin reviews each one and creates the account.
+    public async Task<IActionResult> Requests(bool all = false)
+    {
+        var q = _db.CarinderiaRequests.AsNoTracking();
+        if (!all) q = q.Where(r => r.Status == "New");
+        ViewBag.All = all;
+        return View((await q.ToListAsync()).OrderByDescending(r => r.CreatedAt).ToList());
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeclineRequest(int id)
+    {
+        var r = await _db.CarinderiaRequests.FirstOrDefaultAsync(x => x.Id == id && x.Status == "New");
+        if (r != null) { r.Status = "Declined"; await _db.SaveChangesAsync(); TempData["Saved"] = "Request from " + r.CarinderiaName + " declined."; }
+        return RedirectToAction(nameof(Requests));
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -125,6 +150,8 @@ public class AdminController : Controller
             PasswordHash = ""
         };
         _db.Users.Add(owner);
+        if (form.RequestId != null && await _db.CarinderiaRequests.FirstOrDefaultAsync(r => r.Id == form.RequestId && r.Status == "New") is { } req)
+            req.Status = "Approved";
         await _db.SaveChangesAsync();
 
         // Module 9: every new carinderia starts with the free trial month
