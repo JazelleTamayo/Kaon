@@ -15,6 +15,10 @@ public class AppUser
     [StringLength(20)]
     public string? Phone { get; set; }
 
+    // Customers: the delivery address saved at checkout, filled in for the next order
+    [StringLength(300)]
+    public string? Address { get; set; }
+
     [Required]
     public string PasswordHash { get; set; } = "";
 

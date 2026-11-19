@@ -58,6 +58,7 @@ public class OrderController : Controller
         {
             CustomerName = user?.FullName ?? "",
             Phone = user?.Phone ?? "",
+            Address = user?.Address,
             OrderType = store.PickupEnabled ? OrderType.Pickup : OrderType.Delivery,
             PaymentMethod = store.AcceptsCash ? PaymentMethod.Cash : PaymentMethod.Cashless
         });
@@ -143,6 +144,15 @@ public class OrderController : Controller
                 ModelState.AddModelError(nameof(form.ScheduledFor), "Food packages need at least 1 day notice.");
         }
 
+        // Ordinary meals: an optional preferred time later today (packages use their own date above)
+        DateTime? preferredAt = null;
+        if (!hasPackage && form.PreferredTime != null)
+        {
+            preferredAt = DateTime.Today.Add(form.PreferredTime.Value);
+            if (preferredAt < DateTime.Now.AddMinutes(-5))
+                ModelState.AddModelError(nameof(form.PreferredTime), "That time has passed. Please choose a later time today, or leave it empty.");
+        }
+
         if (!ModelState.IsValid)
         {
             await FillCheckoutView();
@@ -173,7 +183,8 @@ public class OrderController : Controller
             DeliveryFee = form.OrderType == OrderType.Delivery ? store.DeliveryFee : 0,
             Status = OrderStatus.Pending,
             CreatedAt = DateTime.Now,
-            ScheduledFor = hasPackage ? form.ScheduledFor : null,
+            ScheduledFor = hasPackage ? form.ScheduledFor : preferredAt,
+            Notes = string.IsNullOrWhiteSpace(form.Notes) ? null : form.Notes.Trim(),
             PaymentMethod = form.PaymentMethod,
             PaymentProof = proofName,
             PaymentRef = form.PaymentMethod == PaymentMethod.Cashless && !string.IsNullOrWhiteSpace(form.PaymentRef) ? form.PaymentRef.Trim() : null,
@@ -197,6 +208,13 @@ public class OrderController : Controller
                 DailyMenuEntryId = entry?.Id
             });
             if (entry?.Stock != null) entry.Stock -= line.Quantity;
+        }
+
+        // Remember the delivery address on the customer's profile for next time
+        if (form.OrderType == OrderType.Delivery && form.SaveAddress)
+        {
+            var user = await _db.Users.FindAsync(CurrentUserId);
+            if (user != null) user.Address = order.Address;
         }
 
         _db.Orders.Add(order);

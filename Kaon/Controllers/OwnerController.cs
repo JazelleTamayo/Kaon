@@ -68,12 +68,17 @@ public class OwnerController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Cancel(int id)
+    public async Task<IActionResult> Cancel(int id, string? reason, string? otherReason)
     {
         var order = await _db.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id);
         if (order != null && IsActive(order))
         {
             order.Status = OrderStatus.Cancelled;
+
+            // The reason the customer will see: a quick choice, or the owner's own words for "Other"
+            var why = (reason == "Other" ? otherReason : reason)?.Trim();
+            if (string.IsNullOrEmpty(why) || why == "Other") why = null;
+            order.CancelReason = why != null && why.Length > 200 ? why[..200] : why;
 
             // Give the portions back to today's menu
             var entryIds = order.Items.Where(i => i.DailyMenuEntryId != null).Select(i => i.DailyMenuEntryId!.Value).ToList();
