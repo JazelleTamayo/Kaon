@@ -1,32 +1,29 @@
-@model List<MenuItem>
+@model OwnerMenuVm
 @{
     ViewData["Title"] = "Menu";
     ViewData["Wide"] = true;
-    var foods = Model.Where(m => !m.IsPackage).OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList();
-    var packages = Model.Where(m => m.IsPackage).OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList();
+    var catalog = Model.CatalogMeals.OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList();
+    var today = Model.TodayEntries.OrderBy(e => Array.IndexOf(MenuSeries.All, e.MenuItem!.SeriesName)).ThenBy(e => e.MenuItem!.Name).ToList();
+    var packages = Model.Packages.OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList();
+    var todayIds = today.Select(e => e.MenuItemId).ToHashSet();
     string Pesos(decimal d) => "₱" + d.ToString("N0");
 }
 
 @{
-    var cookNow = foods.Count(f => f.CanOrder);
-    var cookPct = foods.Count == 0 ? 0 : cookNow * 100 / foods.Count;
+    var pickedPct = catalog.Count == 0 ? 0 : today.Count * 100 / catalog.Count;
 }
 <section class="o-hero o-side">
     <div class="o-hero-bg" aria-hidden="true"></div>
     <div class="o-hero-in">
         <span class="o-kicker">Menu</span>
         <h1>What's cooking today?</h1>
-        <p>Switch on what you're cooking. Food packages are party trays and lechon with sizes.</p>
-        <div class="cook-meter" role="img" aria-label="@cookNow of @foods.Count foods cooking today"><div style="width:@cookPct%"></div></div>
-        <span class="cook-text">@cookNow of @foods.Count daily foods cooking today</span>
-        <div class="o-hero-actions">
-            <a class="btn btn-sm btn-yellow" asp-action="Create">+ Add food</a>
-            <a class="btn btn-sm btn-wline" asp-action="Create" asp-route-package="true">+ Add food package</a>
-        </div>
+        <p>Pick today's dishes from your catalog below. Food packages are party trays and lechon with sizes.</p>
+        <div class="cook-meter" role="img" aria-label="@today.Count of @catalog.Count dishes picked for today"><div style="width:@pickedPct%"></div></div>
+        <span class="cook-text">@today.Count of @catalog.Count catalog dishes picked for today</span>
     </div>
 </section>
 
-@{ var store = (StoreSettings)ViewBag.Store; }
+@{ var store = Model.Store; }
 <div class="offer-grid">
     <form asp-action="ToggleOffer" asp-route-kind="daily" method="post" class="card offer-card @(store.OffersDailyMenu ? "" : "is-off")">
         <div>
@@ -51,26 +48,28 @@
 </div>
 
 <div class="stats">
-    <div class="stat"><span class="stat-num">@foods.Count(f => f.CanOrder)</span><span class="stat-label">Foods cooking today</span></div>
-    <div class="stat"><span class="stat-num">@(foods.Count - foods.Count(f => f.CanOrder))</span><span class="stat-label">Not cooking / sold out</span></div>
+    <div class="stat"><span class="stat-num">@today.Count</span><span class="stat-label">Dishes in today's menu</span></div>
+    <div class="stat"><span class="stat-num">@catalog.Count</span><span class="stat-label">Dishes in your catalog</span></div>
     <div class="stat"><span class="stat-num">@packages.Count(p => p.CanOrder)</span><span class="stat-label">Food packages offered</span></div>
 </div>
 
-@if (!Model.Any())
+<div class="page-head">
+    <h2 class="section" style="margin:0">Your dishes <span class="muted" style="font-weight:400">(your full catalog — edit any time)</span></h2>
+    <a class="btn btn-sm btn-yellow" asp-action="Create">+ Add a dish</a>
+</div>
+@if (!catalog.Any())
 {
-    <div class="card"><p class="muted" style="margin:0">Nothing on the menu yet. Add your first food.</p></div>
+    <div class="card"><p class="muted" style="margin:0">Nothing in your catalog yet. Tap "+ Add a dish" above.</p></div>
 }
-
-@if (foods.Any())
+else
 {
-    <h2 class="section">Daily foods</h2>
     <div class="card table-wrap">
         <table class="table table-stack">
             <thead>
-                <tr><th>Food</th><th>Series</th><th class="num">Price</th><th class="num">Portions left</th><th>Cooking today</th><th></th></tr>
+                <tr><th>Food</th><th>Series</th><th class="num">Price</th><th></th><th></th></tr>
             </thead>
             <tbody>
-                @foreach (var m in foods)
+                @foreach (var m in catalog)
                 {
                     <tr>
                         <td>
@@ -85,22 +84,22 @@
                         </td>
                         <td data-label="Series"><span class="series-tag">@m.SeriesName</span></td>
                         <td class="num" data-label="Price">@Pesos(m.Price)</td>
-                        <td class="num" data-label="Portions left">@(m.Stock?.ToString() ?? "No limit")</td>
-                        <td data-label="Cooking today">
-                            <form asp-action="Toggle" asp-route-id="@m.Id" method="post" class="switch-form">
-                                <label class="switch">
-                                    <input type="checkbox" @(m.IsAvailable ? "checked" : "") onchange="this.form.submit()" aria-label="Cooking today: @m.Name" />
-                                    <span class="slider"></span>
-                                </label>
-                                @if (!m.IsAvailable) { <span class="chip chip-soldout">Not cooking</span> }
-                                else if (!m.CanOrder) { <span class="chip chip-soldout">Sold out</span> }
-                                else { <span class="chip chip-ready">Cooking</span> }
-                            </form>
+                        <td data-label="Today">
+                            @if (todayIds.Contains(m.Id))
+                            {
+                                <span class="chip chip-ready">In today's menu</span>
+                            }
+                            else
+                            {
+                                <form asp-action="AddToday" asp-route-menuItemId="@m.Id" method="post">
+                                    <button class="btn-ghost">+ Add to today</button>
+                                </form>
+                            }
                         </td>
                         <td class="actions">
                             <a class="btn-ghost" asp-action="Edit" asp-route-id="@m.Id">Edit</a>
                             <form asp-action="Delete" asp-route-id="@m.Id" method="post"
-                                  onsubmit="return confirm('Delete @Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(m.Name))?');">
+                                  onsubmit="return confirm('Delete @Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(m.Name))? This also removes it from today\'s menu.');">
                                 <button class="btn-ghost danger">Delete</button>
                             </form>
                         </td>
@@ -111,10 +110,64 @@
     </div>
 }
 
-<h2 class="section">Food packages <span class="muted" style="font-weight:400">(party trays and lechon)</span></h2>
+<h2 class="section">Today's menu <span class="muted" style="font-weight:400">(resets every day — pick from your catalog above)</span></h2>
+@if (!today.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">Nothing picked for today yet. Add dishes from "Your dishes" above.</p></div>
+}
+else
+{
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead>
+                <tr><th>Food</th><th class="num">Portions left</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in today)
+                {
+                    var m = entry.MenuItem!;
+                    <tr>
+                        <td>
+                            <div class="menu-cell">
+                                @if (!string.IsNullOrEmpty(m.ImageUrl)) { <img class="thumb" src="@m.ImageUrl" alt="" /> }
+                                else { <span class="thumb thumb-ph"></span> }
+                                <strong>@m.Name</strong>
+                            </div>
+                        </td>
+                        <td data-label="Portions left">
+                            <form asp-action="SetStock" asp-route-entryId="@entry.Id" method="post" class="stock-form">
+                                <input class="input stock-in" type="number" name="stock" min="0" max="1000" value="@entry.Stock" placeholder="No limit" aria-label="Portions left: @m.Name" />
+                                <button class="btn-ghost">Save</button>
+                            </form>
+                            @if (entry.Stock == 0) { <span class="chip chip-soldout">Sold out</span> }
+                        </td>
+                        <td data-label="Status">
+                            <form asp-action="ToggleReady" asp-route-entryId="@entry.Id" method="post" class="ready-form">
+                                <button type="submit" class="chip-btn chip @(entry.ReadyState == DishReadyState.Preparing ? "chip-preparing" : "chip-ready")">
+                                    @(entry.ReadyState == DishReadyState.Preparing ? "Preparing — tap when ready" : "Ready to serve — tap to reset")
+                                </button>
+                            </form>
+                        </td>
+                        <td class="actions">
+                            <form asp-action="RemoveToday" asp-route-entryId="@entry.Id" method="post"
+                                  onsubmit="return confirm('Remove @Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(m.Name)) from today\'s menu?');">
+                                <button class="btn-ghost danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="page-head">
+    <h2 class="section" style="margin:0">Food packages <span class="muted" style="font-weight:400">(party trays and lechon)</span></h2>
+    <a class="btn btn-sm" asp-action="Create" asp-route-package="true">+ Add food package</a>
+</div>
 @if (!packages.Any())
 {
-    <div class="card"><p class="muted" style="margin:0">No food packages yet. Tap "Add food package" to offer trays or lechon with sizes.</p></div>
+    <div class="card"><p class="muted" style="margin:0">No food packages yet. Tap "+ Add food package" above to offer trays or lechon with sizes.</p></div>
 }
 else
 {

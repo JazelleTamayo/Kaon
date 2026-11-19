@@ -1,4 +1,4 @@
-@model List<MenuItem>
+@model List<DailyMenuEntry>
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Daily menu";
@@ -6,7 +6,7 @@
     var store = (StoreSettings)ViewBag.Store;
     var cart = CartHelper.Get(Context.Session);
     var cartTotal = cart.Sum(c => c.Price * c.Quantity);
-    var seriesInMenu = Model.GroupBy(m => m.SeriesName).OrderBy(g => Array.IndexOf(MenuSeries.All, g.Key)).ToList();
+    var seriesInMenu = Model.GroupBy(e => e.MenuItem!.SeriesName).OrderBy(g => Array.IndexOf(MenuSeries.All, g.Key)).ToList();
 }
 
 <section class="hero-banner">
@@ -46,10 +46,11 @@
 </div>
 
 <div class="dish-grid" data-grid>
-    @foreach (var item in Model)
+    @foreach (var entry in Model)
     {
-        var canBuy = item.CanOrder && store.IsOpen;
-        <article class="dish-card @(item.CanOrder ? "" : "is-out")" id="item-@item.Id" data-series="@item.SeriesName">
+        var item = entry.MenuItem!;
+        var canBuy = entry.CanOrder && store.IsOpen;
+        <article class="dish-card @(entry.CanOrder ? "" : "is-out")" id="item-@item.Id" data-series="@item.SeriesName">
             <div class="dish-img">
                 @if (!string.IsNullOrEmpty(item.ImageUrl))
                 {
@@ -61,13 +62,24 @@
                         <svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg>
                     </span>
                 }
-                @if (!item.CanOrder)
+                @if (!entry.CanOrder)
                 {
                     <span class="dish-badge badge-out">Sold out</span>
                 }
-                else if (item.Stock is > 0 and <= 5)
+                else
                 {
-                    <span class="dish-badge badge-low">Only @item.Stock left</span>
+                    @if (entry.ReadyState == DishReadyState.Preparing)
+                    {
+                        <span class="dish-badge badge-state badge-preparing">Preparing</span>
+                    }
+                    else
+                    {
+                        <span class="dish-badge badge-state badge-ready">Ready to serve</span>
+                    }
+                    @if (entry.Stock is > 0 and <= 5)
+                    {
+                        <span class="dish-badge badge-low">Only @entry.Stock left</span>
+                    }
                 }
             </div>
             <div class="dish-body">
@@ -81,7 +93,9 @@
                     <span class="price">₱@item.Price.ToString("N2")</span>
                     @if (canBuy)
                     {
-                        <form asp-action="Add" method="post">
+                        <form asp-action="Add" method="post"
+                              data-ready="@(entry.ReadyState == DishReadyState.Preparing ? "preparing" : "ready")"
+                              data-name="@item.Name">
                             <input type="hidden" name="id" value="@item.Id" />
                             <button class="dish-add" aria-label="Add @item.Name to cart">+ Add</button>
                         </form>
@@ -112,6 +126,8 @@ else
         <span>View cart · ₱@cartTotal.ToString("N2")</span>
     </a>
 }
+
+<partial name="_ConfirmModal" />
 
 @section Scripts {
     <script src="~/js/menu.js" asp-append-version="true"></script>

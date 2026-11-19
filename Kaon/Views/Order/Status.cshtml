@@ -68,7 +68,13 @@
     @foreach (var item in Model.Items)
     {
         <div class="row">
-            <span>@item.Quantity × @item.ItemName</span>
+            <span>
+                @item.Quantity × @item.ItemName
+                @if (item.TracksReadiness)
+                {
+                    <span class="chip chip-sm @(item.IsReadyToServe ? "chip-ready" : "chip-preparing")">@(item.IsReadyToServe ? "Ready" : "Preparing")</span>
+                }
+            </span>
             <span>₱@((item.UnitPrice * item.Quantity).ToString("N2"))</span>
         </div>
     }

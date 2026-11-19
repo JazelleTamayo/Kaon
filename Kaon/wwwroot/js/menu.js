@@ -164,4 +164,32 @@
         });
         update();
     });
+
+    // ----- Confirm before adding a dish that's still being prepared -----
+    var modal = document.getElementById('confirmModal');
+    if (modal) {
+        var text = modal.querySelector('#confirmText');
+        var pendingForm = null;
+
+        function closeModal() { modal.hidden = true; pendingForm = null; }
+
+        document.querySelectorAll('form[data-ready="preparing"]').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.confirmed) return;
+                e.preventDefault();
+                pendingForm = form;
+                text.textContent = (form.dataset.name || 'This dish') +
+                    ' is still being prepared. Add it anyway and wait until it’s ready?';
+                modal.hidden = false;
+            });
+        });
+
+        modal.querySelector('[data-confirm-yes]').addEventListener('click', function () {
+            if (pendingForm) { pendingForm.dataset.confirmed = '1'; pendingForm.submit(); }
+            closeModal();
+        });
+        modal.querySelector('[data-confirm-no]').addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+    }
 })();

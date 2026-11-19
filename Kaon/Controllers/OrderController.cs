@@ -93,8 +93,19 @@ public class OrderController : Controller
             .Where(m => ids.Contains(m.Id))
             .ToDictionaryAsync(m => m.Id);
 
+        // Daily meals: only orderable if the owner picked them for today's menu.
+        // Food packages keep using their own on/off switch.
+        var today = DateTime.Today;
+        var todayEntries = await _db.DailyMenuEntries
+            .Where(e => e.Date == today && ids.Contains(e.MenuItemId))
+            .ToDictionaryAsync(e => e.MenuItemId);
+
+        bool CanOrderLine(int menuItemId, MenuItem mi) => mi.IsPackage
+            ? mi.CanOrder
+            : todayEntries.TryGetValue(menuItemId, out var te) && te.CanOrder;
+
         var unavailable = cart
-            .Where(c => !menu.ContainsKey(c.MenuItemId) || !menu[c.MenuItemId].CanOrder)
+            .Where(c => !menu.ContainsKey(c.MenuItemId) || !CanOrderLine(c.MenuItemId, menu[c.MenuItemId]))
             .ToList();
         if (unavailable.Any())
         {
@@ -106,8 +117,9 @@ public class OrderController : Controller
         foreach (var line in cart.Except(unavailable))
         {
             var m = menu[line.MenuItemId];
-            if (m.Stock != null && line.Quantity > m.Stock)
-                ModelState.AddModelError("", "Only " + m.Stock + " " + m.Name + " left. Please lower the quantity in your cart.");
+            var stockLeft = m.IsPackage ? null : todayEntries[line.MenuItemId].Stock;
+            if (stockLeft != null && line.Quantity > stockLeft)
+                ModelState.AddModelError("", "Only " + stockLeft + " " + m.Name + " left. Please lower the quantity in your cart.");
             if (m.Options.Any() && m.Options.All(o => o.Id != line.OptionId))
                 ModelState.AddModelError("", "Please remove " + m.Name + " from your cart and add it again with a size.");
         }
@@ -172,14 +184,19 @@ public class OrderController : Controller
         {
             var m = menu[line.MenuItemId];
             var opt = m.Options.FirstOrDefault(o => o.Id == line.OptionId);
+            var tracksReadiness = !m.IsPackage;
+            var entry = tracksReadiness ? todayEntries[m.Id] : null;
             order.Items.Add(new OrderItem
             {
                 MenuItemId = m.Id,
                 ItemName = opt != null ? m.Name + " - " + opt.Label : m.Name,
                 UnitPrice = opt?.Price ?? m.Price,   // always the price from the database
-                Quantity = line.Quantity
+                Quantity = line.Quantity,
+                TracksReadiness = tracksReadiness,
+                IsReadyToServe = entry?.ReadyState == DishReadyState.ReadyToServe,
+                DailyMenuEntryId = entry?.Id
             });
-            if (m.Stock != null) m.Stock -= line.Quantity;
+            if (entry?.Stock != null) entry.Stock -= line.Quantity;
         }
 
         _db.Orders.Add(order);

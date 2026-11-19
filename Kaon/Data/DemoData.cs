@@ -40,9 +40,13 @@ public static class DemoData
         if (untouched)
         {
             db.MenuItems.RemoveRange(items);
-            db.MenuItems.AddRange(StarterMeals());
+            var meals = StarterMeals();
+            db.MenuItems.AddRange(meals);
             db.MenuItems.AddRange(StarterPackages());
             store.StarterPackagesAdded = true;
+            db.SaveChanges();   // assign ids before seeding today's menu below
+
+            SeedTodayMenu(db, meals);
         }
         else if (!store.StarterPackagesAdded)
         {
@@ -63,15 +67,36 @@ public static class DemoData
         db.SaveChanges();
     }
 
+    // Day-one "today's menu" so a fresh demo isn't empty. Crispy Bola-Bola is left off today's
+    // menu entirely (still in the catalog); Beef Kaldereta starts with limited portions, still Preparing.
+    private static readonly Dictionary<string, int?> DayOneStock = new() { ["Beef Kaldereta"] = 5 };
+    private static readonly Dictionary<string, DishReadyState> DayOneReady = new() { ["Beef Kaldereta"] = DishReadyState.Preparing };
+    private static readonly HashSet<string> SkipToday = new() { "Crispy Bola-Bola" };
+
+    private static void SeedTodayMenu(KaonDbContext db, List<MenuItem> meals)
+    {
+        var today = DateTime.Today;
+        foreach (var m in meals.Where(m => !SkipToday.Contains(m.Name)))
+        {
+            db.DailyMenuEntries.Add(new DailyMenuEntry
+            {
+                MenuItemId = m.Id,
+                Date = today,
+                Stock = DayOneStock.GetValueOrDefault(m.Name),
+                ReadyState = DayOneReady.GetValueOrDefault(m.Name, DishReadyState.ReadyToServe)
+            });
+        }
+    }
+
     private static List<MenuItem> StarterMeals() => new()
     {
         new() { Name = "Chicken Adobo", Description = "Braised in soy sauce and vinegar, with rice", Price = 70m, Category = "Meal", Series = "Chicken", ImageUrl = "/img/menu/adobo.webp" },
         new() { Name = "Fried Chicken", Description = "Crispy and juicy, with rice", Price = 85m, Category = "Meal", Series = "Chicken", ImageUrl = "/img/menu/fried-chicken.webp" },
         new() { Name = "Chicken Afritada", Description = "Tomato stew with potatoes and carrots, with rice", Price = 80m, Category = "Meal", Series = "Chicken", ImageUrl = "/img/menu/afritada.webp" },
-        new() { Name = "Beef Kaldereta", Description = "Slow-cooked beef stew with olives, with rice", Price = 95m, Category = "Meal", Series = "Beef", ImageUrl = "/img/menu/kaldereta.webp", Stock = 5 },
+        new() { Name = "Beef Kaldereta", Description = "Slow-cooked beef stew with olives, with rice", Price = 95m, Category = "Meal", Series = "Beef", ImageUrl = "/img/menu/kaldereta.webp" },
         new() { Name = "Pinakbet", Description = "Mixed vegetables with pork, with rice", Price = 65m, Category = "Meal", Series = "Vegetables", ImageUrl = "/img/menu/pinakbet.webp" },
         new() { Name = "Pancit Bihon", Description = "Stir-fried rice noodles with vegetables", Price = 60m, Category = "Meal", Series = "Noodles & Pasta", ImageUrl = "/img/menu/pancit-bihon.webp" },
-        new() { Name = "Crispy Bola-Bola", Description = "Fried bites with sweet chili sauce", Price = 50m, Category = "Meal", Series = "Pork", ImageUrl = "/img/menu/bola-bola.webp", IsAvailable = false }
+        new() { Name = "Crispy Bola-Bola", Description = "Fried bites with sweet chili sauce", Price = 50m, Category = "Meal", Series = "Pork", ImageUrl = "/img/menu/bola-bola.webp" }
     };
 
     // Party trays and lechon. Customers pick a size, then say when they need it.

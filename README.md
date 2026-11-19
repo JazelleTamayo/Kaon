@@ -30,7 +30,8 @@ and sample food packages.
 - **Customer**: signs up on the site, orders from the daily menu or the Food Packages page, tracks the order.
 - **Carinderia owner**: manages orders, menu, food packages and sizes, store settings, and the end-of-day summary.
 - **Kaon admin**: invites owners by private link, switches owner accounts on or off.
-- **Rider link**: planned.
+
+Riders are carinderia staff managed by the owner, not a separate Kaon account — no rider interface is needed.
 
 ## Project layout
 

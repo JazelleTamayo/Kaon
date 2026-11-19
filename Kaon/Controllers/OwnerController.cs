@@ -75,12 +75,12 @@ public class OwnerController : Controller
         {
             order.Status = OrderStatus.Cancelled;
 
-            // Give the portions back to the menu
-            var ids = order.Items.Select(i => i.MenuItemId).ToList();
-            var menu = await _db.MenuItems.Where(m => ids.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
+            // Give the portions back to today's menu
+            var entryIds = order.Items.Where(i => i.DailyMenuEntryId != null).Select(i => i.DailyMenuEntryId!.Value).ToList();
+            var entries = await _db.DailyMenuEntries.Where(e => entryIds.Contains(e.Id)).ToDictionaryAsync(e => e.Id);
             foreach (var item in order.Items)
-                if (menu.TryGetValue(item.MenuItemId, out var m) && m.Stock != null)
-                    m.Stock += item.Quantity;
+                if (item.DailyMenuEntryId != null && entries.TryGetValue(item.DailyMenuEntryId.Value, out var entry) && entry.Stock != null)
+                    entry.Stock += item.Quantity;
 
             await _db.SaveChangesAsync();
         }

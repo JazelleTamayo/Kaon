@@ -140,6 +140,37 @@ select.input { appearance: auto; }
 .dish-badge { position: absolute; top: 12px; left: 12px; padding: 4px 12px; border-radius: 999px; font-size: .72rem; font-weight: 600; }
 .badge-low { background: var(--yellow); color: var(--brown); }
 .badge-out { background: rgba(43,24,16,.85); color: #fff; }
+.badge-state { left: auto; right: 12px; }
+.badge-preparing { background: var(--orange); color: #fff; }
+.badge-ready { background: var(--green); color: #fff; }
+
+/* Owner menu: preparing / ready to serve toggle */
+.ready-form { margin: 6px 0 0; }
+.chip-btn { border: 0; cursor: pointer; }
+
+/* Today's menu: portions-left inline form */
+.stock-form { display: flex; gap: 8px; align-items: center; margin: 0 0 6px; }
+.stock-in { width: 90px; padding: 8px 10px; }
+
+/* Small inline chip, used next to an order line's dish name */
+.chip-sm { padding: 2px 9px; font-size: .68rem; margin-left: 6px; vertical-align: middle; }
+
+/* Wait-for-it confirm panel */
+.confirm-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(43,24,16,.45);
+    padding: 16px;
+}
+.confirm-overlay[hidden] { display: none; }
+.confirm-overlay:not([hidden]) { display: flex; align-items: center; justify-content: center; }
+.confirm-box {
+    background: #fff; border-radius: 16px; padding: 20px;
+    max-width: 360px; width: 100%;
+    box-shadow: 0 10px 40px rgba(43,24,16,.25);
+}
+.confirm-box p { margin: 0 0 16px; font-weight: 600; color: var(--brown); }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions .btn, .confirm-actions .btn-ghost { flex: 1; margin: 0; width: auto; }
 .dish-card.is-out .dish-img img { filter: grayscale(.85); opacity: .7; }
 .dish-body { padding: 14px 16px 16px; display: flex; flex-direction: column; flex: 1; }
 .dish-name { font-size: 1.05rem; font-weight: 700; margin: 0; }

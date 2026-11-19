@@ -13,15 +13,16 @@ public class MenuController : Controller
     private readonly KaonDbContext _db;
     public MenuController(KaonDbContext db) => _db = db;
 
-    // The daily menu: everyday meals
+    // The daily menu: today's picks from the owner's dish catalog
     public async Task<IActionResult> Index()
     {
         var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
         ViewBag.Store = store;
-        var items = store.OffersDailyMenu
-            ? await _db.MenuItems.Where(m => m.Category != MenuItem.PackageCategory).OrderBy(m => m.Name).ToListAsync()
-            : new List<MenuItem>();
-        return View(items.OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList());
+        var today = DateTime.Today;
+        var entries = store.OffersDailyMenu
+            ? await _db.DailyMenuEntries.Include(e => e.MenuItem).Where(e => e.Date == today).ToListAsync()
+            : new List<DailyMenuEntry>();
+        return View(entries.OrderBy(e => Array.IndexOf(MenuSeries.All, e.MenuItem!.SeriesName)).ThenBy(e => e.MenuItem!.Name).ToList());
     }
 
     // Food packages: party trays and lechon, with sizes
@@ -47,8 +48,21 @@ public class MenuController : Controller
         var back = returnTo == "Packages" ? nameof(Packages) : nameof(Index);
         var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
         var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id);
-        if (!store.IsOpen || item == null || !item.CanOrder)
+        if (!store.IsOpen || item == null)
             return RedirectToAction(back);
+
+        // Daily meals: only orderable if the owner picked them for today's menu.
+        // Food packages keep using their own on/off switch.
+        DailyMenuEntry? entry = null;
+        if (!item.IsPackage)
+        {
+            entry = await _db.DailyMenuEntries.FirstOrDefaultAsync(e => e.MenuItemId == id && e.Date == DateTime.Today);
+            if (entry == null || !entry.CanOrder) return RedirectToAction(back);
+        }
+        else if (!item.CanOrder)
+        {
+            return RedirectToAction(back);
+        }
 
         // A whole section can be switched off by the carinderia
         if (item.IsPackage ? !store.OffersPackages : !store.OffersDailyMenu)
@@ -90,9 +104,9 @@ public class MenuController : Controller
             line.Quantity += qty;
         }
 
-        // Limited-portion meals can't go over what is left
+        // Limited-portion meals can't go over what is left today
         var inCart = cart.First(c => c.MenuItemId == id && c.OptionId == option?.Id);
-        if (item.Stock != null && inCart.Quantity > item.Stock) inCart.Quantity = item.Stock.Value;
+        if (entry?.Stock != null && inCart.Quantity > entry.Stock) inCart.Quantity = entry.Stock.Value;
 
         CartHelper.Save(HttpContext.Session, cart);
         TempData["Saved"] = item.Name + (option != null ? " (" + option.Label + ")" : "") + " added to your cart.";

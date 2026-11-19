@@ -3,6 +3,16 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Kaon.Models;
 
+// Whether a daily-menu dish's current batch is still on the stove or already done.
+// Food packages don't use this: they're made to order for a scheduled date.
+// ReadyToServe is the zero value: a fresh column (or a brand-new item) defaults
+// to it, so adding this feature never retroactively marks existing dishes as Preparing.
+public enum DishReadyState
+{
+    ReadyToServe,
+    Preparing
+}
+
 public class MenuItem
 {
     public const string PackageCategory = "Food package";
@@ -33,6 +43,9 @@ public class MenuItem
 
     // Manual on/off switch ("cooking today")
     public bool IsAvailable { get; set; } = true;
+
+    // Preparing vs ready to serve right now (daily menu items only)
+    public DishReadyState ReadyState { get; set; } = DishReadyState.ReadyToServe;
 
     // Portions left today. Null means no limit.
     public int? Stock { get; set; }

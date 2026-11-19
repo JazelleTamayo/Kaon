@@ -66,6 +66,31 @@ namespace Kaon.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Kaon.Models.DailyMenuEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MenuItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReadyState")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Stock")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MenuItemId");
+
+                    b.ToTable("DailyMenuEntries");
+                });
+
             modelBuilder.Entity("Kaon.Models.ItemOption", b =>
                 {
                     b.Property<int>("Id")
@@ -122,6 +147,9 @@ namespace Kaon.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("ReadyState")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Series")
                         .HasMaxLength(30)
@@ -197,6 +225,12 @@ namespace Kaon.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("DailyMenuEntryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReadyToServe")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ItemName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -208,6 +242,9 @@ namespace Kaon.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TracksReadiness")
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("UnitPrice")
@@ -339,6 +376,17 @@ namespace Kaon.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("StoreSettings");
+                });
+
+            modelBuilder.Entity("Kaon.Models.DailyMenuEntry", b =>
+                {
+                    b.HasOne("Kaon.Models.MenuItem", "MenuItem")
+                        .WithMany()
+                        .HasForeignKey("MenuItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MenuItem");
                 });
 
             modelBuilder.Entity("Kaon.Models.ItemOption", b =>

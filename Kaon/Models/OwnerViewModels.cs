@@ -34,6 +34,14 @@ public class SummaryVm
         .ThenBy(x => x.Key);
 }
 
+public class OwnerMenuVm
+{
+    public List<MenuItem> CatalogMeals { get; set; } = new();
+    public List<DailyMenuEntry> TodayEntries { get; set; } = new();
+    public List<MenuItem> Packages { get; set; } = new();
+    public StoreSettings Store { get; set; } = new();
+}
+
 public class OptionForm
 {
     [StringLength(80)]
@@ -68,4 +76,8 @@ public class MenuForm
 
     // Food packages: sizes or portions with their prices
     public List<OptionForm> Options { get; set; } = new();
+
+    // New photo to upload. Leave empty to keep the current one.
+    public IFormFile? Image { get; set; }
+    public string? ExistingImageUrl { get; set; }
 }

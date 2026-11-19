@@ -14,6 +14,7 @@ public class KaonDbContext : DbContext
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();
     public DbSet<ItemOption> ItemOptions => Set<ItemOption>();
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
+    public DbSet<DailyMenuEntry> DailyMenuEntries => Set<DailyMenuEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,5 +27,9 @@ public class KaonDbContext : DbContext
         modelBuilder.Entity<ItemOption>()
             .HasOne(o => o.MenuItem).WithMany(m => m.Options)
             .HasForeignKey(o => o.MenuItemId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DailyMenuEntry>()
+            .HasOne(e => e.MenuItem).WithMany()
+            .HasForeignKey(e => e.MenuItemId).OnDelete(DeleteBehavior.Cascade);
     }
 }

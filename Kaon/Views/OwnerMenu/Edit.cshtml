@@ -9,8 +9,9 @@
 
 <h1>@ViewData["Title"]</h1>
 
-<form asp-action="Save" method="post" id="menuForm">
+<form asp-action="Save" method="post" id="menuForm" enctype="multipart/form-data">
     <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ExistingImageUrl" />
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 
     <div class="card">
@@ -21,6 +22,15 @@
         <label class="label" asp-for="Description">Description (optional)</label>
         <input class="input" asp-for="Description" placeholder="For example: with rice" />
         <span class="error" asp-validation-for="Description"></span>
+
+        <label class="label" asp-for="Image">Photo</label>
+        @if (!string.IsNullOrEmpty(Model.ExistingImageUrl))
+        {
+            <img class="thumb" src="@Model.ExistingImageUrl" alt="" style="margin-bottom:8px" />
+        }
+        <input class="input" asp-for="Image" type="file" accept="image/jpeg,image/png,image/webp" />
+        <span class="hint">JPG, PNG or WebP, up to 5 MB. Leave blank to keep the current photo.</span>
+        <span class="error" asp-validation-for="Image"></span>
 
         <div class="two-fields">
             <div>
@@ -36,25 +46,18 @@
         </div>
 
         <div id="mealFields">
-            <div class="two-fields">
-                <div>
-                    <label class="label" asp-for="Price">Price (₱)</label>
-                    <input class="input" asp-for="Price" type="number" step="0.01" min="0" inputmode="decimal" />
-                    <span class="error" asp-validation-for="Price"></span>
-                </div>
-                <div>
-                    <label class="label" asp-for="Stock">Portions available today</label>
-                    <input class="input" asp-for="Stock" type="number" min="0" inputmode="numeric" placeholder="No limit" />
-                    <span class="hint">Shows "Sold out" at 0.</span>
-                    <span class="error" asp-validation-for="Stock"></span>
-                </div>
-            </div>
+            <label class="label" asp-for="Price">Price (₱)</label>
+            <input class="input" asp-for="Price" type="number" step="0.01" min="0" inputmode="decimal" />
+            <span class="error" asp-validation-for="Price"></span>
+            <span class="hint">Portions and "cooking today" are set on the Menu page's Today's menu table, not here.</span>
         </div>
 
-        <label class="check">
-            <input type="checkbox" asp-for="IsAvailable" />
-            <span id="availText">Cooking / offering today</span>
-        </label>
+        <div id="pkgAvailField">
+            <label class="check">
+                <input type="checkbox" asp-for="IsAvailable" />
+                <span>Offering today</span>
+            </label>
+        </div>
     </div>
 
     <div class="card" id="sizeFields">
@@ -85,6 +88,7 @@
         const cat = document.getElementById('Category');
         const meal = document.getElementById('mealFields');
         const sizes = document.getElementById('sizeFields');
+        const pkgAvail = document.getElementById('pkgAvailField');
         const rows = document.getElementById('sizeRows');
         const form = document.getElementById('menuForm');
 
@@ -92,6 +96,7 @@
             const pkg = cat.value === '@MenuItem.PackageCategory';
             meal.style.display = pkg ? 'none' : '';
             sizes.style.display = pkg ? '' : 'none';
+            pkgAvail.style.display = pkg ? '' : 'none';
             if (pkg && !rows.children.length) addRow();
         }
 

@@ -127,7 +127,13 @@
                     <ul class="order-lines">
                         @foreach (var i in o.Items)
                         {
-                            <li>@i.Quantity × @i.ItemName</li>
+                            <li>
+                                @i.Quantity × @i.ItemName
+                                @if (i.TracksReadiness)
+                                {
+                                    <span class="chip chip-sm @(i.IsReadyToServe ? "chip-ready" : "chip-preparing")">@(i.IsReadyToServe ? "Ready" : "Preparing")</span>
+                                }
+                            </li>
                         }
                     </ul>
                     <div class="row order-foot">

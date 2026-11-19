@@ -1,4 +1,5 @@
 using Kaon.Data;
+using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,16 +13,38 @@ public class OwnerMenuController : Controller
 {
     private static readonly string[] Categories = { "Meal", MenuItem.PackageCategory };
     private readonly KaonDbContext _db;
-    public OwnerMenuController(KaonDbContext db) => _db = db;
+    private readonly IWebHostEnvironment _env;
+    public OwnerMenuController(KaonDbContext db, IWebHostEnvironment env)
+    {
+        _db = db;
+        _env = env;
+    }
 
     public async Task<IActionResult> Index()
     {
-        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync();
-        var items = await _db.MenuItems
-            .Include(m => m.Options)
+        var today = DateTime.Today;
+        var catalogMeals = await _db.MenuItems
+            .Where(m => m.Category != MenuItem.PackageCategory)
             .OrderBy(m => m.Name)
             .ToListAsync();
-        return View(items);
+        var todayEntries = await _db.DailyMenuEntries
+            .Include(e => e.MenuItem)
+            .Where(e => e.Date == today)
+            .ToListAsync();
+        todayEntries = todayEntries.OrderBy(e => e.MenuItem!.Name).ToList();
+        var packages = await _db.MenuItems
+            .Include(m => m.Options)
+            .Where(m => m.Category == MenuItem.PackageCategory)
+            .OrderBy(m => m.Name)
+            .ToListAsync();
+
+        return View(new OwnerMenuVm
+        {
+            CatalogMeals = catalogMeals,
+            TodayEntries = todayEntries,
+            Packages = packages,
+            Store = await _db.StoreSettings.AsNoTracking().FirstAsync()
+        });
     }
 
     private void FillForm()
@@ -51,7 +74,8 @@ public class OwnerMenuController : Controller
         return View(new MenuForm
         {
             Id = m.Id, Name = m.Name, Description = m.Description, Price = m.Price,
-            Category = m.Category, Series = m.SeriesName, Stock = m.Stock, IsAvailable = m.IsAvailable,
+            Category = m.Category, Series = m.SeriesName, IsAvailable = m.IsAvailable,
+            ExistingImageUrl = m.ImageUrl,
             Options = m.Options.OrderBy(o => o.SortOrder)
                 .Select(o => new OptionForm { Label = o.Label, Price = o.Price }).ToList()
         });
@@ -87,6 +111,21 @@ public class OwnerMenuController : Controller
             return View("Edit", form);
         }
 
+        // Save the photo only now that everything else is valid
+        string? newImageUrl = null;
+        if (form.Image is { Length: > 0 })
+        {
+            var (url, error) = await MenuImageStorage.SaveAsync(form.Image, _env);
+            if (error != null)
+            {
+                ModelState.AddModelError(nameof(form.Image), error);
+                FillForm();
+                if (isPackage && form.Options.Count == 0) form.Options.Add(new OptionForm());
+                return View("Edit", form);
+            }
+            newImageUrl = url;
+        }
+
         MenuItem? m = form.Id == 0
             ? new MenuItem()
             : await _db.MenuItems.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == form.Id);
@@ -96,8 +135,17 @@ public class OwnerMenuController : Controller
         m.Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
         m.Category = form.Category;
         m.Series = string.IsNullOrEmpty(form.Series) ? MenuSeries.Other : form.Series;
-        m.Stock = isPackage ? null : form.Stock;
-        m.IsAvailable = form.IsAvailable;
+
+        // Portions and "cooking today" for meals are managed per day on Today's menu, not here.
+        // Food packages keep their own on/off switch exactly as before.
+        m.Stock = null;
+        m.IsAvailable = isPackage ? form.IsAvailable : true;
+
+        if (newImageUrl != null)
+        {
+            MenuImageStorage.DeleteIfUploaded(_env, m.ImageUrl);
+            m.ImageUrl = newImageUrl;
+        }
 
         if (form.Id == 0) _db.MenuItems.Add(m);
 
@@ -150,7 +198,7 @@ public class OwnerMenuController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // One-tap "cooking today" switch
+    // Food packages only: one-tap "offered" switch
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Toggle(int id)
     {
@@ -163,13 +211,85 @@ public class OwnerMenuController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Add a catalog dish to today's menu
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddToday(int menuItemId)
+    {
+        var today = DateTime.Today;
+        var already = await _db.DailyMenuEntries.AnyAsync(e => e.MenuItemId == menuItemId && e.Date == today);
+        if (!already)
+        {
+            var m = await _db.MenuItems.FindAsync(menuItemId);
+            if (m != null && !m.IsPackage)
+            {
+                _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = menuItemId, Date = today });
+                await _db.SaveChangesAsync();
+                TempData["Saved"] = m.Name + " added to today's menu.";
+            }
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Take a dish off today's menu. Past orders keep their own snapshot, so this is safe.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveToday(int entryId)
+    {
+        var entry = await _db.DailyMenuEntries.FindAsync(entryId);
+        if (entry != null)
+        {
+            _db.DailyMenuEntries.Remove(entry);
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Portions left today for one of today's dishes
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetStock(int entryId, int? stock)
+    {
+        var entry = await _db.DailyMenuEntries.FindAsync(entryId);
+        if (entry != null)
+        {
+            entry.Stock = stock is < 0 ? 0 : stock;
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Preparing <-> Ready to serve. Marking a dish ready also updates any open
+    // orders that are still waiting on this dish.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleReady(int entryId)
+    {
+        var entry = await _db.DailyMenuEntries.FindAsync(entryId);
+        if (entry != null)
+        {
+            entry.ReadyState = entry.ReadyState == DishReadyState.Preparing
+                ? DishReadyState.ReadyToServe
+                : DishReadyState.Preparing;
+
+            if (entry.ReadyState == DishReadyState.ReadyToServe)
+            {
+                var waiting = await _db.OrderItems
+                    .Include(oi => oi.Order)
+                    .Where(oi => oi.DailyMenuEntryId == entryId && !oi.IsReadyToServe
+                        && oi.Order!.Status != OrderStatus.Completed && oi.Order.Status != OrderStatus.Cancelled)
+                    .ToListAsync();
+                foreach (var oi in waiting) oi.IsReadyToServe = true;
+            }
+
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
         var m = await _db.MenuItems.FindAsync(id);
         if (m != null)
         {
-            _db.MenuItems.Remove(m);   // its sizes are removed with it
+            _db.MenuItems.Remove(m);   // its sizes and today's-menu entry are removed with it
             await _db.SaveChangesAsync();
             TempData["Saved"] = m.Name + " deleted.";
         }
