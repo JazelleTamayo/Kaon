@@ -82,7 +82,7 @@ public class AccountController : Controller
         // carinderia's customers (and staff) are considered. Without a link, any account with this email.
         var linked = await LinkedStore();
         var candidates = await _db.Users
-            .Where(u => u.Email == email && (u.Role != "Customer" || linked == null || u.StoreId == linked.Id))
+            .Where(u => u.Email == email && (u.Role != "Customer" || (linked != null && u.StoreId == linked.Id)))
             .ToListAsync();
 
         // Too many wrong passwords: the account rests for a few minutes
@@ -110,7 +110,7 @@ public class AccountController : Controller
             }
             if (candidates.Count > 0) await _db.SaveChangesAsync();
             ModelState.AddModelError("", linked == null
-                ? "Wrong email or password."
+                ? "Wrong email or password. Customers: open your carinderia's link or scan its QR code to log in."
                 : "Wrong email or password. Accounts are separate for each carinderia: if you signed up at another one, open its link instead.");
             return View(form);
         }
@@ -156,7 +156,7 @@ public class AccountController : Controller
         // One email per account (the same email can be a customer at several carinderias)
         var users = await _db.Users
             .Where(u => u.Email == email && u.IsActive && u.PasswordHash != "" &&
-                        (u.Role != "Customer" || linked == null || u.StoreId == linked.Id))
+                        (u.Role != "Customer" || (linked != null && u.StoreId == linked.Id)))
             .ToListAsync();
         var storeNames = await _db.StoreSettings.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name);
 

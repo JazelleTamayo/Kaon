@@ -1,18 +1,25 @@
 @model LoginForm
 @{
     Layout = "_Auth";
+    var storeName = ViewBag.JoinStoreName as string;
     ViewData["Title"] = "Log in";
-    ViewData["PanelTitle"] = "Hungry? Skip the line.";
-    ViewData["PanelText"] = "Order from your neighborhood carinderia and follow your order in real time. Carinderia owners manage every order from one dashboard.";
+    ViewData["PanelTitle"] = storeName != null ? storeName : "Every order, one dashboard.";
+    ViewData["PanelText"] = storeName != null
+        ? "Log in to see today's menu, order ahead and follow your order in real time."
+        : "Carinderia owners and the Kaon team log in here.";
 }
 
-<span class="auth-kicker">Welcome back</span>
-<h1 class="auth-title">Log in to Kaon</h1>
-<p class="auth-sub">Order your favorites, or manage your carinderia's orders.</p>
-
-@if (ViewBag.JoinStoreName is string joinName)
+@if (storeName != null)
 {
-    <p class="auth-sub"><strong>Ordering from @joinName.</strong> Your account works at every carinderia on Kaon.</p>
+    <span class="auth-kicker">Welcome back</span>
+    <h1 class="auth-title">Log in to @storeName</h1>
+    <p class="auth-sub">Use the account you created at @storeName.</p>
+}
+else
+{
+    <span class="auth-kicker">Owners and the Kaon team</span>
+    <h1 class="auth-title">Log in to Kaon</h1>
+    <p class="auth-sub">Customers: open your carinderia's own link or scan its QR code to log in and order.</p>
 }
 
 <form asp-action="Login" method="post" class="auth-form" novalidate>
@@ -44,7 +51,14 @@
     <button class="btn btn-go">Log in <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
 </form>
 
-<p class="auth-alt">New here? <a asp-action="Register">Create a customer account</a></p>
+@if (storeName != null)
+{
+    <p class="auth-alt">New here? <a asp-action="Register">Create an account</a></p>
+}
+else
+{
+    <p class="auth-alt">Own a carinderia? <a asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a></p>
+}
 
 @section Scripts {
     <script src="~/js/auth.js" asp-append-version="true"></script>
