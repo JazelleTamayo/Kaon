@@ -13,10 +13,15 @@ public class KaonDbContext : DbContext
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<StoreSettings> StoreSettings => Set<StoreSettings>();
     public DbSet<ItemOption> ItemOptions => Set<ItemOption>();
+    public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
+
+        modelBuilder.Entity<PasswordToken>().HasIndex(t => t.TokenHash).IsUnique();
+        modelBuilder.Entity<PasswordToken>()
+            .HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ItemOption>()
             .HasOne(o => o.MenuItem).WithMany(m => m.Options)

@@ -16,6 +16,7 @@ public class OwnerMenuController : Controller
 
     public async Task<IActionResult> Index()
     {
+        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync();
         var items = await _db.MenuItems
             .Include(m => m.Options)
             .OrderBy(m => m.Name)
@@ -117,6 +118,35 @@ public class OwnerMenuController : Controller
 
         await _db.SaveChangesAsync();
         TempData["Saved"] = m.Name + " saved.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Turn a whole section on or off: "daily" foods or "packages"
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleOffer(string kind)
+    {
+        var store = await _db.StoreSettings.FirstAsync();
+        if (kind == "daily")
+        {
+            if (store.OffersDailyMenu && !store.OffersPackages)
+            {
+                TempData["Warn"] = "Keep at least one on. To pause all orders, use the Open / Closed switch on the Orders page.";
+                return RedirectToAction(nameof(Index));
+            }
+            store.OffersDailyMenu = !store.OffersDailyMenu;
+            TempData["Saved"] = store.OffersDailyMenu ? "Daily foods are on. Customers can order them." : "Daily foods are off. Customers can't see or order them.";
+        }
+        else if (kind == "packages")
+        {
+            if (store.OffersPackages && !store.OffersDailyMenu)
+            {
+                TempData["Warn"] = "Keep at least one on. To pause all orders, use the Open / Closed switch on the Orders page.";
+                return RedirectToAction(nameof(Index));
+            }
+            store.OffersPackages = !store.OffersPackages;
+            TempData["Saved"] = store.OffersPackages ? "Food packages are on. Customers can order them." : "Food packages are off. Customers can't see or order them.";
+        }
+        await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
 

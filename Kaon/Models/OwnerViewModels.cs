@@ -21,6 +21,8 @@ public class SummaryVm
     public int StillOpenCount => Orders.Count(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled);
     public decimal Sales => Completed.Sum(o => o.Total);
     public decimal DeliveryFees => Completed.Sum(o => o.DeliveryFee);
+    public decimal PaidTotal => Completed.Where(o => o.PaymentStatus == PaymentStatus.Paid).Sum(o => o.Total);
+    public decimal ToCollect => Completed.Where(o => o.PaymentStatus != PaymentStatus.Paid).Sum(o => o.Total);
     public int PickupCount => Completed.Count(o => o.OrderType == OrderType.Pickup);
     public int DeliveryCount => Completed.Count(o => o.OrderType == OrderType.Delivery);
 

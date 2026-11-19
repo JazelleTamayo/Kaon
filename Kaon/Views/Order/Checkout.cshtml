@@ -15,7 +15,7 @@
     <div class="banner banner-closed">We're closed right now. You can't place an order until we open.</div>
 }
 
-<form asp-action="Checkout" method="post">
+<form asp-action="Checkout" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="error"></div>
 
     <div class="card">
@@ -66,6 +66,49 @@
         <span class="error" asp-validation-for="Address"></span>
     </div>
 
+    @{ var cashlessOk = store.CashlessAvailable; }
+    <div class="card">
+        <label class="label">How will you pay?</label>
+        <div class="pay-opts">
+            @if (store.AcceptsCash)
+            {
+                <label class="pay-opt">
+                    <input type="radio" asp-for="PaymentMethod" value="Cash" />
+                    <span class="pay-tile">
+                        <strong>Pay with cash</strong>
+                        <small id="cashHint">Pay in person when you pick up your order.</small>
+                    </span>
+                </label>
+            }
+            @if (cashlessOk)
+            {
+                <label class="pay-opt">
+                    <input type="radio" asp-for="PaymentMethod" value="Cashless" />
+                    <span class="pay-tile">
+                        <strong>Pay in advance</strong>
+                        <small>GCash, bank or QR code. You send a screenshot as proof.</small>
+                    </span>
+                </label>
+            }
+        </div>
+
+        @if (cashlessOk)
+        {
+            <div class="pay-box" id="cashlessBox" style="display:none">
+                <div class="pay-send">Send <strong id="sendAmount"></strong> to:</div>
+                <partial name="_PayDetails" model="store" />
+
+                <label class="label" asp-for="Proof">Screenshot of your payment</label>
+                <input class="input" asp-for="Proof" type="file" accept="image/jpeg,image/png,image/webp" />
+                <span class="hint">You can also send it later from your order page. The carinderia confirms your payment.</span>
+                <span class="error" asp-validation-for="Proof"></span>
+
+                <label class="label" asp-for="PaymentRef">Reference number (optional)</label>
+                <input class="input" asp-for="PaymentRef" maxlength="60" />
+            </div>
+        }
+    </div>
+
     <div class="card">
         @foreach (var line in cart)
         {
@@ -92,6 +135,9 @@
         const addressBox = document.getElementById('addressBox');
         const feeRow = document.getElementById('feeRow');
         const totalText = document.getElementById('totalText');
+        const sendAmount = document.getElementById('sendAmount');
+        const cashHint = document.getElementById('cashHint');
+        const cashlessBox = document.getElementById('cashlessBox');
 
         function money(n) {
             return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -101,10 +147,27 @@
             const delivery = document.querySelector('input[name="OrderType"]:checked').value === 'Delivery';
             addressBox.style.display = delivery ? '' : 'none';
             feeRow.style.display = delivery ? '' : 'none';
-            totalText.textContent = money(subtotal + (delivery ? fee : 0));
+            const total = subtotal + (delivery ? fee : 0);
+            totalText.textContent = money(total);
+            if (sendAmount) sendAmount.textContent = money(total);
+            if (cashHint) cashHint.textContent = delivery
+                ? 'Pay the rider in cash when your order is delivered.'
+                : 'Pay in person when you pick up your order.';
         }
 
         radios.forEach(r => r.addEventListener('change', update));
         update();
+
+        function payUpdate() {
+            const c = document.querySelector('input[name="PaymentMethod"]:checked');
+            if (cashlessBox) cashlessBox.style.display = (c && c.value === 'Cashless') ? '' : 'none';
+        }
+        document.querySelectorAll('input[name="PaymentMethod"]').forEach(r => r.addEventListener('change', payUpdate));
+        payUpdate();
+
+        document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+            if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy);
+            b.textContent = 'Copied';
+        }));
     </script>
 }

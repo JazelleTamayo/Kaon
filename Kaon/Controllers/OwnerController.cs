@@ -1,4 +1,4 @@
-﻿using Kaon.Data;
+using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +49,19 @@ public class OwnerController : Controller
         if (order != null && next != null)
         {
             order.Status = next.Value;
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // The owner confirms the money was received (cash collected, or GCash proof checked)
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkPaid(int id)
+    {
+        var order = await _db.Orders.FindAsync(id);
+        if (order != null && order.Status != OrderStatus.Cancelled)
+        {
+            order.PaymentStatus = PaymentStatus.Paid;
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));

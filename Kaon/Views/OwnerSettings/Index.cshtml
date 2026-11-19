@@ -3,10 +3,17 @@
     ViewData["Title"] = "Store setup";
 }
 
-<h1>Store setup</h1>
-<p class="muted">This is what customers see on your page.</p>
+<section class="o-hero sm">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Your store</span>
+        <h1>Store setup</h1>
+        <p>This is what customers see on your page, and how they can pay you.</p>
+    </div>
+</section>
+<div style="height:18px"></div>
 
-<form asp-action="Index" method="post">
+<form asp-action="Index" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="error"></div>
 
     <div class="card">
@@ -44,6 +51,59 @@
 
         <label class="label" asp-for="DeliveryArea">Delivery area</label>
         <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
+    </div>
+
+    <div class="card">
+        <strong>How customers can pay</strong>
+        <label class="check">
+            <input type="checkbox" asp-for="AcceptsCash" />
+            <span>Cash (pay at pickup, or when the food is delivered)</span>
+        </label>
+        <label class="check">
+            <input type="checkbox" asp-for="AcceptsCashless" />
+            <span>Pay in advance with GCash (customer sends proof of payment)</span>
+        </label>
+
+        <label class="label" asp-for="GCashName">GCash account name</label>
+        <input class="input" asp-for="GCashName" />
+
+        <label class="label" asp-for="GCashNumber">GCash number</label>
+        <input class="input" asp-for="GCashNumber" type="tel" inputmode="tel" />
+        <span class="error" asp-validation-for="GCashNumber"></span>
+
+        <label class="label" asp-for="PaymentNote">Note for customers (optional)</label>
+        <input class="input" asp-for="PaymentNote" placeholder="For example: Send the exact amount, then upload your screenshot." />
+        <span class="hint">Customers see these details at checkout when they choose Pay in advance.</span>
+    </div>
+
+    <div class="card">
+        <strong>Other bank or e-wallet (optional)</strong>
+        <p class="muted" style="margin:2px 0 6px">For customers who pay by bank transfer, Maya, and so on.</p>
+        <label class="label" asp-for="BankName">Bank or e-wallet name</label>
+        <input class="input" asp-for="BankName" placeholder="For example: BDO, BPI, Maya" />
+        <span class="error" asp-validation-for="BankName"></span>
+
+        <label class="label" asp-for="BankAccountName">Account name</label>
+        <input class="input" asp-for="BankAccountName" />
+
+        <label class="label" asp-for="BankAccountNumber">Account number</label>
+        <input class="input" asp-for="BankAccountNumber" inputmode="numeric" />
+    </div>
+
+    <div class="card">
+        <strong>QR code customers can scan to pay</strong>
+        <p class="muted" style="margin:2px 0 6px">Upload a screenshot of your GCash, Maya or bank QR code. Customers see it at checkout.</p>
+        @if (!string.IsNullOrEmpty(Model.PaymentQr))
+        {
+            <div class="qr-current">
+                <img class="qr-preview" src="@Url.Action("Qr", "Payment")?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="Your payment QR code" />
+                <label class="check"><input type="checkbox" name="removeQr" value="true" /><span>Remove this QR code</span></label>
+            </div>
+        }
+        <label class="label" for="qrFile">@(string.IsNullOrEmpty(Model.PaymentQr) ? "Upload QR code" : "Replace QR code")</label>
+        <input class="input" id="qrFile" name="qrFile" type="file" accept="image/jpeg,image/png,image/webp" />
+        <span class="hint">JPG, PNG or WebP, up to 5 MB.</span>
+        @Html.ValidationMessage("qrFile", new { @class = "error" })
     </div>
 
     <button class="btn">Save settings</button>

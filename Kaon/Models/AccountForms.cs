@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Kaon.Models;
 
@@ -30,4 +30,8 @@ public class RegisterForm
     [Required(ErrorMessage = "Please confirm your password."),
      Compare(nameof(Password), ErrorMessage = "Passwords don't match.")]
     public string ConfirmPassword { get; set; } = "";
+
+    // Data Privacy: the customer must agree to the Privacy Notice
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Please agree to the Privacy Notice to continue.")]
+    public bool AcceptPrivacy { get; set; }
 }

@@ -1,9 +1,13 @@
 @using Kaon.Helpers
 @using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject Kaon.Data.KaonDbContext Db
 @{
     var isCustomer = User.IsInRole("Customer");
     var isOwner = User.IsInRole("Owner");
+    var isAdmin = User.IsInRole("Admin");
     var signedIn = User.Identity?.IsAuthenticated == true;
+    var offersPackages = !isCustomer || (Db.StoreSettings.AsNoTracking().Select(x => (bool?)x.OffersPackages).FirstOrDefault() ?? true);
     var cartCount = isCustomer ? CartHelper.Get(Context.Session).Sum(c => c.Quantity) : 0;
     var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     var act = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
@@ -14,7 +18,18 @@
     var initials = string.Concat(fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpper(w[0])));
     if (initials == "") initials = "K";
     var email = User.FindFirstValue(ClaimTypes.Email);
-    var roleLabel = isOwner ? "Carinderia owner" : "Customer";
+    var roleLabel = isAdmin ? "Kaon admin" : isOwner ? "Carinderia owner" : "Customer";
+
+    // Orders still in progress, so the tracker bar shows right away
+    var trackInitial = "[]";
+    if (isCustomer && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var trackUid))
+    {
+        var activeOrders = Db.Orders.AsNoTracking()
+            .Where(o => o.UserId == trackUid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+            .OrderByDescending(o => o.CreatedAt).Take(5).ToList();
+        trackInitial = System.Text.Json.JsonSerializer.Serialize(activeOrders.Select(OrderText.Snap));
+    }
+    var onOrderPage = ctrl == "Order" && act == "Status";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -45,8 +60,16 @@
                 @if (isCustomer)
                 {
                     <a class="@On(ctrl == "Menu" && act != "Packages")" asp-controller="Menu" asp-action="Index">Menu</a>
-                    <a class="@On(ctrl == "Menu" && act == "Packages")" asp-controller="Menu" asp-action="Packages">Food packages</a>
+                    @if (offersPackages)
+                    {
+                        <a class="@On(ctrl == "Menu" && act == "Packages")" asp-controller="Menu" asp-action="Packages">Food packages</a>
+                    }
                     <a class="@On(ctrl == "Order" && act != "Checkout")" asp-controller="Order" asp-action="Index">My orders</a>
+                }
+                else if (isAdmin)
+                {
+                    <a class="@On(ctrl == "Admin" && act != "Users")" asp-controller="Admin" asp-action="Index">Overview</a>
+                    <a class="@On(ctrl == "Admin" && act == "Users")" asp-controller="Admin" asp-action="Users">Accounts</a>
                 }
                 else if (isOwner)
                 {
@@ -80,6 +103,10 @@
                                 <span>@roleLabel</span>
                                 @if (!string.IsNullOrEmpty(email)) { <span>@email</span> }
                             </div>
+                            <a class="dd-item" asp-controller="Account" asp-action="ChangePassword">
+                                <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                                Change password
+                            </a>
                             <form asp-controller="Account" asp-action="Logout" method="post">
                                 <button class="dd-item">
                                     <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
@@ -109,7 +136,7 @@
         @RenderBody()
     </main>
 
-    <footer class="site-footer">Kaon · Order ahead. Skip the line.</footer>
+    <footer class="site-footer">Kaon · Order ahead. Skip the line. · <a asp-controller="Home" asp-action="Privacy">Privacy Notice</a></footer>
 
     <script>
         (function () {
@@ -137,6 +164,22 @@
             });
         })();
     </script>
+    @if (signedIn)
+    {
+        <div id="toasts" class="toasts" aria-live="polite"></div>
+        <script src="~/js/alerts.js" asp-append-version="true"></script>
+    }
+    @if (isCustomer)
+    {
+        <div id="tracker" class="tracker" hidden
+             data-initial="@trackInitial"
+             data-active-url="@Url.Action("Active", "Order")"
+             data-status-url="@Url.Action("Status", "Order")"
+             data-json-url="@Url.Action("StatusJson", "Order")"
+             data-orders-url="@Url.Action("Index", "Order")"
+             data-hide="@(onOrderPage ? "1" : "0")"></div>
+        <script src="~/js/tracker.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

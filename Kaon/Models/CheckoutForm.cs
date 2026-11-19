@@ -15,6 +15,15 @@ public class CheckoutForm
     [StringLength(300)]
     public string? Address { get; set; }
 
+    // How the customer will pay
+    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+
+    [StringLength(60)]
+    public string? PaymentRef { get; set; }
+
+    // Screenshot of the GCash / bank payment (cashless only)
+    public IFormFile? Proof { get; set; }
+
     // Needed only when the order has a food package
     public DateTime? ScheduledFor { get; set; }
 }

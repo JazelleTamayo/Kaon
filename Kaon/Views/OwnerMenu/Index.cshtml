@@ -7,15 +7,47 @@
     string Pesos(decimal d) => "₱" + d.ToString("N0");
 }
 
-<div class="page-head">
-    <div>
-        <h1>Menu</h1>
-        <p class="muted">Switch on what you're cooking today. Food packages are party trays and lechon with sizes.</p>
+@{
+    var cookNow = foods.Count(f => f.CanOrder);
+    var cookPct = foods.Count == 0 ? 0 : cookNow * 100 / foods.Count;
+}
+<section class="o-hero o-side">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Menu</span>
+        <h1>What's cooking today?</h1>
+        <p>Switch on what you're cooking. Food packages are party trays and lechon with sizes.</p>
+        <div class="cook-meter" role="img" aria-label="@cookNow of @foods.Count foods cooking today"><div style="width:@cookPct%"></div></div>
+        <span class="cook-text">@cookNow of @foods.Count daily foods cooking today</span>
+        <div class="o-hero-actions">
+            <a class="btn btn-sm btn-yellow" asp-action="Create">+ Add food</a>
+            <a class="btn btn-sm btn-wline" asp-action="Create" asp-route-package="true">+ Add food package</a>
+        </div>
     </div>
-    <div class="head-actions">
-        <a class="btn btn-sm" asp-action="Create">+ Add food</a>
-        <a class="btn btn-sm btn-outline" asp-action="Create" asp-route-package="true">+ Add food package</a>
-    </div>
+</section>
+
+@{ var store = (StoreSettings)ViewBag.Store; }
+<div class="offer-grid">
+    <form asp-action="ToggleOffer" asp-route-kind="daily" method="post" class="card offer-card @(store.OffersDailyMenu ? "" : "is-off")">
+        <div>
+            <strong>Daily foods</strong>
+            <p class="muted">@(store.OffersDailyMenu ? "On. Customers can see and order your everyday meals." : "Off. Customers can't see or order daily foods.")</p>
+        </div>
+        <label class="switch">
+            <input type="checkbox" @(store.OffersDailyMenu ? "checked" : "") onchange="this.form.submit()" aria-label="Offer daily foods" />
+            <span class="slider"></span>
+        </label>
+    </form>
+    <form asp-action="ToggleOffer" asp-route-kind="packages" method="post" class="card offer-card @(store.OffersPackages ? "" : "is-off")">
+        <div>
+            <strong>Food packages</strong>
+            <p class="muted">@(store.OffersPackages ? "On. Customers can order party trays and lechon." : "Off. Customers can't see or order food packages.")</p>
+        </div>
+        <label class="switch">
+            <input type="checkbox" @(store.OffersPackages ? "checked" : "") onchange="this.form.submit()" aria-label="Offer food packages" />
+            <span class="slider"></span>
+        </label>
+    </form>
 </div>
 
 <div class="stats">

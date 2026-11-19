@@ -6,53 +6,99 @@
 
     var columns = new[]
     {
-        (OrderStatus.Pending, "Pending"),
-        (OrderStatus.Preparing, "Preparing"),
-        (OrderStatus.Ready, "Ready"),
-        (OrderStatus.OutForDelivery, "Out for Delivery")
+        (OrderStatus.Pending, "Pending", "Waiting for you to accept"),
+        (OrderStatus.Preparing, "Preparing", "In the kitchen"),
+        (OrderStatus.Ready, "Ready", "Waiting for pickup or a rider"),
+        (OrderStatus.OutForDelivery, "Out for Delivery", "On the way")
     };
+
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    var waiting = Model.Active.Count(o => o.Status == OrderStatus.Pending);
 }
 
-<div class="page-head">
-    <div>
-        <h1>Today's orders</h1>
-        <p class="muted">@Model.Store.Name · @DateTime.Today.ToString("dddd, MMM d")</p>
+<section class="o-hero">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">@greeting!</span>
+        <h1>@Model.Store.Name</h1>
+        <p>@DateTime.Today.ToString("dddd, MMMM d") · @(waiting > 0 ? waiting + " order" + (waiting == 1 ? "" : "s") + " waiting for you" : "You're all caught up")</p>
+        <div class="o-hero-actions">
+            <form asp-action="ToggleOpen" method="post">
+                <button class="open-toggle @(Model.Store.IsOpen ? "is-open" : "is-closed")" title="Tap to switch">
+                    <span class="dot"></span> @(Model.Store.IsOpen ? "Open for orders" : "Closed")
+                </button>
+            </form>
+            <button type="button" class="alert-toggle" id="alertBtn">Turn on alerts</button>
+        </div>
     </div>
-    <form asp-action="ToggleOpen" method="post">
-        <button class="open-toggle @(Model.Store.IsOpen ? "is-open" : "is-closed")"
-                title="Tap to switch">
-            <span class="dot"></span> @(Model.Store.IsOpen ? "Open for orders" : "Closed")
-        </button>
-    </form>
+</section>
+
+<div class="stats o-stats">
+    <div class="stat c-orange">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>
+        <span class="stat-num" data-count="@Model.Active.Count">@Model.Active.Count</span><span class="stat-label">Active orders now</span>
+    </div>
+    <div class="stat c-yellow">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <span class="stat-num" data-count="@waiting">@waiting</span><span class="stat-label">Waiting to accept</span>
+    </div>
+    <div class="stat c-teal">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
+        <span class="stat-num" data-count="@Model.OrdersToday">@Model.OrdersToday</span><span class="stat-label">Orders today</span>
+    </div>
+    <div class="stat c-green">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M16.5 7.5c-.8-1.4-2.4-2-4.5-2-2.6 0-4.2 1.2-4.2 3 0 4.4 9 2 9 6.5 0 1.9-1.8 3.2-4.8 3.2-2.3 0-4-.8-5-2.3"/></svg></span>
+        <span class="stat-num" data-count="@((int)Model.SalesToday)" data-prefix="₱">₱@Model.SalesToday.ToString("N0")</span><span class="stat-label">Sales (completed)</span>
+    </div>
 </div>
 
-<div class="stats">
-    <div class="stat"><span class="stat-num">@Model.Active.Count</span><span class="stat-label">Active now</span></div>
-    <div class="stat"><span class="stat-num">@Model.OrdersToday</span><span class="stat-label">Orders today</span></div>
-    <div class="stat"><span class="stat-num">₱@Model.SalesToday.ToString("N0")</span><span class="stat-label">Sales (completed)</span></div>
-</div>
+<nav class="quick" aria-label="Quick actions">
+    <a asp-controller="OwnerMenu" asp-action="Create">
+        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Add a food
+    </a>
+    <a asp-controller="OwnerMenu" asp-action="Index">
+        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>Today's menu
+    </a>
+    <a asp-controller="Owner" asp-action="Summary">
+        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>End-of-day summary
+    </a>
+    <a asp-controller="OwnerSettings" asp-action="Index">
+        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg></span>Store &amp; payments
+    </a>
+</nav>
 
 <div class="board">
-    @foreach (var (status, title) in columns)
+    @foreach (var (status, title, hint) in columns)
     {
         var orders = Model.Active.Where(o => o.Status == status).ToList();
-        <section class="board-col" aria-label="@title">
+        var cls = status.ToString().ToLower();
+        <section class="board-col col-@cls" aria-label="@title">
             <div class="board-head">
-                <span>@title</span>
-                <span class="chip chip-@status.ToString().ToLower()">@orders.Count</span>
+                <span class="bh-title"><span class="bh-dot"></span>@title</span>
+                <span class="chip chip-@cls">@orders.Count</span>
             </div>
+            <div class="bh-hint">@hint</div>
 
             @if (!orders.Any())
             {
-                <p class="board-empty">No orders</p>
+                <div class="board-empty">
+                    <svg class="pot" viewBox="0 0 64 64" aria-hidden="true">
+                        <path class="steam s1" d="M24 18c-3-3 3-5 0-9"/><path class="steam s2" d="M32 18c-3-3 3-5 0-11"/><path class="steam s3" d="M40 18c-3-3 3-5 0-9"/>
+                        <rect x="14" y="26" width="36" height="6" rx="3"/><path d="M17 32h30a15 15 0 0 1-30 0z"/>
+                    </svg>
+                    <span>@(status == OrderStatus.Pending ? "No new orders yet" : "Nothing here")</span>
+                </div>
             }
 
             @foreach (var o in orders)
             {
                 var mins = (int)(DateTime.Now - o.CreatedAt).TotalMinutes;
-                <article class="order-card">
+                var slow = (status == OrderStatus.Pending || status == OrderStatus.Preparing);
+                var ageClass = slow && mins >= 15 ? "late" : slow && mins >= 8 ? "warn" : "";
+                <article class="order-card @(mins < 2 ? "fresh" : "")">
                     <div class="row">
-                        <strong>#@o.Id</strong>
+                        <strong>#@o.Id @if (mins < 2) { <span class="new-badge">New</span> }</strong>
                         <span class="tag @(o.OrderType == OrderType.Delivery ? "tag-delivery" : "tag-pickup")">
                             @(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")
                         </span>
@@ -66,6 +112,18 @@
                     {
                         <div class="order-addr">@o.Address</div>
                     }
+                    <div class="pay-line">
+                        <span class="pay-method">@OrderText.PayMethodLabel(o)</span>
+                        <span class="chip @(o.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : o.PaymentStatus == PaymentStatus.ProofSent ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(o)</span>
+                        @if (!string.IsNullOrEmpty(o.PaymentProof))
+                        {
+                            <a href="/Payment/Proof/@o.Id" target="_blank" rel="noopener">View proof</a>
+                        }
+                        @if (!string.IsNullOrEmpty(o.PaymentRef))
+                        {
+                            <span class="muted">Ref: @o.PaymentRef</span>
+                        }
+                    </div>
                     <ul class="order-lines">
                         @foreach (var i in o.Items)
                         {
@@ -73,13 +131,19 @@
                         }
                     </ul>
                     <div class="row order-foot">
-                        <span class="muted">@(mins < 1 ? "Just now" : mins + " min ago")</span>
+                        <span class="age @ageClass">@(mins < 1 ? "Just now" : mins < 120 ? mins + " min ago" : o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
                         <strong>₱@o.Total.ToString("N2")</strong>
                     </div>
                     <div class="order-actions">
                         <form asp-action="Advance" asp-route-id="@o.Id" method="post">
                             <button class="btn btn-sm">@OrderText.NextLabel(o)</button>
                         </form>
+                        @if (o.PaymentStatus != PaymentStatus.Paid)
+                        {
+                            <form asp-action="MarkPaid" asp-route-id="@o.Id" method="post">
+                                <button class="btn-ghost">Mark paid</button>
+                            </form>
+                        }
                         <form asp-action="Cancel" asp-route-id="@o.Id" method="post"
                               onsubmit="return confirm('Cancel order #@o.Id?');">
                             <button class="btn-ghost">Cancel</button>
@@ -93,18 +157,65 @@
 
 @section Scripts {
     <script>
-        // Refresh the board when a new order or status change comes in
+        const stateUrl = '@Url.Action("BoardState")';
+        const alertBtn = document.getElementById('alertBtn');
+        const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let last = null;
+
+        function paintAlertBtn() {
+            const on = kaonAlerts.enabled();
+            alertBtn.classList.toggle('on', on);
+            alertBtn.textContent = on ? 'Alerts on' : 'Turn on alerts';
+        }
+        alertBtn.addEventListener('click', () => { kaonAlerts.enabled() ? kaonAlerts.disable() : kaonAlerts.enable(); });
+        kaonAlerts.onChange(paintAlertBtn);
+        paintAlertBtn();
+
+        // Numbers count up when the page opens or the board refreshes
+        function countUp(root) {
+            root.querySelectorAll('[data-count]').forEach(el => {
+                const end = Number(el.dataset.count), pre = el.dataset.prefix || '';
+                if (calm || !end) { el.textContent = pre + end.toLocaleString('en-PH'); return; }
+                const t0 = performance.now(), dur = 900;
+                (function step(t) {
+                    const p = Math.min(1, (t - t0) / dur);
+                    el.textContent = pre + Math.round(end * (1 - Math.pow(1 - p, 3))).toLocaleString('en-PH');
+                    if (p < 1) requestAnimationFrame(step);
+                })(t0);
+            });
+        }
+        countUp(document);
+
+        // Replace the stats and the board without reloading the page
+        async function refresh() {
+            const html = await (await fetch(location.href, { cache: 'no-store', credentials: 'same-origin' })).text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            ['.stats', '.board'].forEach(sel => {
+                const fresh = doc.querySelector(sel), old = document.querySelector(sel);
+                if (fresh && old) old.replaceWith(fresh);
+            });
+            countUp(document.querySelector('.stats'));
+        }
+
+        const ids = sig => sig.split(',').filter(Boolean).map(x => x.split(':')[0]);
+
         async function check() {
             try {
-                const r = await fetch('@Url.Action("BoardState")', { cache: 'no-store' });
+                const r = await fetch(stateUrl, { cache: 'no-store', credentials: 'same-origin' });
                 if (!r.ok) return;
                 const d = await r.json();
-                if (last !== null && d.sig !== last) { location.reload(); return; }
+                if (last !== null && d.sig !== last) {
+                    const before = new Set(ids(last));
+                    const fresh = ids(d.sig).filter(id => !before.has(id));
+                    await refresh();
+                    if (fresh.length) {
+                        kaonAlerts.notify('New order', 'New order' + (fresh.length > 1 ? 's' : '') + ': #' + fresh.join(', #'), { kind: 'ready', tag: 'new-order' });
+                    }
+                }
                 last = d.sig;
             } catch (e) { }
         }
         check();
-        setInterval(check, 8000);
+        setInterval(check, 5000);
     </script>
 }

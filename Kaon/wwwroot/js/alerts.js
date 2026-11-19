@@ -1,0 +1,112 @@
+// Kaon alerts: pop-up message, chime, phone vibration, browser notification.
+// Shared by the customer order tracker and the owner order board.
+(function () {
+    var KEY = 'kaon.alerts';
+    var ctx = null;
+    var listeners = [];
+    var flashTimer = null;
+    var baseTitle = document.title;
+
+    function audio() {
+        try {
+            if (!ctx) {
+                var A = window.AudioContext || window.webkitAudioContext;
+                if (A) ctx = new A();
+            }
+            if (ctx && ctx.state === 'suspended') ctx.resume();
+        } catch (e) { }
+        return ctx;
+    }
+
+    // A short three-note chime
+    function chime() {
+        var c = audio();
+        if (!c || c.state !== 'running') return;
+        var now = c.currentTime;
+        [[880, 0], [1175, 0.18], [1568, 0.36]].forEach(function (n) {
+            var o = c.createOscillator(), g = c.createGain();
+            o.type = 'sine';
+            o.frequency.value = n[0];
+            g.gain.setValueAtTime(0.0001, now + n[1]);
+            g.gain.exponentialRampToValueAtTime(0.25, now + n[1] + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + n[1] + 0.35);
+            o.connect(g); g.connect(c.destination);
+            o.start(now + n[1]); o.stop(now + n[1] + 0.4);
+        });
+    }
+
+    function enabled() {
+        try { return localStorage.getItem(KEY) === 'on'; } catch (e) { return false; }
+    }
+
+    function permission() {
+        return ('Notification' in window) ? Notification.permission : 'unsupported';
+    }
+
+    function changed() { listeners.forEach(function (f) { f(); }); }
+
+    function toast(message, kind) {
+        var host = document.getElementById('toasts');
+        if (!host) return;
+        var t = document.createElement('div');
+        t.className = 'toast ' + (kind || '');
+        t.setAttribute('role', 'status');
+        var dot = document.createElement('span'); dot.className = 'toast-dot';
+        var msg = document.createElement('span'); msg.textContent = message;
+        t.appendChild(dot); t.appendChild(msg);
+        t.addEventListener('click', function () { t.remove(); });
+        host.appendChild(t);
+        setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 9000);
+    }
+
+    // Blink the tab title while the page is in the background
+    function flashTitle(text) {
+        if (!document.hidden) return;
+        var on = false;
+        clearInterval(flashTimer);
+        flashTimer = setInterval(function () { document.title = on ? baseTitle : text; on = !on; }, 1000);
+    }
+    function stopFlash() { clearInterval(flashTimer); document.title = baseTitle; }
+    window.addEventListener('focus', stopFlash);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) stopFlash(); });
+
+    function notify(title, body, opts) {
+        opts = opts || {};
+        toast(body || title, opts.kind);
+        if (enabled()) chime();
+        if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch (e) { } }
+        if (enabled() && permission() === 'granted') {
+            try { new Notification(title, { body: body, tag: opts.tag, icon: '/img/logo-icon.svg' }); } catch (e) { }
+        }
+        flashTitle(title);
+    }
+
+    // Must be called from a click, so the browser lets us play sound and ask for permission
+    function enable() {
+        try { localStorage.setItem(KEY, 'on'); } catch (e) { }
+        audio(); chime();
+        if (permission() === 'default') {
+            Notification.requestPermission().then(changed);
+        }
+        changed();
+    }
+
+    function disable() {
+        try { localStorage.setItem(KEY, 'off'); } catch (e) { }
+        changed();
+    }
+
+    window.kaonAlerts = {
+        enable: enable, disable: disable, enabled: enabled, notify: notify,
+        toast: toast, chime: chime, permission: permission,
+        onChange: function (f) { listeners.push(f); }
+    };
+})();
+
+// Copy buttons (account numbers, links)
+document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]');
+    if (!b) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(b.getAttribute('data-copy'));
+    b.textContent = 'Copied';
+});

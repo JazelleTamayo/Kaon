@@ -1,5 +1,6 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Kaon.Data;
+using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -13,19 +14,24 @@ public class AccountController : Controller
     private const string Scheme = "KaonCookie";
     private readonly KaonDbContext _db;
     private readonly IPasswordHasher<AppUser> _hasher;
+    private readonly IEmailSender _email;
 
-    public AccountController(KaonDbContext db, IPasswordHasher<AppUser> hasher)
+    public AccountController(KaonDbContext db, IPasswordHasher<AppUser> hasher, IEmailSender email)
     {
         _db = db;
         _hasher = hasher;
+        _email = email;
     }
 
     private IActionResult GoHome(string? role = null)
     {
         role ??= User.FindFirstValue(ClaimTypes.Role);
-        return role == "Owner"
-            ? RedirectToAction("Index", "Owner")
-            : RedirectToAction("Index", "Menu");
+        return role switch
+        {
+            "Admin" => RedirectToAction("Index", "Admin"),
+            "Owner" => RedirectToAction("Index", "Owner"),
+            _ => RedirectToAction("Index", "Menu")
+        };
     }
 
     private async Task SignInUser(AppUser user)
@@ -37,6 +43,7 @@ public class AccountController : Controller
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Role, user.Role)
         };
+        if (user.MustChangePassword) claims.Add(new Claim("must_change", "1"));
         var identity = new ClaimsIdentity(claims, Scheme);
         await HttpContext.SignInAsync(Scheme, new ClaimsPrincipal(identity),
             new AuthenticationProperties { IsPersistent = true });
@@ -58,14 +65,169 @@ public class AccountController : Controller
         var email = form.Email.Trim().ToLower();
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-        if (user == null ||
+        // Too many wrong passwords: the account rests for a few minutes
+        if (user?.LockoutUntil != null && user.LockoutUntil > DateTime.UtcNow)
+        {
+            ModelState.AddModelError("", "Too many tries. Please wait a few minutes and try again, or reset your password.");
+            return View(form);
+        }
+
+        if (user == null || string.IsNullOrEmpty(user.PasswordHash) ||
             _hasher.VerifyHashedPassword(user, user.PasswordHash, form.Password) == PasswordVerificationResult.Failed)
         {
+            if (user != null)
+            {
+                user.FailedLogins++;
+                if (user.FailedLogins >= 5)
+                {
+                    user.LockoutUntil = DateTime.UtcNow.AddMinutes(10);
+                    user.FailedLogins = 0;
+                }
+                await _db.SaveChangesAsync();
+            }
             ModelState.AddModelError("", "Wrong email or password.");
             return View(form);
         }
 
+        if (user.FailedLogins != 0 || user.LockoutUntil != null)
+        {
+            user.FailedLogins = 0;
+            user.LockoutUntil = null;
+            await _db.SaveChangesAsync();
+        }
+
+        if (!user.IsActive)
+        {
+            ModelState.AddModelError("", "This account is turned off. Please contact the Kaon team.");
+            return View(form);
+        }
+
         await SignInUser(user);
+        return user.MustChangePassword
+            ? RedirectToAction(nameof(ChangePassword))
+            : GoHome(user.Role);
+    }
+
+    // "Forgot password": we email a one-time link. The answer is always the same, so nobody can
+    // use this page to find out which emails have accounts.
+    [HttpGet]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordForm());
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordForm form)
+    {
+        if (!ModelState.IsValid) return View(form);
+
+        var email = form.Email.Trim().ToLower();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user != null && user.IsActive && user.PasswordHash != "")
+        {
+            // Not more than one email every 2 minutes per account
+            var recent = await _db.PasswordTokens.AnyAsync(t =>
+                t.UserId == user.Id && t.Purpose == "Reset" && t.CreatedAt > DateTime.UtcNow.AddMinutes(-2));
+            if (!recent)
+            {
+                var old = await _db.PasswordTokens.Where(t => t.UserId == user.Id && t.UsedAt == null).ToListAsync();
+                foreach (var o in old) o.UsedAt = DateTime.UtcNow;
+
+                var (token, hash) = InviteTokens.New();
+                _db.PasswordTokens.Add(new PasswordToken
+                {
+                    UserId = user.Id, TokenHash = hash, Purpose = "Reset",
+                    ExpiresAt = DateTime.UtcNow.AddHours(1)
+                });
+                await _db.SaveChangesAsync();
+
+                var link = Url.Action(nameof(SetPassword), "Account", new { token }, Request.Scheme)!;
+                await _email.SendAsync(user.Email, "Reset your Kaon password", EmailTemplates.Reset(user.FullName, link, 60));
+            }
+        }
+
+        ViewBag.Sent = true;
+        return View(new ForgotPasswordForm());
+    }
+
+    // The link the Kaon team sends: lets the person choose their OWN password. The admin never sees it.
+    private async Task<PasswordToken?> FindToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token) || token.Length > 100) return null;
+        var hash = InviteTokens.Hash(token);
+        return await _db.PasswordTokens.Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.TokenHash == hash && t.UsedAt == null &&
+                                      t.ExpiresAt > DateTime.UtcNow && t.User!.IsActive);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SetPassword(string? token)
+    {
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        Response.Headers["Cache-Control"] = "no-store";
+        var t = await FindToken(token);
+        if (t == null) return View("SetPasswordInvalid");
+        ViewBag.Name = t.User!.FullName;
+        ViewBag.Purpose = t.Purpose;
+        return View(new SetPasswordForm { Token = token! });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetPassword(SetPasswordForm form)
+    {
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        Response.Headers["Cache-Control"] = "no-store";
+        var t = await FindToken(form.Token);
+        if (t == null) return View("SetPasswordInvalid");
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Name = t.User!.FullName;
+            ViewBag.Purpose = t.Purpose;
+            return View(form);
+        }
+
+        var user = t.User!;
+        user.PasswordHash = _hasher.HashPassword(user, form.NewPassword);
+        user.MustChangePassword = false;
+
+        // The link works once. Any other link for this person stops working too.
+        t.UsedAt = DateTime.UtcNow;
+        var others = await _db.PasswordTokens.Where(x => x.UserId == user.Id && x.UsedAt == null && x.Id != t.Id).ToListAsync();
+        foreach (var o in others) o.UsedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Saved"] = "Your password is set. You can log in now.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    // Everyone can change their own password. A temporary password must be changed here first.
+    [HttpGet, Microsoft.AspNetCore.Authorization.Authorize]
+    public IActionResult ChangePassword() => View(new ChangePasswordForm());
+
+    [HttpPost, Microsoft.AspNetCore.Authorization.Authorize, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordForm form)
+    {
+        if (!ModelState.IsValid) return View(form);
+
+        var id = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null) return RedirectToAction(nameof(Login));
+
+        if (_hasher.VerifyHashedPassword(user, user.PasswordHash, form.CurrentPassword) == PasswordVerificationResult.Failed)
+        {
+            ModelState.AddModelError(nameof(form.CurrentPassword), "That is not your current password.");
+            return View(form);
+        }
+        if (form.NewPassword == form.CurrentPassword)
+        {
+            ModelState.AddModelError(nameof(form.NewPassword), "Choose a different password from the one you have now.");
+            return View(form);
+        }
+
+        user.PasswordHash = _hasher.HashPassword(user, form.NewPassword);
+        user.MustChangePassword = false;
+        await _db.SaveChangesAsync();
+
+        await SignInUser(user);   // refresh the sign-in so the "must change" flag is gone
+        TempData["Saved"] = "Password changed.";
         return GoHome(user.Role);
     }
 

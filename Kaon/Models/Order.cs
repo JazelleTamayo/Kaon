@@ -29,6 +29,17 @@ public class Order
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+    // How the customer pays, and whether it has been paid
+    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
+
+    [StringLength(60)]
+    public string? PaymentRef { get; set; }
+
+    // File name of the proof-of-payment picture (kept outside wwwroot)
+    [StringLength(100)]
+    public string? PaymentProof { get; set; }
+
     // When the customer needs the order (food packages and lechon are made ahead)
     public DateTime? ScheduledFor { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using Kaon.Data;
+using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -16,19 +16,24 @@ public class MenuController : Controller
     // The daily menu: everyday meals
     public async Task<IActionResult> Index()
     {
-        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync();
-        ViewBag.PackageCount = await _db.MenuItems.CountAsync(m => m.Category == MenuItem.PackageCategory && m.IsAvailable);
-        var items = await _db.MenuItems
-            .Where(m => m.Category != MenuItem.PackageCategory)
-            .OrderBy(m => m.Name)
-            .ToListAsync();
+        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        ViewBag.Store = store;
+        var items = store.OffersDailyMenu
+            ? await _db.MenuItems.Where(m => m.Category != MenuItem.PackageCategory).OrderBy(m => m.Name).ToListAsync()
+            : new List<MenuItem>();
         return View(items.OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList());
     }
 
     // Food packages: party trays and lechon, with sizes
     public async Task<IActionResult> Packages()
     {
-        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        var store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        if (!store.OffersPackages)
+        {
+            TempData["Warn"] = "Food packages aren't offered right now.";
+            return RedirectToAction(nameof(Index));
+        }
+        ViewBag.Store = store;
         var items = await _db.MenuItems
             .Include(m => m.Options)
             .Where(m => m.Category == MenuItem.PackageCategory)
@@ -44,6 +49,13 @@ public class MenuController : Controller
         var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id);
         if (!store.IsOpen || item == null || !item.CanOrder)
             return RedirectToAction(back);
+
+        // A whole section can be switched off by the carinderia
+        if (item.IsPackage ? !store.OffersPackages : !store.OffersDailyMenu)
+        {
+            TempData["Warn"] = item.IsPackage ? "Food packages aren't offered right now." : "The daily menu isn't offered right now.";
+            return RedirectToAction(nameof(Index));
+        }
 
         qty = Math.Clamp(qty, 1, 100);
 

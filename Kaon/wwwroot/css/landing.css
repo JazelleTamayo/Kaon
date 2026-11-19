@@ -201,3 +201,13 @@ a { color: inherit; }
     .js .reveal { opacity: 1; transform: none; transition: none; }
     .step3:hover, .why:hover, .dish:hover { transform: none; }
 }
+
+/* Privacy page and consent */
+.doc { max-width: 760px; padding-top: 40px; padding-bottom: 56px; }
+.doc h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 700; letter-spacing: -.02em; margin: 6px 0 12px; }
+.doc h2 { font-size: 1.15rem; margin: 28px 0 8px; }
+.doc p, .doc li { color: var(--muted); line-height: 1.7; }
+.doc ul { padding-left: 20px; }
+.doc a { color: var(--orange); font-weight: 600; }
+.doc-note { background: #fff1cc; border-radius: 14px; padding: 12px 16px; color: var(--brown) !important; font-size: .9rem; }
+.lp-foot a { color: inherit; text-decoration: underline; }

@@ -1,0 +1,58 @@
+@model List<AppUser>
+@{
+    ViewData["Title"] = "Accounts";
+    ViewData["Wide"] = true;
+    var role = (string)ViewBag.Role;
+    var myId = (int)ViewBag.MyId;
+    string Active(string r) => role == r ? "on" : "";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Carinderia owners and admins</h1>
+        <p class="muted">Customers' personal details are private. Kaon admins can't see them.</p>
+    </div>
+    <a class="btn btn-sm" asp-action="CreateOwner">+ Add a carinderia owner</a>
+</div>
+
+<div class="filters" role="group" aria-label="Filter by role">
+    <a class="fchip @Active("")" asp-action="Users">All</a>
+    <a class="fchip @Active("Owner")" asp-action="Users" asp-route-role="Owner">Owners</a>
+    <a class="fchip @Active("Admin")" asp-action="Users" asp-route-role="Admin">Admins</a>
+</div>
+
+<div class="card table-wrap">
+    <table class="table table-stack">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
+                    <td data-label="Email">@u.Email</td>
+                    <td data-label="Role"><span class="series-tag">@u.Role</span></td>
+                    <td data-label="Status">
+                        @if (!u.IsActive) { <span class="chip chip-soldout">Switched off</span> }
+                        else if (u.PasswordHash == "") { <span class="chip chip-pending">Invite pending</span> }
+                        else { <span class="chip chip-ready">Active</span> }
+                    </td>
+                    <td class="actions">
+                        @if (u.Role == "Owner")
+                        {
+                            <form asp-action="SendLink" asp-route-id="@u.Id" method="post">
+                                <button class="btn-ghost">@(u.PasswordHash == "" ? "New invite link" : "Send reset link")</button>
+                            </form>
+                            <form asp-action="ToggleActive" asp-route-id="@u.Id" asp-route-back="users" method="post">
+                                <button class="btn-ghost @(u.IsActive ? "danger" : "")">@(u.IsActive ? "Switch off" : "Switch on")</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="muted">@(u.Id == myId ? "You" : "")</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

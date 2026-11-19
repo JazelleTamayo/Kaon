@@ -1,28 +1,31 @@
-﻿@model List<MenuItem>
+@model List<MenuItem>
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Daily menu";
     ViewData["Wide"] = true;
     var store = (StoreSettings)ViewBag.Store;
-    var packageCount = (int)ViewBag.PackageCount;
     var cart = CartHelper.Get(Context.Session);
     var cartTotal = cart.Sum(c => c.Price * c.Quantity);
     var seriesInMenu = Model.GroupBy(m => m.SeriesName).OrderBy(g => Array.IndexOf(MenuSeries.All, g.Key)).ToList();
 }
 
-<section class="store-head">
-    <div>
+<section class="hero-banner">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-in">
         <span class="store-open @(store.IsOpen ? "is-open" : "is-closed")"><span class="dot"></span>@(store.IsOpen ? "Open now" : "Closed")</span>
         <h1>@store.Name</h1>
-        <p class="muted">
+        <p>
             @if (!string.IsNullOrWhiteSpace(store.Hours)) { <span>@store.Hours</span> }
             @if (!string.IsNullOrWhiteSpace(store.DeliveryArea)) { <span> · Delivers to @store.DeliveryArea</span> }
             @if (store.PickupEnabled && store.DeliveryEnabled) { <span> · Pickup or delivery</span> }
             else if (store.DeliveryEnabled) { <span> · Delivery only</span> }
             else { <span> · Pickup only</span> }
         </p>
+        @if (store.OffersPackages)
+        {
+            <a class="btn btn-sm btn-head btn-yellow" asp-action="Packages">Food package order <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        }
     </div>
-    <a class="btn btn-sm btn-head" asp-action="Packages">Food package order <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
 </section>
 
 @if (!store.IsOpen)
@@ -30,15 +33,8 @@
     <div class="banner banner-closed">We're closed right now. You can look at the menu, but ordering is paused.</div>
 }
 
-@if (packageCount > 0)
+@if (store.OffersDailyMenu)
 {
-    <a class="promo" asp-action="Packages">
-        <span class="promo-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
-        <span class="promo-text"><strong>Planning a party or gathering?</strong><span>Order party trays and lechon by size. Choose small, medium or large, or by the kilo.</span></span>
-        <span class="promo-go">See food packages <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-}
-
 <h2 class="section">Daily menu</h2>
 
 <div class="filters" role="group" aria-label="Filter by series" data-filters>
@@ -96,6 +92,18 @@
     }
 </div>
 <p class="muted filter-empty" data-empty hidden>Nothing in this series today.</p>
+}
+else
+{
+    <div class="card off-card">
+        <strong>The daily menu isn't offered right now.</strong>
+        <p class="muted" style="margin:6px 0 0">@(store.OffersPackages ? "You can still order food packages: party trays and lechon." : "Please check back later.")</p>
+        @if (store.OffersPackages)
+        {
+            <a class="btn btn-sm" style="margin-top:14px" asp-action="Packages">See food packages</a>
+        }
+    </div>
+}
 
 @if (cart.Any())
 {

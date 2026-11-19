@@ -22,11 +22,14 @@ public static class DemoData
         ["Crispy Bola-Bola"] = "Pork"
     };
 
-    public static void Seed(KaonDbContext db)
+    public static void Seed(KaonDbContext db, string? demoGCash = null)
     {
         var store = db.StoreSettings.First();
         if (store.Name == "Kaon Carinderia")
             store.Name = "Jamaica Foods";
+        // The demo GCash number comes from a private setting (never from the code)
+        if (!string.IsNullOrWhiteSpace(demoGCash) && (string.IsNullOrWhiteSpace(store.GCashNumber) || store.GCashNumber == "09XX XXX XXXX"))
+            store.GCashNumber = demoGCash.Trim();
 
         var items = db.MenuItems.ToList();
         var untouched = items.Count == 0 ||

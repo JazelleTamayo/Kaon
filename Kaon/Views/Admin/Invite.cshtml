@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "Invitation link";
+    var purpose = (string)ViewBag.Purpose;
+    var email = (string)ViewBag.Email;
+    var link = (string)ViewBag.Link;
+    var subject = purpose == "Invite" ? "Your Kaon account" : "Reset your Kaon password";
+    var body = (purpose == "Invite"
+        ? "Hello " + ViewBag.Name + ",\n\nYour Kaon account is ready. Open this private link to choose your own password:\n\n"
+        : "Hello " + ViewBag.Name + ",\n\nOpen this private link to choose a new Kaon password:\n\n")
+        + link + "\n\nThe link works once and expires in " + ViewBag.Hours + " hours. Please do not share it.";
+    var mailto = "mailto:" + email + "?subject=" + Uri.EscapeDataString(subject) + "&body=" + Uri.EscapeDataString(body);
+}
+
+<h1>@ViewBag.Heading</h1>
+<p class="muted">@ViewBag.Name · @email</p>
+
+<div class="card cred-card">
+    <div>
+        <div class="cred-label">Private link for @ViewBag.Name</div>
+        <input class="input link-box" id="linkBox" value="@link" readonly aria-label="Private link" />
+    </div>
+    <div class="row" style="justify-content:flex-start">
+        <button type="button" class="btn btn-sm" id="copyBtn" style="margin-top:0">Copy link</button>
+        <a class="btn btn-sm btn-outline" href="@mailto">Write the email</a>
+    </div>
+
+    @if ((string?)ViewBag.Mail == "email")
+    {
+        <div class="banner ok-banner">We also emailed this link to <strong>@email</strong>.</div>
+    }
+    else if ((string?)ViewBag.Mail == "outbox")
+    {
+        <div class="banner">Test mode: the email was saved as a file in <strong>App_Data/outbox</strong> (no email service is connected yet).</div>
+    }
+    else
+    {
+        <div class="banner">No email service is connected, so please send the link to the owner yourself.</div>
+    }
+
+    <div class="banner">
+        <strong>Only the owner chooses the password.</strong> You never see it.
+        Send this link <strong>privately</strong> (email or a direct message, not a group chat).
+        It works <strong>once</strong> and expires in <strong>@ViewBag.Hours hours</strong>.
+        This page is shown only once.
+    </div>
+</div>
+
+<a class="btn" asp-action="Index">Done</a>
+<a class="link" asp-action="CreateOwner">Add another owner</a>
+
+@section Scripts {
+    <script>
+        document.getElementById('copyBtn').addEventListener('click', function () {
+            var box = document.getElementById('linkBox');
+            box.select();
+            if (navigator.clipboard) navigator.clipboard.writeText(box.value);
+            this.textContent = 'Copied';
+        });
+    </script>
+}

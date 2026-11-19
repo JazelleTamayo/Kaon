@@ -1,0 +1,98 @@
+@model AdminDashVm
+@{
+    ViewData["Title"] = "Kaon admin";
+    ViewData["Wide"] = true;
+}
+
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Kaon admin</span>
+        <h1>Carinderias and accounts</h1>
+        <p>Invite carinderia owners with a private link. They choose their own password.</p>
+        <div class="o-hero-actions">
+            <a class="btn btn-sm btn-yellow" asp-action="CreateOwner">+ Add a carinderia owner</a>
+            <a class="btn btn-sm btn-wline" asp-action="Users">All accounts</a>
+        </div>
+    </div>
+</section>
+
+<div class="stats o-stats">
+    <div class="stat c-orange">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg></span>
+        <span class="stat-num">@Model.Owners.Count(o => o.IsActive)</span><span class="stat-label">Active carinderia owners</span>
+    </div>
+    <div class="stat c-teal">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+        <span class="stat-num">@Model.CustomerCount</span><span class="stat-label">Customers</span>
+    </div>
+    <div class="stat c-yellow">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
+        <span class="stat-num">@Model.OrdersToday</span><span class="stat-label">Orders today</span>
+    </div>
+    <div class="stat c-green">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>
+        <span class="stat-num">@Model.OrdersTotal</span><span class="stat-label">Orders in total</span>
+    </div>
+</div>
+
+<h2 class="section">Carinderia owners</h2>
+@if (!Model.Owners.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">No owner accounts yet. Add the first carinderia owner.</p></div>
+}
+else
+{
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead><tr><th>Owner</th><th>Email</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var u in Model.Owners)
+                {
+                    <tr>
+                        <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
+                        <td data-label="Email">@u.Email</td>
+                        <td data-label="Status">
+                            @if (!u.IsActive) { <span class="chip chip-soldout">Switched off</span> }
+                            else if (u.PasswordHash == "")
+                            {
+                                <span class="chip chip-pending">Invite pending</span>
+                                @if (Model.PendingLinks.TryGetValue(u.Id, out var until))
+                                {
+                                    <div class="muted" style="font-size:.75rem">Link valid until @until.ToLocalTime().ToString("MMM d, h:mm tt")</div>
+                                }
+                                else
+                                {
+                                    <div class="muted" style="font-size:.75rem">Link expired. Send a new one.</div>
+                                }
+                            }
+                            else { <span class="chip chip-ready">Active</span> }
+                        </td>
+                        <td class="actions">
+                            <form asp-action="SendLink" asp-route-id="@u.Id" method="post">
+                                <button class="btn-ghost">@(u.PasswordHash == "" ? "New invite link" : "Send reset link")</button>
+                            </form>
+                            <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post">
+                                <button class="btn-ghost @(u.IsActive ? "danger" : "")">@(u.IsActive ? "Switch off" : "Switch on")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="section">The carinderia store</h2>
+<div class="card store-card">
+    <div>
+        <strong>@Model.Store.Name</strong>
+        <div class="muted">@Model.Store.Hours</div>
+    </div>
+    <div class="store-flags">
+        <span class="chip @(Model.Store.IsOpen ? "chip-ready" : "chip-soldout")">@(Model.Store.IsOpen ? "Open" : "Closed")</span>
+        <span class="chip @(Model.Store.OffersDailyMenu ? "chip-ready" : "chip-soldout")">Daily foods @(Model.Store.OffersDailyMenu ? "on" : "off")</span>
+        <span class="chip @(Model.Store.OffersPackages ? "chip-ready" : "chip-soldout")">Food packages @(Model.Store.OffersPackages ? "on" : "off")</span>
+    </div>
+</div>
+<p class="muted">Kaon currently runs one carinderia. Supporting several, each with its own owner and menu, comes next.</p>

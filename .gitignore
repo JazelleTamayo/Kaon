@@ -24,3 +24,6 @@ Thumbs.db
 *.pfx
 secrets.json
 appsettings.Production.json
+
+# Uploaded proofs of payment (private)
+App_Data/

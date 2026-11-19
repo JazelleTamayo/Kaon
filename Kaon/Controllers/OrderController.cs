@@ -12,8 +12,13 @@ namespace Kaon.Controllers;
 public class OrderController : Controller
 {
     private readonly KaonDbContext _db;
+    private readonly IWebHostEnvironment _env;
 
-    public OrderController(KaonDbContext db) => _db = db;
+    public OrderController(KaonDbContext db, IWebHostEnvironment env)
+    {
+        _db = db;
+        _env = env;
+    }
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -53,7 +58,8 @@ public class OrderController : Controller
         {
             CustomerName = user?.FullName ?? "",
             Phone = user?.Phone ?? "",
-            OrderType = store.PickupEnabled ? OrderType.Pickup : OrderType.Delivery
+            OrderType = store.PickupEnabled ? OrderType.Pickup : OrderType.Delivery,
+            PaymentMethod = store.AcceptsCash ? PaymentMethod.Cash : PaymentMethod.Cashless
         });
     }
 
@@ -73,6 +79,13 @@ public class OrderController : Controller
             ModelState.AddModelError("", "Home delivery is not available right now.");
         if (form.OrderType == OrderType.Delivery && string.IsNullOrWhiteSpace(form.Address))
             ModelState.AddModelError(nameof(form.Address), "Please enter your delivery address.");
+
+        // Payment: only what the carinderia accepts
+        var cashlessOk = store.CashlessAvailable;
+        if (form.PaymentMethod == PaymentMethod.Cash && !store.AcceptsCash)
+            ModelState.AddModelError("", "This carinderia does not take cash payments. Please pay in advance.");
+        if (form.PaymentMethod == PaymentMethod.Cashless && !cashlessOk)
+            ModelState.AddModelError("", "Pay in advance is not available right now. Please choose cash.");
 
         var ids = cart.Select(c => c.MenuItemId).ToList();
         var menu = await _db.MenuItems
@@ -99,6 +112,15 @@ public class OrderController : Controller
                 ModelState.AddModelError("", "Please remove " + m.Name + " from your cart and add it again with a size.");
         }
 
+        // Sections the carinderia has switched off can't be ordered
+        foreach (var line in cart)
+        {
+            if (!menu.TryGetValue(line.MenuItemId, out var mi)) continue;
+            if (mi.IsPackage ? !store.OffersPackages : !store.OffersDailyMenu)
+                ModelState.AddModelError("", (mi.IsPackage ? "Food packages are" : "The daily menu is") +
+                    " not offered right now. Please remove " + mi.Name + " from your cart.");
+        }
+
         // Food packages are made ahead: the customer must say when they need them
         var hasPackage = cart.Any(c => menu.TryGetValue(c.MenuItemId, out var mi) && mi.IsPackage);
         if (hasPackage)
@@ -115,6 +137,20 @@ public class OrderController : Controller
             return View(form);
         }
 
+        // Save the proof picture only now that everything else is valid
+        string? proofName = null;
+        if (form.PaymentMethod == PaymentMethod.Cashless && form.Proof is { Length: > 0 })
+        {
+            var (name, error) = await ProofStorage.SaveAsync(form.Proof, _env);
+            if (error != null)
+            {
+                ModelState.AddModelError(nameof(form.Proof), error);
+                await FillCheckoutView();
+                return View(form);
+            }
+            proofName = name;
+        }
+
         var order = new Order
         {
             UserId = CurrentUserId,
@@ -125,7 +161,11 @@ public class OrderController : Controller
             DeliveryFee = form.OrderType == OrderType.Delivery ? store.DeliveryFee : 0,
             Status = OrderStatus.Pending,
             CreatedAt = DateTime.Now,
-            ScheduledFor = hasPackage ? form.ScheduledFor : null
+            ScheduledFor = hasPackage ? form.ScheduledFor : null,
+            PaymentMethod = form.PaymentMethod,
+            PaymentProof = proofName,
+            PaymentRef = form.PaymentMethod == PaymentMethod.Cashless && !string.IsNullOrWhiteSpace(form.PaymentRef) ? form.PaymentRef.Trim() : null,
+            PaymentStatus = proofName != null ? PaymentStatus.ProofSent : PaymentStatus.Unpaid
         };
 
         foreach (var line in cart)
@@ -158,7 +198,57 @@ public class OrderController : Controller
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
         if (order == null) return NotFound();
+        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync();
         return View(order);
+    }
+
+    // Send (or replace) the proof of payment after ordering
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProof(int id, IFormFile? proof, string? paymentRef)
+    {
+        var uid = CurrentUserId;
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
+        if (order == null) return NotFound();
+
+        if (order.PaymentMethod != PaymentMethod.Cashless ||
+            order.PaymentStatus == PaymentStatus.Paid || order.Status == OrderStatus.Cancelled)
+            return RedirectToAction(nameof(Status), new { id });
+
+        if (proof == null || proof.Length == 0)
+        {
+            TempData["Warn"] = "Please choose a picture of your payment.";
+            return RedirectToAction(nameof(Status), new { id });
+        }
+
+        var (name, error) = await ProofStorage.SaveAsync(proof, _env);
+        if (error != null)
+        {
+            TempData["Warn"] = error;
+            return RedirectToAction(nameof(Status), new { id });
+        }
+
+        ProofStorage.Delete(_env, order.PaymentProof);
+        order.PaymentProof = name;
+        if (!string.IsNullOrWhiteSpace(paymentRef))
+            order.PaymentRef = paymentRef.Trim().Length > 60 ? paymentRef.Trim()[..60] : paymentRef.Trim();
+        order.PaymentStatus = PaymentStatus.ProofSent;
+        await _db.SaveChangesAsync();
+
+        TempData["Saved"] = "Proof sent. The carinderia will confirm your payment.";
+        return RedirectToAction(nameof(Status), new { id });
+    }
+
+    // The orders that are still in progress (for the tracker bar)
+    public async Task<IActionResult> Active()
+    {
+        var uid = CurrentUserId;
+        var list = await _db.Orders.AsNoTracking()
+            .Where(o => o.UserId == uid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(5)
+            .ToListAsync();
+        Response.Headers["Cache-Control"] = "no-store";
+        return Json(new { orders = list.Select(OrderText.Snap) });
     }
 
     public async Task<IActionResult> StatusJson(int id)
@@ -166,6 +256,7 @@ public class OrderController : Controller
         var uid = CurrentUserId;
         var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
         if (order == null) return NotFound();
+        Response.Headers["Cache-Control"] = "no-store";
         return Json(new { status = order.Status.ToString() });
     }
 }

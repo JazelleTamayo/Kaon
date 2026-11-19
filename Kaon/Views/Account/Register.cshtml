@@ -1,4 +1,4 @@
-﻿@model RegisterForm
+@model RegisterForm
 @{
     Layout = "_Auth";
     ViewData["Title"] = "Sign up";
@@ -64,6 +64,12 @@
             <span class="error" asp-validation-for="ConfirmPassword"></span>
         </div>
     </div>
+
+    <label class="check consent">
+        <input type="checkbox" asp-for="AcceptPrivacy" />
+        <span>I have read and agree to the <a asp-controller="Home" asp-action="Privacy" target="_blank" rel="noopener">Privacy Notice</a>.</span>
+    </label>
+    <span class="error" asp-validation-for="AcceptPrivacy"></span>
 
     <button class="btn btn-go">Create account <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
 

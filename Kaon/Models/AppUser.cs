@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Kaon.Models;
 
@@ -18,7 +18,17 @@ public class AppUser
     [Required]
     public string PasswordHash { get; set; } = "";
 
-    // "Owner" or "Customer"
+    // "Admin" (Kaon team), "Owner" (carinderia) or "Customer"
     [Required, StringLength(20)]
     public string Role { get; set; } = "Customer";
+
+    // The Kaon team can turn an account off
+    public bool IsActive { get; set; } = true;
+
+    // Protection against password guessing: 5 wrong passwords lock the account for 10 minutes
+    public int FailedLogins { get; set; }
+    public DateTime? LockoutUntil { get; set; }
+
+    // True while the person is using a temporary password
+    public bool MustChangePassword { get; set; }
 }

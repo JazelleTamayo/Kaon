@@ -11,10 +11,11 @@
 
 <a class="back-link" asp-action="Index">&larr; Back to daily menu</a>
 
-<section class="store-head">
-    <div>
+<section class="hero-banner hero-sm">
+    <div class="hero-bg alt" aria-hidden="true"></div>
+    <div class="hero-in">
         <h1>Food packages</h1>
-        <p class="muted">Party trays and lechon from @store.Name. Choose a size, then tell us when you need it at checkout. Please order at least 1 day ahead.</p>
+        <p>Party trays and lechon from @store.Name. Choose a size, then tell us when you need it at checkout. Please order at least 1 day ahead.</p>
     </div>
 </section>
 
@@ -60,16 +61,13 @@ else
                             <input type="hidden" name="id" value="@item.Id" />
                             <input type="hidden" name="returnTo" value="Packages" />
 
-                            <div class="opts" role="radiogroup" aria-label="Choose a size for @item.Name">
-                                @for (var i = 0; i < opts.Count; i++)
+                            <label class="size-label" for="size-@item.Id">Choose a size</label>
+                            <select class="size-select" id="size-@item.Id" name="optionId">
+                                @foreach (var o in opts)
                                 {
-                                    <label class="opt">
-                                        <input type="radio" name="optionId" value="@opts[i].Id" data-price="@opts[i].Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" @(i == 0 ? "checked" : "") />
-                                        <span class="opt-label">@opts[i].Label</span>
-                                        <span class="opt-price">₱@opts[i].Price.ToString("N0")</span>
-                                    </label>
+                                    <option value="@o.Id" data-price="@o.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-label="@o.Label" data-money="₱@o.Price.ToString("N0")">@o.Label · ₱@o.Price.ToString("N0")</option>
                                 }
-                            </div>
+                            </select>
 
                             <div class="pkg-buy">
                                 <div class="stepper" aria-label="Quantity">

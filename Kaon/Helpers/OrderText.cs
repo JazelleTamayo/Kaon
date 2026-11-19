@@ -45,4 +45,31 @@ public static class OrderText
         OrderStatus.OutForDelivery => "Delivered",
         _ => ""
     };
+
+    // What the order tracker bar needs to know about an order
+    public static object Snap(Order o)
+    {
+        var steps = Steps(o.OrderType);
+        return new
+        {
+            id = o.Id,
+            status = o.Status.ToString(),
+            label = Label(o.Status),
+            message = Message(o),
+            type = o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup",
+            step = steps.IndexOf(o.Status),
+            steps = steps.Select(Label).ToArray()
+        };
+    }
+
+    public static string PayMethodLabel(Order o) => o.PaymentMethod == PaymentMethod.Cash
+        ? (o.OrderType == OrderType.Delivery ? "Cash on delivery" : "Cash at pickup")
+        : "GCash / cashless";
+
+    public static string PayStatusLabel(Order o) => o.PaymentStatus switch
+    {
+        PaymentStatus.Paid => "Paid",
+        PaymentStatus.ProofSent => "Proof sent",
+        _ => o.PaymentMethod == PaymentMethod.Cash ? "Pay in person" : "Waiting for payment"
+    };
 }

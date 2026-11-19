@@ -77,3 +77,6 @@
     .auth-grid { grid-template-columns: 1fr; }
     .auth-form { padding: 22px; }
 }
+
+.forgot { display: block; text-align: right; font-size: .85rem; font-weight: 600; color: var(--orange); text-decoration: none; margin: 10px 2px 0; }
+.forgot:hover { text-decoration: underline; }
