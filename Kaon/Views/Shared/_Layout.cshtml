@@ -29,6 +29,19 @@
             .OrderByDescending(o => o.CreatedAt).Take(5).ToList();
         trackInitial = System.Text.Json.JsonSerializer.Serialize(activeOrders.Select(OrderText.Snap));
     }
+    // Module 9: remind the owner when the free month or paid period is about to end
+    string? billingNote = null;
+    if (isOwner && ctrl != "Billing" && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var billUid))
+    {
+        var bs = Db.Subscriptions.AsNoTracking().FirstOrDefault(x => x.OwnerId == billUid);
+        var nowUtc = DateTime.UtcNow;
+        if (bs != null && bs.IsDueSoon(nowUtc))
+        {
+            var left = bs.DaysLeft(nowUtc);
+            billingNote = (bs.StatusAt(nowUtc) == Kaon.Models.SubscriptionStatus.Trial ? "Your free month ends" : "Your subscription ends")
+                + (left <= 1 ? " today or tomorrow." : " in " + left + " days.");
+        }
+    }
     var onOrderPage = ctrl == "Order" && act == "Status";
 }
 <!DOCTYPE html>
@@ -70,6 +83,7 @@
                 {
                     <a class="@On(ctrl == "Admin" && act != "Users")" asp-controller="Admin" asp-action="Index">Overview</a>
                     <a class="@On(ctrl == "Admin" && act == "Users")" asp-controller="Admin" asp-action="Users">Accounts</a>
+                    <a class="@On(ctrl == "AdminBilling")" asp-controller="AdminBilling" asp-action="Index">Billing</a>
                 }
                 else if (isOwner)
                 {
@@ -77,6 +91,7 @@
                     <a class="@On(ctrl == "OwnerMenu")" asp-controller="OwnerMenu" asp-action="Index">Menu</a>
                     <a class="@On(ctrl == "Owner" && act == "Summary")" asp-controller="Owner" asp-action="Summary">Summary</a>
                     <a class="@On(ctrl == "OwnerSettings")" asp-controller="OwnerSettings" asp-action="Index">Store</a>
+                    <a class="@On(ctrl == "Billing")" asp-controller="Billing" asp-action="Index">Subscription</a>
                 }
                 else
                 {
@@ -132,6 +147,10 @@
         @if (TempData["Warn"] is string warn)
         {
             <div class="banner banner-closed" role="alert">@warn</div>
+        }
+        @if (billingNote != null)
+        {
+            <div class="banner" role="status">@billingNote <a asp-controller="Billing" asp-action="Index">Renew your subscription</a></div>
         }
         @RenderBody()
     </main>

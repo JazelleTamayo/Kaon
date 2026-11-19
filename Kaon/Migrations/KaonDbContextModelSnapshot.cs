@@ -307,6 +307,35 @@ namespace Kaon.Migrations
                     b.ToTable("PasswordTokens");
                 });
 
+            modelBuilder.Entity("Kaon.Models.PlatformSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GCashName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GCashNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("MonthlyFee")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("PaymentNote")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TrialDays")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlatformSettings");
+                });
+
             modelBuilder.Entity("Kaon.Models.StoreSettings", b =>
                 {
                     b.Property<int>("Id")
@@ -390,6 +419,87 @@ namespace Kaon.Migrations
                     b.ToTable("StoreSettings");
                 });
 
+            modelBuilder.Entity("Kaon.Models.Subscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastReminderAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("PaidUntil")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("TrialEndsAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("Subscriptions");
+                });
+
+            modelBuilder.Entity("Kaon.Models.SubscriptionPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("Months")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("PeriodEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PeriodStart")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Proof")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("RecordedByAdmin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.ToTable("SubscriptionPayments");
+                });
+
             modelBuilder.Entity("Kaon.Models.DailyMenuEntry", b =>
                 {
                     b.HasOne("Kaon.Models.MenuItem", "MenuItem")
@@ -434,6 +544,28 @@ namespace Kaon.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Kaon.Models.Subscription", b =>
+                {
+                    b.HasOne("Kaon.Models.AppUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Kaon.Models.SubscriptionPayment", b =>
+                {
+                    b.HasOne("Kaon.Models.Subscription", "Subscription")
+                        .WithMany("Payments")
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subscription");
+                });
+
             modelBuilder.Entity("Kaon.Models.MenuItem", b =>
                 {
                     b.Navigation("Options");
@@ -442,6 +574,11 @@ namespace Kaon.Migrations
             modelBuilder.Entity("Kaon.Models.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Kaon.Models.Subscription", b =>
+                {
+                    b.Navigation("Payments");
                 });
 #pragma warning restore 612, 618
         }

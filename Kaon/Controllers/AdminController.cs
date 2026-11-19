@@ -85,6 +85,10 @@ public class AdminController : Controller
         _db.Users.Add(owner);
         await _db.SaveChangesAsync();
 
+        // Module 9: every new carinderia starts with the free trial month
+        _db.Subscriptions.Add(Billing.NewFor(owner.Id, await _db.PlatformSettings.AsNoTracking().FirstAsync(), DateTime.UtcNow));
+        await _db.SaveChangesAsync();
+
         var link = await IssueLink(owner, "Invite");
         TempData["InvMail"] = await _email.SendAsync(owner.Email, "Your Kaon account is ready",
             EmailTemplates.Invite(owner.FullName, link, LinkHours));

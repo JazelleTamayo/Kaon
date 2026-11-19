@@ -222,6 +222,8 @@
         async function check() {
             try {
                 const r = await fetch(stateUrl, { cache: 'no-store', credentials: 'same-origin' });
+                // The subscription ended while the board was open: go to the billing page
+                if (r.redirected || r.status === 402) { location.href = '@Url.Action("Index", "Billing")'; return; }
                 if (!r.ok) return;
                 const d = await r.json();
                 // Don't redraw the board while the owner is choosing a cancel reason; check again next time
