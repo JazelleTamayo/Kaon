@@ -1,0 +1,151 @@
+@model BillingVm
+@{
+    ViewData["Title"] = "Subscription";
+    var now = DateTime.UtcNow;
+    var sub = Model.Subscription;
+    var status = sub.StatusAt(now);
+    var days = sub.DaysLeft(now);
+    var form = ViewBag.Form as SubmitPaymentForm ?? new SubmitPaymentForm();
+    string Chip(SubscriptionPaymentStatus s) => s switch
+    {
+        SubscriptionPaymentStatus.Confirmed => "chip-ready",
+        SubscriptionPaymentStatus.Rejected => "chip-cancelled",
+        _ => "chip-pending"
+    };
+}
+
+<section class="o-hero sm">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Your plan</span>
+        <h1>Kaon subscription</h1>
+        <p>One low, fixed fee every month. No commission on your orders.</p>
+    </div>
+</section>
+<div style="height:18px"></div>
+
+<div class="card">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+        <div>
+            @switch (status)
+            {
+                case SubscriptionStatus.Trial:
+                    <span class="chip chip-pending">Free month</span>
+                    <h2 style="margin:8px 0 2px">@days day@(days == 1 ? "" : "s") of free access left</h2>
+                    <p class="muted" style="margin:0">Your free month ends on @sub.TrialEndsAt.ToLocalTime().ToString("MMMM d, yyyy").</p>
+                    break;
+                case SubscriptionStatus.Active:
+                    <span class="chip chip-ready">Active</span>
+                    <h2 style="margin:8px 0 2px">Paid until @sub.AccessUntil.ToLocalTime().ToString("MMMM d, yyyy")</h2>
+                    <p class="muted" style="margin:0">@days day@(days == 1 ? "" : "s") left.</p>
+                    break;
+                default:
+                    <span class="chip chip-cancelled">Ended</span>
+                    <h2 style="margin:8px 0 2px">Your subscription has ended</h2>
+                    <p class="muted" style="margin:0">Renew below to open your orders, menu and store again.</p>
+                    break;
+            }
+        </div>
+        <div style="text-align:right">
+            <div class="muted">Monthly fee</div>
+            <strong style="font-size:1.6rem">₱@Model.Platform.MonthlyFee.ToString("N2")</strong>
+        </div>
+    </div>
+    @if (sub.PaidUntil.HasValue && status == SubscriptionStatus.Trial)
+    {
+        <p class="hint" style="margin-top:10px">You already paid ahead. Billing starts after your free month and runs until @sub.PaidUntil.Value.ToLocalTime().ToString("MMMM d, yyyy").</p>
+    }
+</div>
+
+<div class="card">
+    <strong>How to pay</strong>
+    <ol style="margin:8px 0 0;padding-left:20px;line-height:1.7">
+        <li>Send the fee by GCash to:
+            @if (!string.IsNullOrWhiteSpace(Model.Platform.GCashNumber))
+            {
+                <strong>@Model.Platform.GCashName, @Model.Platform.GCashNumber</strong>
+            }
+            else
+            {
+                <em class="muted">the Kaon team will give you the GCash number.</em>
+            }
+        </li>
+        <li>Take a screenshot of the payment.</li>
+        <li>Upload it below. The Kaon team confirms it and your access is extended.</li>
+    </ol>
+    @if (!string.IsNullOrWhiteSpace(Model.Platform.PaymentNote)) { <p class="hint">@Model.Platform.PaymentNote</p> }
+</div>
+
+<form asp-action="Submit" method="post" enctype="multipart/form-data" class="card">
+    <strong>Send my payment</strong>
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+
+    @if (Model.HasPending)
+    {
+        <p class="muted" style="margin:6px 0 0">You already sent a payment. We will confirm it soon, then you can send the next one.</p>
+    }
+    else
+    {
+        <label class="label" for="Months">How many months are you paying for?</label>
+        <select class="input" id="Months" name="Months">
+            @foreach (var m in new[] { 1, 2, 3, 6, 12 })
+            {
+                <option value="@m" selected="@(form.Months == m)">@m month@(m == 1 ? "" : "s") · ₱@((Model.Platform.MonthlyFee * m).ToString("N2"))</option>
+            }
+        </select>
+        @Html.ValidationMessage("Months", new { @class = "error" })
+
+        <label class="label" for="Reference">GCash reference number (optional)</label>
+        <input class="input" id="Reference" name="Reference" maxlength="60" value="@form.Reference" inputmode="numeric" />
+
+        <label class="label" for="proof">Screenshot of your payment</label>
+        <input class="input" id="proof" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required />
+        <span class="hint">JPG, PNG or WebP, up to 5 MB.</span>
+        @Html.ValidationMessage("proof", new { @class = "error" })
+
+        <div style="height:12px"></div>
+        <button class="btn">Send payment</button>
+    }
+</form>
+
+<h2 class="section">Payment history</h2>
+@if (!Model.Payments.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">No payments yet.</p></div>
+}
+else
+{
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead><tr><th>Sent</th><th>Months</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Payments)
+                {
+                    <tr>
+                        <td>@p.SubmittedAt.ToLocalTime().ToString("MMM d, yyyy")</td>
+                        <td data-label="Months">@p.Months</td>
+                        <td data-label="Amount">₱@p.Amount.ToString("N2")</td>
+                        <td data-label="Status">
+                            <span class="chip @Chip(p.Status)">@p.Status</span>
+                            @if (p.Status == SubscriptionPaymentStatus.Confirmed && p.PeriodEnd.HasValue)
+                            {
+                                <div class="muted" style="font-size:.75rem">Covers until @p.PeriodEnd.Value.ToLocalTime().ToString("MMM d, yyyy")</div>
+                            }
+                            @if (p.Status == SubscriptionPaymentStatus.Rejected && !string.IsNullOrEmpty(p.ReviewNote))
+                            {
+                                <div class="muted" style="font-size:.75rem">@p.ReviewNote</div>
+                            }
+                        </td>
+                        <td class="actions">
+                            @if (p.Proof != null) { <a class="btn-ghost" asp-action="Proof" asp-route-id="@p.Id" target="_blank" rel="noopener">View proof</a> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

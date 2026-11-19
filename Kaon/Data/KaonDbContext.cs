@@ -15,6 +15,9 @@ public class KaonDbContext : DbContext
     public DbSet<ItemOption> ItemOptions => Set<ItemOption>();
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
     public DbSet<DailyMenuEntry> DailyMenuEntries => Set<DailyMenuEntry>();
+    public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<SubscriptionPayment> SubscriptionPayments => Set<SubscriptionPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +26,13 @@ public class KaonDbContext : DbContext
         modelBuilder.Entity<PasswordToken>().HasIndex(t => t.TokenHash).IsUnique();
         modelBuilder.Entity<PasswordToken>()
             .HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Subscription>().HasIndex(x => x.OwnerId).IsUnique();
+        modelBuilder.Entity<Subscription>()
+            .HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<SubscriptionPayment>()
+            .HasOne(x => x.Subscription).WithMany(x => x.Payments)
+            .HasForeignKey(x => x.SubscriptionId).OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ItemOption>()
             .HasOne(o => o.MenuItem).WithMany(m => m.Options)

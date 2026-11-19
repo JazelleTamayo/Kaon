@@ -1,0 +1,42 @@
+@model PlatformSettings
+@{
+    ViewData["Title"] = "Billing settings";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Fee and GCash settings</h1>
+        <p class="muted">Owners see these on their Subscription page.</p>
+    </div>
+</div>
+
+<form asp-action="Settings" method="post" class="card">
+    <div asp-validation-summary="ModelOnly" class="error"></div>
+
+    <label class="label" asp-for="MonthlyFee">Monthly fee per carinderia (₱)</label>
+    <input class="input" asp-for="MonthlyFee" type="number" step="0.01" min="0" inputmode="decimal" />
+    <span class="hint">Fixed. No per-order commission. This is a placeholder until the price is confirmed from pilot feedback.</span>
+    <span class="error" asp-validation-for="MonthlyFee"></span>
+
+    <label class="label" asp-for="TrialDays">Free days for each new carinderia</label>
+    <input class="input" asp-for="TrialDays" type="number" min="0" max="365" inputmode="numeric" />
+    <span class="hint">Applies to carinderias added from now on. Use "Add free days" to change one owner.</span>
+    <span class="error" asp-validation-for="TrialDays"></span>
+
+    <label class="label" asp-for="GCashName">Kaon GCash account name</label>
+    <input class="input" asp-for="GCashName" />
+
+    <label class="label" asp-for="GCashNumber">Kaon GCash number</label>
+    <input class="input" asp-for="GCashNumber" type="tel" inputmode="tel" />
+
+    <label class="label" asp-for="PaymentNote">Note for owners (optional)</label>
+    <input class="input" asp-for="PaymentNote" placeholder="For example: Send the exact amount, then upload your screenshot." />
+
+    <div style="height:12px"></div>
+    <button class="btn">Save settings</button>
+    <a class="btn-ghost" asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

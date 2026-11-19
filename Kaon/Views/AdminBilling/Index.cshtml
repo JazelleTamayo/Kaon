@@ -1,0 +1,148 @@
+@model AdminBillingVm
+@{
+    ViewData["Title"] = "Billing";
+    ViewData["Wide"] = true;
+    var now = DateTime.UtcNow;
+    string Chip(SubscriptionStatus s) => s switch
+    {
+        SubscriptionStatus.Active => "chip-ready",
+        SubscriptionStatus.Trial => "chip-pending",
+        _ => "chip-cancelled"
+    };
+    var trials = Model.Rows.Count(r => r.Subscription?.StatusAt(now) == SubscriptionStatus.Trial);
+    var active = Model.Rows.Count(r => r.Subscription?.StatusAt(now) == SubscriptionStatus.Active);
+    var expired = Model.Rows.Count(r => r.Subscription?.StatusAt(now) == SubscriptionStatus.Expired);
+}
+
+<div class="page-head">
+    <div>
+        <h1>Subscriptions and billing</h1>
+        <p class="muted">₱@Model.Platform.MonthlyFee.ToString("N2") a month · @Model.Platform.TrialDays free days for each new carinderia</p>
+    </div>
+    <a class="btn btn-sm" asp-action="Settings">Fee and GCash settings</a>
+</div>
+
+<div class="stats o-stats">
+    <div class="stat c-yellow"><span class="stat-num">@trials</span><span class="stat-label">On free trial</span></div>
+    <div class="stat c-green"><span class="stat-num">@active</span><span class="stat-label">Paying</span></div>
+    <div class="stat c-orange"><span class="stat-num">@expired</span><span class="stat-label">Ended</span></div>
+    <div class="stat c-teal"><span class="stat-num">₱@Model.ConfirmedTotal.ToString("N0")</span><span class="stat-label">Confirmed payments</span></div>
+</div>
+
+<h2 class="section">Payments to confirm</h2>
+@if (!Model.PendingPayments.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">Nothing waiting. All payments are confirmed.</p></div>
+}
+else
+{
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead><tr><th>Carinderia owner</th><th>Sent</th><th>Amount</th><th>Reference</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.PendingPayments)
+                {
+                    <tr>
+                        <td><strong>@p.Subscription!.Owner!.FullName</strong></td>
+                        <td data-label="Sent">@p.SubmittedAt.ToLocalTime().ToString("MMM d, h:mm tt")</td>
+                        <td data-label="Amount">₱@p.Amount.ToString("N2") <span class="muted">(@p.Months mo)</span></td>
+                        <td data-label="Reference">@(p.Reference ?? "-")</td>
+                        <td class="actions">
+                            @if (p.Proof != null) { <a class="btn-ghost" asp-controller="Billing" asp-action="Proof" asp-route-id="@p.Id" target="_blank" rel="noopener">View proof</a> }
+                            <form asp-action="Confirm" asp-route-id="@p.Id" method="post"><button class="btn-ghost">Confirm</button></form>
+                            <form asp-action="Reject" asp-route-id="@p.Id" method="post" style="display:flex;gap:6px;align-items:center">
+                                <input class="input" name="note" placeholder="Reason (optional)" maxlength="200" style="min-width:140px;margin:0" />
+                                <button class="btn-ghost danger">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="section">Carinderias</h2>
+@if (!Model.Rows.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">No carinderia owners yet.</p></div>
+}
+else
+{
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead><tr><th>Owner</th><th>Plan</th><th>Access until</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Rows)
+                {
+                    var sub = r.Subscription;
+                    <tr>
+                        <td><strong>@r.Owner.FullName</strong><div class="muted">@r.Owner.Email</div></td>
+                        <td data-label="Plan">
+                            @if (sub == null) { <span class="chip chip-soldout">No plan yet</span> }
+                            else
+                            {
+                                var st = sub.StatusAt(now);
+                                <span class="chip @Chip(st)">@(st == SubscriptionStatus.Trial ? "Free month" : st == SubscriptionStatus.Active ? "Paying" : "Ended")</span>
+                                @if (r.PendingCount > 0) { <div class="muted" style="font-size:.75rem">Payment waiting</div> }
+                            }
+                        </td>
+                        <td data-label="Access until">
+                            @if (sub != null)
+                            {
+                                @sub.AccessUntil.ToLocalTime().ToString("MMM d, yyyy")
+                                <div class="muted" style="font-size:.75rem">
+                                    @(sub.HasAccess(now) ? sub.DaysLeft(now) + " day(s) left" : "ended")@(sub.IsDueSoon(now) || !sub.HasAccess(now) ? " · renewal due" : "")
+                                </div>
+                            }
+                        </td>
+                        <td class="actions">
+                            <form asp-action="RecordPayment" method="post" style="display:flex;gap:6px;align-items:center">
+                                <input type="hidden" name="ownerId" value="@r.Owner.Id" />
+                                <select class="input" name="months" style="margin:0;width:auto" aria-label="Months paid in person">
+                                    @foreach (var m in new[] { 1, 2, 3, 6, 12 }) { <option value="@m">@m mo</option> }
+                                </select>
+                                <button class="btn-ghost">Record payment</button>
+                            </form>
+                            <form asp-action="ExtendTrial" method="post" style="display:flex;gap:6px;align-items:center">
+                                <input type="hidden" name="ownerId" value="@r.Owner.Id" />
+                                <select class="input" name="days" style="margin:0;width:auto" aria-label="Free days to add">
+                                    @foreach (var d in new[] { 7, 14, 30 }) { <option value="@d">+@d days</option> }
+                                </select>
+                                <button class="btn-ghost">Add free days</button>
+                            </form>
+                            <form asp-action="Remind" method="post">
+                                <input type="hidden" name="ownerId" value="@r.Owner.Id" />
+                                <button class="btn-ghost">Email reminder</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (Model.RecentPayments.Any())
+{
+    <h2 class="section">Recent payments</h2>
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead><tr><th>Owner</th><th>Amount</th><th>Result</th><th>Covers</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.RecentPayments)
+                {
+                    <tr>
+                        <td>@p.Subscription!.Owner!.FullName</td>
+                        <td data-label="Amount">₱@p.Amount.ToString("N2") <span class="muted">(@p.Months mo)</span></td>
+                        <td data-label="Result">
+                            <span class="chip @(p.Status == SubscriptionPaymentStatus.Confirmed ? "chip-ready" : "chip-cancelled")">@p.Status</span>
+                            @if (p.RecordedByAdmin) { <span class="muted" style="font-size:.75rem">in person</span> }
+                        </td>
+                        <td data-label="Covers">@(p.PeriodEnd.HasValue ? "until " + p.PeriodEnd.Value.ToLocalTime().ToString("MMM d, yyyy") : (p.ReviewNote ?? ""))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

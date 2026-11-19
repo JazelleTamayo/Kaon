@@ -9,7 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews(options => options.Filters.Add<MustChangePasswordFilter>());
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<MustChangePasswordFilter>();
+    options.Filters.Add<SubscriptionFilter>();
+});
 
 builder.Services.AddDbContext<KaonDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("KaonDb")));
@@ -78,6 +82,18 @@ using (var scope = app.Services.CreateScope())
         db.SaveChanges();
     }
 
+    // Module 9: how Kaon charges carinderias. The price is a placeholder until the team confirms it.
+    if (!db.PlatformSettings.Any())
+    {
+        db.PlatformSettings.Add(new PlatformSettings
+        {
+            MonthlyFee = builder.Configuration.GetValue<decimal?>("Kaon:Subscription:MonthlyFee") ?? 299,
+            TrialDays = builder.Configuration.GetValue<int?>("Kaon:Subscription:TrialDays") ?? 30,
+            GCashNumber = builder.Configuration["Kaon:Subscription:GCashNumber"]
+        });
+        db.SaveChanges();
+    }
+
     DemoData.Seed(db, builder.Configuration["Kaon:Demo:GCashNumber"]);
 
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AppUser>>();
@@ -116,6 +132,14 @@ using (var scope = app.Services.CreateScope())
         db.Users.Add(owner);
         db.SaveChanges();
     }
+
+    // Every owner has a subscription. Owners who existed before billing get their free month starting now.
+    var platform = db.PlatformSettings.First();
+    var ownerIds = db.Users.Where(u => u.Role == "Owner").Select(u => u.Id).ToList();
+    var subscribed = db.Subscriptions.Select(x => x.OwnerId).ToHashSet();
+    foreach (var id in ownerIds.Where(id => !subscribed.Contains(id)))
+        db.Subscriptions.Add(Billing.NewFor(id, platform, DateTime.UtcNow));
+    db.SaveChanges();
 }
 
 if (!app.Environment.IsDevelopment())

@@ -90,4 +90,13 @@ public static class EmailTemplates
         "Hello " + WebUtility.HtmlEncode(name) + ", we got a request to reset your password. Choose a new one below.",
         link,
         "This link works once and expires in " + minutes + " minutes. If you did not ask for this, you can ignore this email and your password stays the same.");
+
+    public static string SubscriptionReminder(string name, string status, int daysLeft, string link) => $@"
+<div style=""font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;color:#2B1810"">
+  <h2 style=""color:#E8501F;margin:0 0 12px"">kaon</h2>
+  <h3 style=""margin:0 0 12px"">Your Kaon subscription</h3>
+  <p>Hello {WebUtility.HtmlEncode(name)}, {WebUtility.HtmlEncode(status)}</p>
+  <p><a href=""{link}"" style=""display:inline-block;background:#E8501F;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:bold"">Open my billing page</a></p>
+  <p style=""font-size:13px;color:#7a6a60"">Pay by GCash, upload your screenshot, and the Kaon team will confirm it.</p>
+</div>";
 }
