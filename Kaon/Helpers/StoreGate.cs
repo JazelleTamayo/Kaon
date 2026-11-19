@@ -4,17 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kaon.Helpers;
 
-// Can customers order from this carinderia right now?
-// Orders go to the owner's dashboard. If no active owner can open it (their free month or paid
-// period has ended, or their account is switched off), taking orders would lose them. So the
-// store shows as closed to customers until an owner can handle orders again.
+// Can customers order from THIS carinderia right now?
+// Orders go to the owner's dashboard. If none of this carinderia's active owners can open it
+// (their free month or paid period has ended, or their account is switched off), taking orders would
+// lose them. So the store shows as closed to customers until an owner can handle orders again.
 public static class StoreGate
 {
-    public static async Task<bool> IsPausedAsync(KaonDbContext db)
+    public static async Task<bool> IsPausedAsync(KaonDbContext db, int storeId)
     {
         var now = DateTime.UtcNow;
         var ownerIds = await db.Users.AsNoTracking()
-            .Where(u => u.Role == "Owner" && u.IsActive)
+            .Where(u => u.Role == "Owner" && u.IsActive && u.StoreId == storeId)
             .Select(u => u.Id).ToListAsync();
         if (ownerIds.Count == 0) return true;
 
@@ -27,10 +27,10 @@ public static class StoreGate
 
     // The store as a CUSTOMER should see it: shown as closed when ordering is paused.
     // (The copy is read-only and never saved, so the owner's own Open/Closed switch is untouched.)
-    public static async Task<StoreSettings> ForCustomersAsync(KaonDbContext db)
+    public static async Task<StoreSettings> ForCustomersAsync(KaonDbContext db, int storeId)
     {
-        var store = await db.StoreSettings.AsNoTracking().FirstAsync();
-        if (await IsPausedAsync(db))
+        var store = await db.StoreSettings.AsNoTracking().FirstAsync(s => s.Id == storeId);
+        if (await IsPausedAsync(db, storeId))
         {
             store.IsOpen = false;
             store.PausedByBilling = true;

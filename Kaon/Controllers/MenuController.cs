@@ -11,16 +11,18 @@ namespace Kaon.Controllers;
 public class MenuController : Controller
 {
     private readonly KaonDbContext _db;
-    public MenuController(KaonDbContext db) => _db = db;
+    private readonly StoreContext _stores;
+    public MenuController(KaonDbContext db, StoreContext stores) { _db = db; _stores = stores; }
 
     // The daily menu: today's picks from the owner's dish catalog
     public async Task<IActionResult> Index()
     {
-        var store = await StoreGate.ForCustomersAsync(_db);
+        var sid = await _stores.RequireAsync();
+        var store = await StoreGate.ForCustomersAsync(_db, sid);
         ViewBag.Store = store;
         var today = DateTime.Today;
         var entries = store.OffersDailyMenu
-            ? await _db.DailyMenuEntries.Include(e => e.MenuItem).Where(e => e.Date == today).ToListAsync()
+            ? await _db.DailyMenuEntries.Include(e => e.MenuItem).Where(e => e.Date == today && e.MenuItem!.StoreId == sid).ToListAsync()
             : new List<DailyMenuEntry>();
         return View(entries.OrderBy(e => Array.IndexOf(MenuSeries.All, e.MenuItem!.SeriesName)).ThenBy(e => e.MenuItem!.Name).ToList());
     }
@@ -28,7 +30,8 @@ public class MenuController : Controller
     // Food packages: party trays and lechon, with sizes
     public async Task<IActionResult> Packages()
     {
-        var store = await StoreGate.ForCustomersAsync(_db);
+        var sid = await _stores.RequireAsync();
+        var store = await StoreGate.ForCustomersAsync(_db, sid);
         if (!store.OffersPackages)
         {
             TempData["Warn"] = "Food packages aren't offered right now.";
@@ -37,7 +40,7 @@ public class MenuController : Controller
         ViewBag.Store = store;
         var items = await _db.MenuItems
             .Include(m => m.Options)
-            .Where(m => m.Category == MenuItem.PackageCategory)
+            .Where(m => m.StoreId == sid && m.Category == MenuItem.PackageCategory)
             .ToListAsync();
         return View(items.OrderBy(m => Array.IndexOf(MenuSeries.All, m.SeriesName)).ThenBy(m => m.Name).ToList());
     }
@@ -46,8 +49,10 @@ public class MenuController : Controller
     public async Task<IActionResult> Add(int id, int? optionId, int qty = 1, string? returnTo = null)
     {
         var back = returnTo == "Packages" ? nameof(Packages) : nameof(Index);
-        var store = await StoreGate.ForCustomersAsync(_db);
-        var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id);
+        var sid = await _stores.RequireAsync();
+        var store = await StoreGate.ForCustomersAsync(_db, sid);
+        // Only a dish of THIS carinderia can go in the cart
+        var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id && m.StoreId == sid);
         if (!store.IsOpen || item == null)
             return RedirectToAction(back);
 

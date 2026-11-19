@@ -13,17 +13,27 @@ public class PaymentController : Controller
 {
     private readonly KaonDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly StoreContext _stores;
 
-    public PaymentController(KaonDbContext db, IWebHostEnvironment env)
+    public PaymentController(KaonDbContext db, IWebHostEnvironment env, StoreContext stores)
     {
         _db = db;
         _env = env;
+        _stores = stores;
     }
 
-    // The carinderia's payment QR code. Any signed-in customer or owner may see it.
-    public async Task<IActionResult> Qr()
+    // A carinderia's payment QR code. Its own owner may see it, and customers who joined that carinderia.
+    public async Task<IActionResult> Qr(int? storeId)
     {
-        var name = (await _db.StoreSettings.AsNoTracking().FirstAsync()).PaymentQr;
+        int? sid;
+        if (User.IsInRole("Owner")) sid = await _stores.IdAsync();
+        else if (User.IsInRole("Customer") && storeId != null &&
+                 await _db.CustomerStores.AnyAsync(c => c.UserId == _stores.UserId && c.StoreId == storeId))
+            sid = storeId;
+        else return NotFound();
+        if (sid == null) return NotFound();
+
+        var name = (await _db.StoreSettings.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sid))?.PaymentQr;
         if (string.IsNullOrEmpty(name)) return NotFound();
 
         var path = ProofStorage.PathFor(_env, name, "qr");
@@ -40,7 +50,12 @@ public class PaymentController : Controller
         if (order?.PaymentProof == null) return NotFound();
 
         var uid = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        if (!User.IsInRole("Owner") && order.UserId != uid) return NotFound();
+        // The owner of the carinderia the order was sent to, or the customer who placed it. Nobody else.
+        if (User.IsInRole("Owner"))
+        {
+            if (order.StoreId != await _stores.IdAsync()) return NotFound();
+        }
+        else if (order.UserId != uid) return NotFound();
 
         var path = ProofStorage.PathFor(_env, order.PaymentProof);
         if (!System.IO.File.Exists(path)) return NotFound();

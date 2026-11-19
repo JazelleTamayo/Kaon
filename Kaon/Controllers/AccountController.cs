@@ -15,13 +15,25 @@ public class AccountController : Controller
     private readonly KaonDbContext _db;
     private readonly IPasswordHasher<AppUser> _hasher;
     private readonly IEmailSender _email;
+    private readonly StoreContext _stores;
 
-    public AccountController(KaonDbContext db, IPasswordHasher<AppUser> hasher, IEmailSender email)
+    public AccountController(KaonDbContext db, IPasswordHasher<AppUser> hasher, IEmailSender email, StoreContext stores)
     {
         _db = db;
         _hasher = hasher;
         _email = email;
+        _stores = stores;
     }
+
+    // The carinderia whose link or QR code this visitor opened before signing in or signing up
+    private async Task<StoreSettings?> LinkedStore()
+    {
+        var sid = HttpContext.Session.GetInt32("storeId");
+        if (sid == null) return null;
+        return await _db.StoreSettings.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sid);
+    }
+
+    private async Task ShowLinkedStore() => ViewBag.JoinStoreName = (await LinkedStore())?.Name;
 
     private IActionResult GoHome(string? role = null)
     {
@@ -51,15 +63,17 @@ public class AccountController : Controller
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Login()
+    public async Task<IActionResult> Login()
     {
         if (User.Identity?.IsAuthenticated == true) return GoHome();
+        await ShowLinkedStore();
         return View(new LoginForm());
     }
 
     [HttpPost]
     public async Task<IActionResult> Login(LoginForm form)
     {
+        await ShowLinkedStore();
         if (!ModelState.IsValid) return View(form);
 
         var email = form.Email.Trim().ToLower();
@@ -101,6 +115,10 @@ public class AccountController : Controller
             ModelState.AddModelError("", "This account is turned off. Please contact the Kaon team.");
             return View(form);
         }
+
+        // A customer who opened a carinderia's link first is now one of that carinderia's customers
+        if (user.Role == "Customer" && await LinkedStore() is { } linked)
+            await _stores.JoinAsync(user.Id, linked.Id);
 
         await SignInUser(user);
         return user.MustChangePassword
@@ -232,15 +250,17 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public IActionResult Register()
+    public async Task<IActionResult> Register()
     {
         if (User.Identity?.IsAuthenticated == true) return GoHome();
+        await ShowLinkedStore();
         return View(new RegisterForm());
     }
 
     [HttpPost]
     public async Task<IActionResult> Register(RegisterForm form)
     {
+        await ShowLinkedStore();
         if (!ModelState.IsValid) return View(form);
 
         var email = form.Email.Trim().ToLower();
@@ -255,12 +275,14 @@ public class AccountController : Controller
             FullName = form.FullName.Trim(),
             Phone = form.Phone.Trim(),
             Email = email,
-            Role = "Customer"
+            Role = "Customer",
+            JoinedStoreId = (await LinkedStore())?.Id
         };
         user.PasswordHash = _hasher.HashPassword(user, form.Password);
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
+        if (user.JoinedStoreId is int joined) await _stores.JoinAsync(user.Id, joined);
 
         await SignInUser(user);
         return GoHome(user.Role);

@@ -10,6 +10,11 @@
 <h1 class="auth-title">Create your account</h1>
 <p class="auth-sub">It only takes a minute. No fees for customers.</p>
 
+@if (ViewBag.JoinStoreName is string joinName)
+{
+    <p class="auth-sub"><strong>Ordering from @joinName.</strong> Your account works at every carinderia on Kaon.</p>
+}
+
 <form asp-action="Register" method="post" class="auth-form" novalidate>
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 

@@ -1,4 +1,4 @@
-﻿@model List<Order>
+@model List<Order>
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "My orders";
@@ -18,7 +18,7 @@ else
     {
         <a class="card order-link" asp-action="Status" asp-route-id="@o.Id">
             <div class="row">
-                <strong>Order #@o.Id</strong>
+                <strong>Order #@o.Id@(((Dictionary<int, string>)ViewBag.StoreNames).TryGetValue(o.StoreId, out var sn) ? " · " + sn : "")</strong>
                 <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
             </div>
             <div class="muted">

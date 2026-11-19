@@ -4,9 +4,9 @@
     @if (!string.IsNullOrEmpty(Model.PaymentQr))
     {
         <figure class="pay-qr">
-            <img src="@Url.Action("Qr", "Payment")?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="QR code to scan and pay" loading="lazy" />
+            <img src="@Url.Action("Qr", "Payment", new { storeId = Model.Id })?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="QR code to scan and pay" loading="lazy" />
             <figcaption>Scan to pay</figcaption>
-            <a href="@Url.Action("Qr", "Payment")" download="kaon-payment-qr">Save QR</a>
+            <a href="@Url.Action("Qr", "Payment", new { storeId = Model.Id })" download="kaon-payment-qr">Save QR</a>
         </figure>
     }
     <div class="pay-accounts">

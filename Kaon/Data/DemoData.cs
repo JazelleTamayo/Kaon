@@ -24,14 +24,25 @@ public static class DemoData
 
     public static void Seed(KaonDbContext db, string? demoGCash = null)
     {
-        var store = db.StoreSettings.First();
+        var store = db.StoreSettings.OrderBy(s => s.Id).First();
         if (store.Name == "Kaon Carinderia")
             store.Name = "Jamaica Foods";
         // The demo GCash number comes from a private setting (never from the code)
         if (!string.IsNullOrWhiteSpace(demoGCash) && (string.IsNullOrWhiteSpace(store.GCashNumber) || store.GCashNumber == "09XX XXX XXXX"))
             store.GCashNumber = demoGCash.Trim();
 
-        var items = db.MenuItems.ToList();
+        // The first carinderia gets a readable web address (/c/jamaica-foods) instead of the placeholder
+        if (string.IsNullOrEmpty(store.Slug) || store.Slug == "carinderia-" + store.Id)
+        {
+            var wanted = Kaon.Helpers.StoreContext.Slugify(store.Name);
+            var slug = wanted;
+            for (var n = 2; db.StoreSettings.Any(x => x.Slug == slug && x.Id != store.Id); n++) slug = wanted + "-" + n;
+            store.Slug = slug;
+        }
+
+        // Everything below is the starter data of this first carinderia only
+        var sid = store.Id;
+        var items = db.MenuItems.Where(m => m.StoreId == sid).ToList();
         var untouched = items.Count == 0 ||
             (items.Count == OriginalNames.Length &&
              items.All(m => m.ImageUrl == null) &&
@@ -41,8 +52,10 @@ public static class DemoData
         {
             db.MenuItems.RemoveRange(items);
             var meals = StarterMeals();
+            var packages = StarterPackages();
+            foreach (var m in meals.Concat(packages)) m.StoreId = sid;
             db.MenuItems.AddRange(meals);
-            db.MenuItems.AddRange(StarterPackages());
+            db.MenuItems.AddRange(packages);
             store.StarterPackagesAdded = true;
             db.SaveChanges();   // assign ids before seeding today's menu below
 
@@ -60,7 +73,9 @@ public static class DemoData
             db.MenuItems.RemoveRange(oldFixed);
 
             var have = items.Select(m => m.Name).ToHashSet();
-            db.MenuItems.AddRange(StarterPackages().Where(p => !have.Contains(p.Name)));
+            var addPk = StarterPackages().Where(p => !have.Contains(p.Name)).ToList();
+            foreach (var m in addPk) m.StoreId = sid;
+            db.MenuItems.AddRange(addPk);
             store.StarterPackagesAdded = true;
         }
 
@@ -71,10 +86,10 @@ public static class DemoData
         // who clears today's menu on purpose does not get it back at the next restart).
         if (!store.DailyMenuSeeded)
         {
-            if (!db.DailyMenuEntries.Any())
+            if (!db.DailyMenuEntries.Any(e => e.MenuItem!.StoreId == sid))
             {
                 var today = DateTime.Today;
-                foreach (var m in db.MenuItems.Where(m => m.Category != MenuItem.PackageCategory && m.IsAvailable).ToList())
+                foreach (var m in db.MenuItems.Where(m => m.StoreId == sid && m.Category != MenuItem.PackageCategory && m.IsAvailable).ToList())
                     db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = m.Id, Date = today, Stock = m.Stock });
             }
             store.DailyMenuSeeded = true;

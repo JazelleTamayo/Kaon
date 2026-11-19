@@ -43,6 +43,9 @@ namespace Kaon.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("JoinedStoreId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("LockoutUntil")
                         .HasColumnType("TEXT");
 
@@ -62,12 +65,40 @@ namespace Kaon.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("StoreId");
+
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Kaon.Models.CustomerStore", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "StoreId")
+                        .IsUnique();
+
+                    b.ToTable("CustomerStores");
                 });
 
             modelBuilder.Entity("Kaon.Models.DailyMenuEntry", b =>
@@ -162,7 +193,12 @@ namespace Kaon.Migrations
                     b.Property<int?>("Stock")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
 
                     b.ToTable("MenuItems");
                 });
@@ -223,10 +259,15 @@ namespace Kaon.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
 
                     b.ToTable("Orders");
                 });
@@ -414,10 +455,18 @@ namespace Kaon.Migrations
                     b.Property<bool>("PickupEnabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("StarterPackagesAdded")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
 
                     b.ToTable("StoreSettings");
                 });

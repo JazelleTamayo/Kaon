@@ -47,6 +47,12 @@ public class CreateOwnerForm
 
     [StringLength(20)]
     public string? Phone { get; set; }
+
+    // Leave empty to open a NEW carinderia for this owner, or pick a carinderia that already exists
+    public int? StoreId { get; set; }
+
+    [StringLength(100)]
+    public string? CarinderiaName { get; set; }
 }
 
 public class AdminDashVm
@@ -55,7 +61,8 @@ public class AdminDashVm
     public int CustomerCount { get; set; }
     public int OrdersToday { get; set; }
     public int OrdersTotal { get; set; }
-    public StoreSettings Store { get; set; } = new();
+    // Every carinderia on Kaon (the admin sees the stores, never their customers or orders)
+    public List<StoreSettings> Stores { get; set; } = new();
 
     // Owners who have an invitation link that is still waiting to be used, and when it expires
     public Dictionary<int, DateTime> PendingLinks { get; set; } = new();

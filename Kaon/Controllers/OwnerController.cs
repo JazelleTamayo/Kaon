@@ -11,7 +11,8 @@ namespace Kaon.Controllers;
 public class OwnerController : Controller
 {
     private readonly KaonDbContext _db;
-    public OwnerController(KaonDbContext db) => _db = db;
+    private readonly StoreContext _stores;
+    public OwnerController(KaonDbContext db, StoreContext stores) { _db = db; _stores = stores; }
 
     private static bool IsActive(Order o) =>
         o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled;
@@ -19,8 +20,9 @@ public class OwnerController : Controller
     // Module 5: Owner order dashboard
     public async Task<IActionResult> Index()
     {
+        var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
-        var all = await _db.Orders.Include(o => o.Items).ToListAsync();
+        var all = await _db.Orders.Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync();
         var todays = all.Where(o => o.CreatedAt >= today && o.CreatedAt < today.AddDays(1)).ToList();
 
         return View(new BoardVm
@@ -28,14 +30,15 @@ public class OwnerController : Controller
             Active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList(),
             OrdersToday = todays.Count(o => o.Status != OrderStatus.Cancelled),
             SalesToday = todays.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.Total),
-            Store = await _db.StoreSettings.AsNoTracking().FirstAsync()
+            Store = await _stores.StoreAsync()
         });
     }
 
     // The dashboard checks this every few seconds and reloads when something changed
     public async Task<IActionResult> BoardState()
     {
-        var rows = (await _db.Orders.Select(o => new { o.Id, o.Status }).ToListAsync())
+        var sid = await _stores.RequireAsync();
+        var rows = (await _db.Orders.Where(o => o.StoreId == sid).Select(o => new { o.Id, o.Status }).ToListAsync())
             .Where(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
             .Select(o => o.Id + ":" + (int)o.Status);
         return Json(new { sig = string.Join(",", rows) });
@@ -44,7 +47,8 @@ public class OwnerController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Advance(int id)
     {
-        var order = await _db.Orders.FindAsync(id);
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
         var next = order == null ? null : OrderText.Next(order);
         if (order != null && next != null)
         {
@@ -58,7 +62,8 @@ public class OwnerController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkPaid(int id)
     {
-        var order = await _db.Orders.FindAsync(id);
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
         if (order != null && order.Status != OrderStatus.Cancelled)
         {
             order.PaymentStatus = PaymentStatus.Paid;
@@ -70,7 +75,8 @@ public class OwnerController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Cancel(int id, string? reason, string? otherReason)
     {
-        var order = await _db.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id);
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
         if (order != null && IsActive(order))
         {
             order.Status = OrderStatus.Cancelled;
@@ -95,7 +101,7 @@ public class OwnerController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleOpen()
     {
-        var store = await _db.StoreSettings.FirstAsync();
+        var store = await _stores.StoreAsync(track: true);
         store.IsOpen = !store.IsOpen;
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -105,7 +111,8 @@ public class OwnerController : Controller
     public async Task<IActionResult> Summary(DateTime? date)
     {
         var day = (date ?? DateTime.Today).Date;
-        var orders = (await _db.Orders.Include(o => o.Items).ToListAsync())
+        var sid = await _stores.RequireAsync();
+        var orders = (await _db.Orders.Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync())
             .Where(o => o.CreatedAt >= day && o.CreatedAt < day.AddDays(1))
             .OrderBy(o => o.CreatedAt).ToList();
 
@@ -113,7 +120,7 @@ public class OwnerController : Controller
         {
             Date = day,
             Orders = orders,
-            Store = await _db.StoreSettings.AsNoTracking().FirstAsync()
+            Store = await _stores.StoreAsync()
         });
     }
 }

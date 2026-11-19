@@ -15,6 +15,7 @@ public class KaonDbContext : DbContext
     public DbSet<ItemOption> ItemOptions => Set<ItemOption>();
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
     public DbSet<DailyMenuEntry> DailyMenuEntries => Set<DailyMenuEntry>();
+    public DbSet<CustomerStore> CustomerStores => Set<CustomerStore>();
     public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<SubscriptionPayment> SubscriptionPayments => Set<SubscriptionPayment>();
@@ -22,6 +23,12 @@ public class KaonDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
+
+        modelBuilder.Entity<StoreSettings>().HasIndex(s => s.Slug).IsUnique();
+        modelBuilder.Entity<MenuItem>().HasIndex(m => m.StoreId);
+        modelBuilder.Entity<Order>().HasIndex(o => o.StoreId);
+        modelBuilder.Entity<AppUser>().HasIndex(u => u.StoreId);
+        modelBuilder.Entity<CustomerStore>().HasIndex(c => new { c.UserId, c.StoreId }).IsUnique();
 
         modelBuilder.Entity<PasswordToken>().HasIndex(t => t.TokenHash).IsUnique();
         modelBuilder.Entity<PasswordToken>()

@@ -12,8 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<MustChangePasswordFilter>();
+    options.Filters.Add<StoreFilter>();
     options.Filters.Add<SubscriptionFilter>();
 });
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<StoreContext>();
 
 builder.Services.AddDbContext<KaonDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("KaonDb")));
@@ -127,7 +131,7 @@ using (var scope = app.Services.CreateScope())
     // A demo owner exists ONLY when developing locally. In production the admin creates owners.
     if (app.Environment.IsDevelopment() && !db.Users.Any(u => u.Role == "Owner"))
     {
-        var owner = new AppUser { FullName = "Kaon Owner", Email = "owner@kaon.local", Role = "Owner" };
+        var owner = new AppUser { FullName = "Kaon Owner", Email = "owner@kaon.local", Role = "Owner", StoreId = db.StoreSettings.OrderBy(x => x.Id).First().Id };
         owner.PasswordHash = hasher.HashPassword(owner, "Owner123!");
         db.Users.Add(owner);
         db.SaveChanges();

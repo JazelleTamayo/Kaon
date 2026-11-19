@@ -14,27 +14,30 @@ public class OwnerMenuController : Controller
     private static readonly string[] Categories = { "Meal", MenuItem.PackageCategory };
     private readonly KaonDbContext _db;
     private readonly IWebHostEnvironment _env;
-    public OwnerMenuController(KaonDbContext db, IWebHostEnvironment env)
+    private readonly StoreContext _stores;
+    public OwnerMenuController(KaonDbContext db, IWebHostEnvironment env, StoreContext stores)
     {
         _db = db;
         _env = env;
+        _stores = stores;
     }
 
     public async Task<IActionResult> Index()
     {
+        var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
         var catalogMeals = await _db.MenuItems
-            .Where(m => m.Category != MenuItem.PackageCategory)
+            .Where(m => m.StoreId == sid && m.Category != MenuItem.PackageCategory)
             .OrderBy(m => m.Name)
             .ToListAsync();
         var todayEntries = await _db.DailyMenuEntries
             .Include(e => e.MenuItem)
-            .Where(e => e.Date == today)
+            .Where(e => e.Date == today && e.MenuItem!.StoreId == sid)
             .ToListAsync();
         todayEntries = todayEntries.OrderBy(e => e.MenuItem!.Name).ToList();
         var packages = await _db.MenuItems
             .Include(m => m.Options)
-            .Where(m => m.Category == MenuItem.PackageCategory)
+            .Where(m => m.StoreId == sid && m.Category == MenuItem.PackageCategory)
             .OrderBy(m => m.Name)
             .ToListAsync();
 
@@ -43,8 +46,8 @@ public class OwnerMenuController : Controller
             CatalogMeals = catalogMeals,
             TodayEntries = todayEntries,
             Packages = packages,
-            Store = await _db.StoreSettings.AsNoTracking().FirstAsync(),
-            LastMenuDate = await _db.DailyMenuEntries.Where(e => e.Date < today).MaxAsync(e => (DateTime?)e.Date)
+            Store = await _stores.StoreAsync(),
+            LastMenuDate = await _db.DailyMenuEntries.Where(e => e.Date < today && e.MenuItem!.StoreId == sid).MaxAsync(e => (DateTime?)e.Date)
         });
     }
 
@@ -69,7 +72,8 @@ public class OwnerMenuController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var m = await _db.MenuItems.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == id);
+        var sid = await _stores.RequireAsync();
+        var m = await _db.MenuItems.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == id && x.StoreId == sid);
         if (m == null) return NotFound();
         FillForm();
         return View(new MenuForm
@@ -127,9 +131,10 @@ public class OwnerMenuController : Controller
             newImageUrl = url;
         }
 
+        var sid = await _stores.RequireAsync();
         MenuItem? m = form.Id == 0
-            ? new MenuItem()
-            : await _db.MenuItems.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == form.Id);
+            ? new MenuItem { StoreId = sid }
+            : await _db.MenuItems.Include(x => x.Options).FirstOrDefaultAsync(x => x.Id == form.Id && x.StoreId == sid);
         if (m == null) return NotFound();
 
         m.Name = form.Name.Trim();
@@ -174,7 +179,7 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleOffer(string kind)
     {
-        var store = await _db.StoreSettings.FirstAsync();
+        var store = await _stores.StoreAsync(track: true);
         if (kind == "daily")
         {
             if (store.OffersDailyMenu && !store.OffersPackages)
@@ -203,7 +208,8 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Toggle(int id)
     {
-        var m = await _db.MenuItems.FindAsync(id);
+        var sid = await _stores.RequireAsync();
+        var m = await _db.MenuItems.FirstOrDefaultAsync(x => x.Id == id && x.StoreId == sid);
         if (m != null)
         {
             m.IsAvailable = !m.IsAvailable;
@@ -216,17 +222,18 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CopyYesterday()
     {
+        var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
-        var lastDay = await _db.DailyMenuEntries.Where(e => e.Date < today).MaxAsync(e => (DateTime?)e.Date);
+        var lastDay = await _db.DailyMenuEntries.Where(e => e.Date < today && e.MenuItem!.StoreId == sid).MaxAsync(e => (DateTime?)e.Date);
         if (lastDay == null)
         {
             TempData["Warn"] = "There is no earlier menu to copy yet. Pick today's dishes below.";
             return RedirectToAction(nameof(Index));
         }
 
-        var have = await _db.DailyMenuEntries.Where(e => e.Date == today).Select(e => e.MenuItemId).ToListAsync();
+        var have = await _db.DailyMenuEntries.Where(e => e.Date == today && e.MenuItem!.StoreId == sid).Select(e => e.MenuItemId).ToListAsync();
         var earlier = await _db.DailyMenuEntries.Include(e => e.MenuItem)
-            .Where(e => e.Date == lastDay && !have.Contains(e.MenuItemId) && e.MenuItem != null && e.MenuItem.Category != MenuItem.PackageCategory)
+            .Where(e => e.Date == lastDay && !have.Contains(e.MenuItemId) && e.MenuItem != null && e.MenuItem.StoreId == sid && e.MenuItem.Category != MenuItem.PackageCategory)
             .ToListAsync();
 
         // Portions are not copied (yesterday's number is what was LEFT). The owner sets them if they limit portions.
@@ -244,11 +251,12 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddToday(int menuItemId)
     {
+        var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
         var already = await _db.DailyMenuEntries.AnyAsync(e => e.MenuItemId == menuItemId && e.Date == today);
         if (!already)
         {
-            var m = await _db.MenuItems.FindAsync(menuItemId);
+            var m = await _db.MenuItems.FirstOrDefaultAsync(x => x.Id == menuItemId && x.StoreId == sid);
             if (m != null && !m.IsPackage)
             {
                 _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = menuItemId, Date = today });
@@ -263,7 +271,8 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveToday(int entryId)
     {
-        var entry = await _db.DailyMenuEntries.FindAsync(entryId);
+        var sid = await _stores.RequireAsync();
+        var entry = await _db.DailyMenuEntries.Include(e => e.MenuItem).FirstOrDefaultAsync(e => e.Id == entryId && e.MenuItem!.StoreId == sid);
         if (entry != null)
         {
             _db.DailyMenuEntries.Remove(entry);
@@ -276,7 +285,8 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> SetStock(int entryId, int? stock)
     {
-        var entry = await _db.DailyMenuEntries.FindAsync(entryId);
+        var sid = await _stores.RequireAsync();
+        var entry = await _db.DailyMenuEntries.Include(e => e.MenuItem).FirstOrDefaultAsync(e => e.Id == entryId && e.MenuItem!.StoreId == sid);
         if (entry != null)
         {
             entry.Stock = stock is < 0 ? 0 : stock;
@@ -290,7 +300,8 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleReady(int entryId)
     {
-        var entry = await _db.DailyMenuEntries.FindAsync(entryId);
+        var sid = await _stores.RequireAsync();
+        var entry = await _db.DailyMenuEntries.Include(e => e.MenuItem).FirstOrDefaultAsync(e => e.Id == entryId && e.MenuItem!.StoreId == sid);
         if (entry != null)
         {
             entry.ReadyState = entry.ReadyState == DishReadyState.Preparing
@@ -315,7 +326,8 @@ public class OwnerMenuController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var m = await _db.MenuItems.FindAsync(id);
+        var sid = await _stores.RequireAsync();
+        var m = await _db.MenuItems.FirstOrDefaultAsync(x => x.Id == id && x.StoreId == sid);
         if (m != null)
         {
             _db.MenuItems.Remove(m);   // its sizes and today's-menu entry are removed with it

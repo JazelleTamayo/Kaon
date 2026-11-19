@@ -45,12 +45,13 @@ else
 {
     <div class="card table-wrap">
         <table class="table table-stack">
-            <thead><tr><th>Owner</th><th>Email</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Owner</th><th>Carinderia</th><th>Email</th><th>Status</th><th></th></tr></thead>
             <tbody>
                 @foreach (var u in Model.Owners)
                 {
                     <tr>
                         <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
+                        <td data-label="Carinderia">@(Model.Stores.FirstOrDefault(x => x.Id == u.StoreId)?.Name ?? "-")</td>
                         <td data-label="Email">@u.Email</td>
                         <td data-label="Status">
                             @if (!u.IsActive) { <span class="chip chip-soldout">Switched off</span> }
@@ -83,16 +84,30 @@ else
     </div>
 }
 
-<h2 class="section">The carinderia store</h2>
-<div class="card store-card">
-    <div>
-        <strong>@Model.Store.Name</strong>
-        <div class="muted">@Model.Store.Hours</div>
+<h2 class="section">Carinderias on Kaon</h2>
+@if (!Model.Stores.Any())
+{
+    <div class="card"><p class="muted" style="margin:0">No carinderias yet.</p></div>
+}
+else
+{
+    <div class="card table-wrap">
+        <table class="table table-stack">
+            <thead><tr><th>Carinderia</th><th>Status</th><th>Its own link (for the QR code)</th></tr></thead>
+            <tbody>
+                @foreach (var st in Model.Stores)
+                {
+                    var link = Url.Action("Landing", "Store", new { slug = st.Slug }, Context.Request.Scheme);
+                    <tr>
+                        <td><strong>@st.Name</strong><div class="muted">@(Model.Owners.Count(o => o.StoreId == st.Id)) owner(s)</div></td>
+                        <td data-label="Status">
+                            <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span>
+                        </td>
+                        <td data-label="Link"><a href="@link">@link</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-    <div class="store-flags">
-        <span class="chip @(Model.Store.IsOpen ? "chip-ready" : "chip-soldout")">@(Model.Store.IsOpen ? "Open" : "Closed")</span>
-        <span class="chip @(Model.Store.OffersDailyMenu ? "chip-ready" : "chip-soldout")">Daily foods @(Model.Store.OffersDailyMenu ? "on" : "off")</span>
-        <span class="chip @(Model.Store.OffersPackages ? "chip-ready" : "chip-soldout")">Food packages @(Model.Store.OffersPackages ? "on" : "off")</span>
-    </div>
-</div>
-<p class="muted">Kaon currently runs one carinderia. Supporting several, each with its own owner and menu, comes next.</p>
+}
+<p class="muted">Each carinderia is separate: its own menu, orders, payment details and customers. Customers reach one only through its own link or QR code.</p>

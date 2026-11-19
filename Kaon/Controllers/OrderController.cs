@@ -13,11 +13,13 @@ public class OrderController : Controller
 {
     private readonly KaonDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly StoreContext _stores;
 
-    public OrderController(KaonDbContext db, IWebHostEnvironment env)
+    public OrderController(KaonDbContext db, IWebHostEnvironment env, StoreContext stores)
     {
         _db = db;
         _env = env;
+        _stores = stores;
     }
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -32,12 +34,15 @@ public class OrderController : Controller
             .OrderByDescending(o => o.CreatedAt)
             .Take(50)
             .ToListAsync();
+        // One account, several carinderias: each order says where it was placed
+        var storeIds = orders.Select(o => o.StoreId).Distinct().ToList();
+        ViewBag.StoreNames = await _db.StoreSettings.AsNoTracking().Where(s => storeIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Name);
         return View(orders);
     }
 
     private async Task FillCheckoutView()
     {
-        var store = await StoreGate.ForCustomersAsync(_db);
+        var store = await StoreGate.ForCustomersAsync(_db, await _stores.RequireAsync());
         ViewBag.Cart = CartHelper.Get(HttpContext.Session);
         ViewBag.Store = store;
         ViewBag.DeliveryFee = store.DeliveryFee;
@@ -70,7 +75,8 @@ public class OrderController : Controller
         var cart = CartHelper.Get(HttpContext.Session);
         if (!cart.Any()) return RedirectToAction("Index", "Menu");
 
-        var store = await StoreGate.ForCustomersAsync(_db);
+        var sid = await _stores.RequireAsync();
+        var store = await StoreGate.ForCustomersAsync(_db, sid);
 
         if (!store.IsOpen)
             ModelState.AddModelError("", "Sorry, " + store.Name + " is closed right now. Please try again later.");
@@ -91,7 +97,7 @@ public class OrderController : Controller
         var ids = cart.Select(c => c.MenuItemId).ToList();
         var menu = await _db.MenuItems
             .Include(m => m.Options)
-            .Where(m => ids.Contains(m.Id))
+            .Where(m => m.StoreId == sid && ids.Contains(m.Id))
             .ToDictionaryAsync(m => m.Id);
 
         // Daily meals: only orderable if the owner picked them for today's menu.
@@ -175,6 +181,7 @@ public class OrderController : Controller
 
         var order = new Order
         {
+            StoreId = sid,
             UserId = CurrentUserId,
             CustomerName = form.CustomerName.Trim(),
             Phone = form.Phone.Trim(),
@@ -233,7 +240,7 @@ public class OrderController : Controller
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
         if (order == null) return NotFound();
-        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync();
+        ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync(s => s.Id == order.StoreId);
         return View(order);
     }
 

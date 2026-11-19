@@ -1,0 +1,29 @@
+@model StoreSettings
+@{
+    Layout = "_Auth";
+    ViewData["Title"] = Model.Name;
+    ViewData["PanelTitle"] = Model.Name;
+    ViewData["PanelText"] = "Order ahead from " + Model.Name + ". Choose pickup or home delivery and follow your order in real time.";
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+
+<span class="auth-kicker">Welcome to</span>
+<h1 class="auth-title">@Model.Name</h1>
+<p class="auth-sub">
+    @if (!string.IsNullOrWhiteSpace(Model.Hours)) { <span>Open @Model.Hours</span> }
+    @if (!string.IsNullOrWhiteSpace(Model.Phone)) { <span> · @Model.Phone</span> }
+</p>
+
+@if (signedIn)
+{
+    <p class="auth-sub">You are signed in with a different kind of account. Customers open this page to order.</p>
+    <a class="btn btn-go" asp-controller="Account" asp-action="Login">Go to my account</a>
+}
+else
+{
+    <p class="auth-sub">Log in or create a free account to see today's menu and order from @Model.Name. One Kaon account works at every carinderia that uses Kaon.</p>
+    <div style="display:grid;gap:.75rem;margin-top:1rem">
+        <a class="btn btn-go" asp-controller="Account" asp-action="Login">Log in</a>
+        <a class="btn btn-go" asp-controller="Account" asp-action="Register">Create an account</a>
+    </div>
+}

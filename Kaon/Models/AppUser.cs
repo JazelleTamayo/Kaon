@@ -29,6 +29,12 @@ public class AppUser
     // The Kaon team can turn an account off
     public bool IsActive { get; set; } = true;
 
+    // Owners: the one carinderia they run
+    public int? StoreId { get; set; }
+
+    // Customers: the carinderia whose link or QR code they signed up from
+    public int? JoinedStoreId { get; set; }
+
     // Protection against password guessing: 5 wrong passwords lock the account for 10 minutes
     public int FailedLogins { get; set; }
     public DateTime? LockoutUntil { get; set; }

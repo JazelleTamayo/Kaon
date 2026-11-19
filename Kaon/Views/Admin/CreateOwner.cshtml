@@ -11,6 +11,23 @@
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 
     <div class="card">
+        <label class="label" asp-for="StoreId">Carinderia</label>
+        <select class="input" asp-for="StoreId" id="storePick">
+            <option value="">+ A new carinderia</option>
+            @foreach (var s in (List<StoreSettings>)ViewBag.Stores)
+            {
+                <option value="@s.Id">Add another owner to @s.Name</option>
+            }
+        </select>
+        <span class="error" asp-validation-for="StoreId"></span>
+
+        <div id="newStore">
+            <label class="label" asp-for="CarinderiaName">New carinderia's name</label>
+            <input class="input" asp-for="CarinderiaName" autocomplete="off" placeholder="e.g. Aling Nena's Carinderia" />
+            <span class="error" asp-validation-for="CarinderiaName"></span>
+            <p class="muted" style="margin:.4rem 0 0">Each carinderia gets its own link and QR code, its own menu, orders and customers.</p>
+        </div>
+
         <label class="label" asp-for="FullName">Owner's full name</label>
         <input class="input" asp-for="FullName" autocomplete="off" />
         <span class="error" asp-validation-for="FullName"></span>
@@ -27,3 +44,13 @@
     <button class="btn">Create account and get the link</button>
     <a class="link" asp-action="Index">Cancel</a>
 </form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var pick = document.getElementById('storePick'), box = document.getElementById('newStore');
+            function sync() { box.style.display = pick.value ? 'none' : ''; }
+            pick.addEventListener('change', sync); sync();
+        })();
+    </script>
+}

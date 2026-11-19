@@ -13,15 +13,17 @@ public class OwnerSettingsController : Controller
 {
     private readonly KaonDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly StoreContext _stores;
 
-    public OwnerSettingsController(KaonDbContext db, IWebHostEnvironment env)
+    public OwnerSettingsController(KaonDbContext db, IWebHostEnvironment env, StoreContext stores)
     {
         _db = db;
         _env = env;
+        _stores = stores;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index() => View(await _db.StoreSettings.AsNoTracking().FirstAsync());
+    public async Task<IActionResult> Index() => View(await _stores.StoreAsync());
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(StoreSettings form, IFormFile? qrFile, bool removeQr)
@@ -30,7 +32,7 @@ public class OwnerSettingsController : Controller
             ModelState.AddModelError("", "Turn on at least one: pickup or home delivery.");
         if (!form.AcceptsCash && !form.AcceptsCashless)
             ModelState.AddModelError("", "Accept at least one payment type: cash or GCash.");
-        var current = await _db.StoreSettings.FirstAsync();
+        var current = await _stores.StoreAsync(track: true);
         var willHaveQr = (qrFile is { Length: > 0 }) || (!removeQr && !string.IsNullOrEmpty(current.PaymentQr));
         if (form.AcceptsCashless && string.IsNullOrWhiteSpace(form.GCashNumber) &&
             string.IsNullOrWhiteSpace(form.BankAccountNumber) && !willHaveQr)
@@ -47,6 +49,8 @@ public class OwnerSettingsController : Controller
         }
         if (!ModelState.IsValid)
         {
+            form.Id = current.Id;
+            form.Slug = current.Slug;
             form.PaymentQr = current.PaymentQr;
             return View(form);
         }

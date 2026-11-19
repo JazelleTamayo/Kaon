@@ -10,11 +10,12 @@ namespace Kaon.Controllers;
 public class CartController : Controller
 {
     private readonly KaonDbContext _db;
-    public CartController(KaonDbContext db) => _db = db;
+    private readonly StoreContext _stores;
+    public CartController(KaonDbContext db, StoreContext stores) { _db = db; _stores = stores; }
 
     public async Task<IActionResult> Index()
     {
-        var store = await StoreGate.ForCustomersAsync(_db);
+        var store = await StoreGate.ForCustomersAsync(_db, await _stores.RequireAsync());
         ViewBag.Store = store;
         ViewBag.DeliveryFee = store.DeliveryFee;
         return View(CartHelper.Get(HttpContext.Session));

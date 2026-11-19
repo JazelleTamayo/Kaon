@@ -47,7 +47,7 @@ public class AdminController : Controller
             CustomerCount = await _db.Users.CountAsync(u => u.Role == "Customer"),   // a number only
             OrdersToday = orders.Count(c => c >= today && c < today.AddDays(1)),
             OrdersTotal = orders.Count,
-            Store = await _db.StoreSettings.AsNoTracking().FirstAsync(),
+            Stores = await _db.StoreSettings.AsNoTracking().OrderBy(s => s.Name).ToListAsync(),
             PendingLinks = pending.ToDictionary(p => p.UserId, p => p.Expires)
         });
     }
@@ -62,8 +62,15 @@ public class AdminController : Controller
         return View(await query.OrderBy(u => u.Role).ThenBy(u => u.FullName).ToListAsync());
     }
 
+    private async Task FillStores() =>
+        ViewBag.Stores = await _db.StoreSettings.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+
     [HttpGet]
-    public IActionResult CreateOwner() => View(new CreateOwnerForm());
+    public async Task<IActionResult> CreateOwner()
+    {
+        await FillStores();
+        return View(new CreateOwnerForm());
+    }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateOwner(CreateOwnerForm form)
@@ -71,7 +78,41 @@ public class AdminController : Controller
         var email = form.Email.Trim().ToLower();
         if (await _db.Users.AnyAsync(u => u.Email == email))
             ModelState.AddModelError(nameof(form.Email), "That email already has an account.");
-        if (!ModelState.IsValid) return View(form);
+
+        StoreSettings? store = null;
+        if (form.StoreId is int existingId and > 0)
+        {
+            store = await _db.StoreSettings.FirstOrDefaultAsync(s => s.Id == existingId);
+            if (store == null) ModelState.AddModelError(nameof(form.StoreId), "Choose a carinderia from the list.");
+        }
+        else if (string.IsNullOrWhiteSpace(form.CarinderiaName))
+        {
+            ModelState.AddModelError(nameof(form.CarinderiaName), "Enter the carinderia's name.");
+        }
+        if (!ModelState.IsValid)
+        {
+            await FillStores();
+            return View(form);
+        }
+
+        // A new carinderia is its own place: its own link, menu, orders and payment details. It starts empty.
+        if (store == null)
+        {
+            var name = form.CarinderiaName!.Trim();
+            store = new StoreSettings
+            {
+                Name = name,
+                Slug = await StoreContext.UniqueSlugAsync(_db, name),
+                Hours = null,
+                GCashName = null,
+                GCashNumber = null,
+                DeliveryFee = 30,
+                StarterPackagesAdded = true,   // no sample dishes: the owner adds their own
+                DailyMenuSeeded = true
+            };
+            _db.StoreSettings.Add(store);
+            await _db.SaveChangesAsync();
+        }
 
         // The account starts with NO password. It cannot be used until the owner sets one.
         var owner = new AppUser
@@ -80,6 +121,7 @@ public class AdminController : Controller
             Email = email,
             Phone = string.IsNullOrWhiteSpace(form.Phone) ? null : form.Phone.Trim(),
             Role = "Owner",
+            StoreId = store.Id,
             PasswordHash = ""
         };
         _db.Users.Add(owner);

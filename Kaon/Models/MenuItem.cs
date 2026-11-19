@@ -19,6 +19,9 @@ public class MenuItem
 
     public int Id { get; set; }
 
+    // Which carinderia this dish belongs to
+    public int StoreId { get; set; }
+
     [Required, StringLength(100)]
     public string Name { get; set; } = "";
 

@@ -3,10 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Kaon.Models;
 
-// One row: the carinderia's store page settings (Module 2)
+// One row PER carinderia: the carinderia's store page settings (Module 2)
 public class StoreSettings
 {
     public int Id { get; set; }
+
+    // The carinderia's own web address: /c/{Slug}. Its link and QR code open this carinderia only.
+    [StringLength(60)]
+    public string Slug { get; set; } = "";
 
     [Required(ErrorMessage = "Please enter the store name."), StringLength(100)]
     public string Name { get; set; } = "Jamaica Foods";

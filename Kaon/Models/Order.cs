@@ -7,6 +7,9 @@ public class Order
 {
     public int Id { get; set; }
 
+    // Which carinderia this order was sent to
+    public int StoreId { get; set; }
+
     // Which customer placed the order
     public int? UserId { get; set; }
 
