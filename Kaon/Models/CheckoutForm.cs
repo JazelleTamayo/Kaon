@@ -15,6 +15,9 @@ public class CheckoutForm
     [StringLength(300)]
     public string? Address { get; set; }
 
+    // Keep this address on the customer's profile for next time
+    public bool SaveAddress { get; set; } = true;
+
     // How the customer will pay
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
@@ -26,4 +29,10 @@ public class CheckoutForm
 
     // Needed only when the order has a food package
     public DateTime? ScheduledFor { get; set; }
+
+    // Ordinary meals: preferred pickup or delivery time today. Empty means as soon as possible.
+    public TimeSpan? PreferredTime { get; set; }
+
+    [StringLength(300, ErrorMessage = "Please keep your note under 300 characters.")]
+    public string? Notes { get; set; }
 }

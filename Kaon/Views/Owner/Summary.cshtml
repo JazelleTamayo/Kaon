@@ -79,7 +79,13 @@
                             <td>@o.CreatedAt.ToString("h:mm tt")</td>
                             <td>@o.CustomerName</td>
                             <td>@(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")</td>
-                            <td><span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span></td>
+                            <td>
+                                <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
+                                @if (o.Status == OrderStatus.Cancelled && !string.IsNullOrWhiteSpace(o.CancelReason))
+                                {
+                                    <span class="cancel-note">@o.CancelReason</span>
+                                }
+                            </td>
                             <td>@(o.PaymentMethod == PaymentMethod.Cash ? "Cash" : "GCash") · @OrderText.PayStatusLabel(o)</td>
                             <td class="num">₱@o.Total.ToString("N2")</td>
                         </tr>

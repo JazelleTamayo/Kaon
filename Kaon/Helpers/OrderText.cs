@@ -18,7 +18,9 @@ public static class OrderText
             ? "Your order is Ready. Pick it up."
             : "Your order is Ready. A rider will pick it up soon.",
         OrderStatus.OutForDelivery => "Your order is on its way.",
-        OrderStatus.Cancelled => "This order was cancelled by the carinderia. Please contact them for details.",
+        OrderStatus.Cancelled => string.IsNullOrWhiteSpace(o.CancelReason)
+            ? "This order was cancelled by the carinderia. Please contact them for details."
+            : "This order was cancelled by the carinderia. Reason: " + o.CancelReason,
         _ => "Done. Thank you for ordering with Kaon."
     };
 
@@ -34,6 +36,16 @@ public static class OrderText
         OrderStatus.Ready => o.OrderType == OrderType.Delivery ? OrderStatus.OutForDelivery : OrderStatus.Completed,
         OrderStatus.OutForDelivery => OrderStatus.Completed,
         _ => null
+    };
+
+    // Quick choices when the owner cancels an order (plus "Other" for their own words)
+    public static readonly string[] CancelReasons =
+    {
+        "Sold out",
+        "Too many orders right now",
+        "We can't deliver to this address",
+        "Customer asked to cancel",
+        "Store is closing"
     };
 
     // Button text on the owner dashboard

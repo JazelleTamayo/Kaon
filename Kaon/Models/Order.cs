@@ -41,7 +41,16 @@ public class Order
     public string? PaymentProof { get; set; }
 
     // When the customer needs the order (food packages and lechon are made ahead)
+    // For ordinary meals this is the customer's preferred pickup or delivery time today (optional)
     public DateTime? ScheduledFor { get; set; }
+
+    // Anything the customer wants the carinderia to know ("less rice", "gate is blue")
+    [StringLength(300)]
+    public string? Notes { get; set; }
+
+    // Why the carinderia cancelled the order, shown to the customer
+    [StringLength(200)]
+    public string? CancelReason { get; set; }
 
     public List<OrderItem> Items { get; set; } = new();
 

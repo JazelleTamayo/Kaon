@@ -13,13 +13,25 @@
 
 @if (Model.ScheduledFor != null)
 {
-    <div class="banner">Needed on <strong>@Model.ScheduledFor.Value.ToString("dddd, MMM d, h:mm tt")</strong></div>
+    var sameDay = Model.ScheduledFor.Value.Date == Model.CreatedAt.Date;
+    <div class="banner">
+        @(sameDay ? (Model.OrderType == OrderType.Delivery ? "Preferred delivery time" : "Preferred pickup time") : "Needed on")
+        <strong>@Model.ScheduledFor.Value.ToString(sameDay ? "h:mm tt" : "dddd, MMM d, h:mm tt")</strong>
+    </div>
 }
 
 <div class="card status-card">
     <span class="chip chip-@Model.Status.ToString().ToLower()">@OrderText.Label(Model.Status)</span>
     <p class="status-msg">@OrderText.Message(Model)</p>
 </div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Notes))
+{
+    <div class="card">
+        <strong>Your note</strong>
+        <p class="muted order-note-text">@Model.Notes</p>
+    </div>
+}
 
 <div class="card">
     <div class="steps">

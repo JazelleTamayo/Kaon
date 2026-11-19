@@ -587,3 +587,17 @@ a.dd-item { text-decoration: none; }
 .pa-num strong { font-size: 1.1rem; letter-spacing: .02em; }
 .qr-current { display: flex; align-items: center; gap: 16px; margin: 8px 0; flex-wrap: wrap; }
 .qr-preview { width: 120px; height: 120px; object-fit: contain; background: #fff; border-radius: 12px; border: 1px solid #eadfce; }
+
+/* Customer notes and the cancel-with-reason panel on the orders board */
+.order-note { font-size: .8rem; margin-top: 6px; padding: 6px 8px; border-radius: 8px; background: #fff4e3; border-left: 3px solid var(--orange); white-space: pre-line; overflow-wrap: anywhere; }
+.order-note-text { white-space: pre-line; overflow-wrap: anywhere; margin: 4px 0 0; }
+.cancel-box { margin-top: 8px; }
+.cancel-box > summary { list-style: none; }
+.cancel-box > summary::-webkit-details-marker { display: none; }
+.cancel-box[open] > summary { border-color: #b3261e; color: #b3261e; }
+.cancel-form { display: grid; gap: 6px; margin-top: 8px; padding: 10px; border-radius: 12px; background: #fff4e3; }
+.cancel-form .label { margin: 0; font-size: .8rem; }
+.cancel-opt { display: flex; align-items: center; gap: 8px; font-size: .85rem; cursor: pointer; }
+.cancel-opt input { width: 18px; height: 18px; accent-color: #b3261e; }
+.btn-danger { background: #b3261e; }
+.cancel-note { display: block; font-size: .75rem; color: #7a6a60; margin-top: 2px; }

@@ -58,12 +58,32 @@
             <span class="error" asp-validation-for="ScheduledFor"></span>
         </div>
     }
+    else
+    {
+        <div class="card">
+            <label class="label" asp-for="PreferredTime"><span id="timeLabel">Preferred pickup time</span> (optional)</label>
+            <input class="input" asp-for="PreferredTime" type="time" step="300" />
+            <span class="hint">Today. Leave it empty and we'll prepare it as soon as we can.</span>
+            <span class="error" asp-validation-for="PreferredTime"></span>
+        </div>
+    }
 
     <div class="card" id="addressBox">
         <label class="label" asp-for="Address">Delivery address</label>
         <textarea class="input" asp-for="Address" rows="3"
                   placeholder="House no., street, barangay, landmark"></textarea>
         <span class="error" asp-validation-for="Address"></span>
+        <label class="check">
+            <input type="checkbox" asp-for="SaveAddress" />
+            Save this address for my next order
+        </label>
+    </div>
+
+    <div class="card">
+        <label class="label" asp-for="Notes">Notes for the carinderia (optional)</label>
+        <textarea class="input" asp-for="Notes" rows="2" maxlength="300"
+                  placeholder="For example: less rice, extra sauce, blue gate"></textarea>
+        <span class="error" asp-validation-for="Notes"></span>
     </div>
 
     @{ var cashlessOk = store.CashlessAvailable; }
@@ -146,6 +166,8 @@
         function update() {
             const delivery = document.querySelector('input[name="OrderType"]:checked').value === 'Delivery';
             addressBox.style.display = delivery ? '' : 'none';
+            const timeLabel = document.getElementById('timeLabel');
+            if (timeLabel) timeLabel.textContent = delivery ? 'Preferred delivery time' : 'Preferred pickup time';
             feeRow.style.display = delivery ? '' : 'none';
             const total = subtotal + (delivery ? fee : 0);
             totalText.textContent = money(total);
