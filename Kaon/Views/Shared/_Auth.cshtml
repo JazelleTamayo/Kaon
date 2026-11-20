@@ -21,12 +21,19 @@
             <div class="auth-photo-copy">
                 <h2>@(ViewData["PanelTitle"] ?? "Order ahead. Skip the line.")</h2>
                 <p>@(ViewData["PanelText"] ?? "Browse the daily menu, choose pickup or home delivery, and follow your order in real time.")</p>
-                <div class="auth-chips">
-                    <span class="chip c-pend">Pending</span>
-                    <span class="chip c-prep">Preparing</span>
-                    <span class="chip c-ready">Ready</span>
-                    <span class="chip c-del">Out for Delivery</span>
-                </div>
+                @if (IsSectionDefined("Panel"))
+                {
+                    @RenderSection("Panel")
+                }
+                else
+                {
+                    <div class="auth-chips">
+                        <span class="chip c-pend">Pending</span>
+                        <span class="chip c-prep">Preparing</span>
+                        <span class="chip c-ready">Ready</span>
+                        <span class="chip c-del">Out for Delivery</span>
+                    </div>
+                }
             </div>
         </aside>
 

@@ -24,7 +24,6 @@
                 </div>
                 <ul class="hero-points">
                     <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> 30 days free</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Low, fixed monthly fee</li>
                     <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> No commissions</li>
                 </ul>
                 <p class="muted" style="margin-top:.75rem;font-size:.9rem">Customer? Open your carinderia's own link or scan its QR code to order.</p>
@@ -100,7 +99,7 @@
                 <article class="step3">
                     <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></div>
                     <h3>2. Set up your menu</h3>
-                    <p>Add your store details, post today's dishes and food packages, and choose how you get paid. Your first 30 days are free.</p>
+                    <p>Add your store details, post today's dishes and food packages, and choose how you get paid.</p>
                 </article>
                 <article class="step3">
                     <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></svg></div>
@@ -122,21 +121,16 @@
         <div class="wrap owner-grid">
             <div>
                 <span class="eyebrow eyebrow-light">For carinderia owners</span>
-                <h2>Your own ordering system. One simple dashboard.</h2>
+                <h2>Every order in one list.</h2>
                 <p class="lead-light">
-                    Stop juggling paper notes, verbal orders and Messenger threads. Every order lands in one list,
-                    with pickup and delivery kept apart.
+                    Stop juggling paper notes, verbal orders and Messenger threads. Pickup and delivery
+                    are kept apart, so nothing gets missed.
                 </p>
                 <ul class="checks">
                     <li>Post the day's menu and set how many portions you have. Sold out is automatic.</li>
                     <li>Move each order from Pending to Ready with one tap. Customers see it right away.</li>
                     <li>See your sales and top sellers in an end-of-day summary.</li>
-                    <li>A low, fixed monthly fee. No commissions.</li>
                 </ul>
-                <div class="cta-row">
-                    <a class="lp-btn lp-btn-yellow lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
-                    <a class="lp-btn lp-btn-lg lp-btn-ghost" asp-controller="Account" asp-action="Login">Owner log in</a>
-                </div>
             </div>
             <div class="board-art" aria-hidden="true">
                 <div class="mini-col"><b>Pending</b>
@@ -186,34 +180,6 @@
                 </ol>
                 <p class="muted">If a plan lapses, you can still log in to pay. Orders and menu tools unlock again once your payment is confirmed.</p>
             </div>
-            <div class="cta-row">
-                <a class="lp-btn lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Why -->
-    <section id="why" class="sec">
-        <div class="wrap">
-            <span class="eyebrow">Why Kaon</span>
-            <h2>Built for one small eatery at a time</h2>
-            <div class="why3">
-                <article class="why">
-                    <div class="ico ico-y"><svg viewBox="0 0 24 24"><path d="M3 12l9-9h8v8l-9 9z"/><circle cx="15.5" cy="8.5" r="1.2"/></svg></div>
-                    <h3>Affordable</h3>
-                    <p>A low, fixed monthly subscription. Delivery fees are small, fixed and kept separate, so costs stay predictable.</p>
-                </article>
-                <article class="why">
-                    <div class="ico ico-y"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg></div>
-                    <h3>Easy to use</h3>
-                    <p>A simple dashboard for owners with little or no digital tools, and a simple ordering flow for customers.</p>
-                </article>
-                <article class="why">
-                    <div class="ico ico-y"><svg viewBox="0 0 24 24"><path d="M4 10l1.5-5h13L20 10M4 10v10h16V10M4 10h16"/></svg></div>
-                    <h3>Independent</h3>
-                    <p>Your own page and your own orders. No competing with other eateries on a shared marketplace.</p>
-                </article>
-            </div>
         </div>
     </section>
 
@@ -221,7 +187,7 @@
     <section class="final">
         <div class="wrap final-in">
             <h2>Ready to take orders online?</h2>
-            <p>Request your carinderia's account. The first 30 days are free.</p>
+            <p>Request your carinderia's account and the Kaon team will set you up.</p>
             <a class="lp-btn lp-btn-yellow lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
         </div>
     </section>
@@ -240,7 +206,7 @@
     (function () {
         document.documentElement.classList.add('js');
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var groups = ['.steps3 > *', '.why3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.final-in', '.sec h2', '.menu-head', '.owner-grid > div:first-child .cta-row'];
+        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.final-in', '.sec h2', '.menu-head', '.owner-grid > div:first-child .cta-row'];
         var els = [];
         groups.forEach(function (sel) {
             document.querySelectorAll(sel).forEach(function (el, i) {

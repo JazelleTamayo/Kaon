@@ -1,21 +1,15 @@
 @model ApplyForm
 @{
     Layout = "_Auth";
+    var plan = (PlatformSettings)ViewBag.Plan;
     ViewData["Title"] = "Get Kaon for your carinderia";
-    ViewData["PanelTitle"] = "Your own ordering system.";
-    ViewData["PanelText"] = "Customers order ahead from your own link and QR code. You manage every order from one dashboard. 30 days free, then a low monthly fee, with no commissions.";
+    ViewData["PanelTitle"] = "Your carinderia, online.";
+    ViewData["PanelText"] = "Everything a carinderia needs to take orders ahead.";
 }
 
 <span class="auth-kicker">For carinderia owners</span>
 <h1 class="auth-title">Get Kaon for your carinderia</h1>
-<p class="auth-sub">Tell us about your carinderia. The Kaon team will contact you, then send a private link where you choose your own password.</p>
-
-@{ var plan = (PlatformSettings)ViewBag.Plan; }
-<div class="form-alert" style="background:#FFF4E3;color:#2B1810;border:1px solid #F2D9B3;margin-bottom:1rem">
-    <strong>Free for @plan.TrialDays days, then ₱@plan.MonthlyFee.ToString("N0") a month.</strong>
-    You pay nothing now. We contact you first, create your account, and you pay only after your free month, by GCash.
-    No commissions.
-</div>
+<p class="auth-sub">Tell us about your carinderia and the Kaon team will contact you. <strong>@plan.TrialDays days free, then ₱@plan.MonthlyFee.ToString("N0")/month.</strong> Nothing to pay now. <a href="/#pricing">How billing works</a></p>
 
 <form asp-action="Index" method="post" class="auth-form" novalidate>
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
@@ -66,3 +60,13 @@
 </form>
 
 <p class="auth-alt">Already a Kaon owner? <a asp-controller="Account" asp-action="Login">Log in</a></p>
+
+@section Panel {
+    <ul class="panel-list">
+        <li>Your own page, link and QR code</li>
+        <li>One dashboard for every order</li>
+        <li>Pickup and delivery kept apart</li>
+        <li>Post your daily menu and food packages</li>
+        <li>Get paid by cash, GCash or bank</li>
+    </ul>
+}
