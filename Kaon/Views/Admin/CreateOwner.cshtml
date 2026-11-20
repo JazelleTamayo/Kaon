@@ -3,10 +3,17 @@
     ViewData["Title"] = "Add a carinderia owner";
 }
 
-<a class="back-link" asp-action="Index">&larr; Back to admin</a>
-<h1>Add a carinderia owner</h1>
-<p class="muted">Kaon creates the account with <strong>no password</strong>. You get a private link to send to the owner, and <strong>they choose their own password</strong>. You never see it.</p>
+<a class="back-link" asp-action="Index">&larr; All carinderias</a>
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Carinderias</span>
+        <h1>Add a carinderia owner</h1>
+        <p>The account starts with no password. You get a private link to send, and the owner chooses their own password.</p>
+    </div>
+</section>
 
+<div style="height:16px"></div>
 <form asp-action="CreateOwner" method="post">
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 

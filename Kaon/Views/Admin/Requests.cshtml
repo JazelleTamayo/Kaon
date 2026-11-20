@@ -5,12 +5,14 @@
     var all = (bool)ViewBag.All;
 }
 
-<div class="page-head">
-    <div>
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Requests</span>
         <h1>Carinderia requests</h1>
-        <p class="muted">Carinderias that asked to join Kaon from the website. Contact them, then create their account.</p>
+        <p>Carinderias that asked to join Kaon. Contact them, then create their account in one click.</p>
     </div>
-</div>
+</section>
 
 <div class="filters" role="group" aria-label="Filter">
     <a class="fchip @(all ? "" : "on")" asp-action="Requests">Waiting</a>

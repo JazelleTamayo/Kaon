@@ -4,9 +4,16 @@
 }
 
 <a class="back-link" asp-action="Team">&larr; Kaon team</a>
-<h1>Add a team member</h1>
-<p class="muted">They get no password from you. You get a private link to send them, and they choose their own.</p>
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Kaon team</span>
+        <h1>Add a team member</h1>
+        <p>They get no password from you. You get a private link to send them, and they choose their own.</p>
+    </div>
+</section>
 
+<div style="height:16px"></div>
 <form asp-action="AddAdmin" method="post">
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 

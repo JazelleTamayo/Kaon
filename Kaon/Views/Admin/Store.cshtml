@@ -9,25 +9,37 @@
 
 <a class="back-link" asp-action="Index">&larr; All carinderias</a>
 
-<div class="page-head">
-    <div>
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Carinderia</span>
         <h1>@st.Name</h1>
-        <p class="muted">
-            Customer link: <a href="@Model.Link">@Model.Link</a>
-        </p>
+        <p>Customer link: <a href="@Model.Link" style="color:#fff;text-decoration:underline">@Model.Link</a></p>
+        <div class="o-hero-actions">
+            @if (st.SuspendedByAdmin) { <span class="chip chip-cancelled">Paused by Kaon</span> }
+            else { <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span> }
+            <span class="chip @stats.PlanClass">@stats.Plan</span>
+        </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
-        @if (st.SuspendedByAdmin) { <span class="chip chip-cancelled">Paused by Kaon</span> }
-        else { <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span> }
-        <span class="chip @stats.PlanClass">@stats.Plan</span>
-    </div>
-</div>
+</section>
 
-<div class="stats">
-    <div class="stat c-teal"><span class="stat-num">@stats.Customers</span><span class="stat-label">Customers</span></div>
-    <div class="stat c-yellow"><span class="stat-num">@stats.Orders7Days</span><span class="stat-label">Orders, last 7 days</span></div>
-    <div class="stat c-green"><span class="stat-num">@stats.OrdersTotal</span><span class="stat-label">Orders in total</span></div>
-    <div class="stat c-orange"><span class="stat-num">@stats.Dishes</span><span class="stat-label">Dishes and packages</span></div>
+<div class="stats o-stats">
+    <div class="stat c-teal">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+        <span class="stat-num">@stats.Customers</span><span class="stat-label">Customers</span>
+    </div>
+    <div class="stat c-yellow">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
+        <span class="stat-num">@stats.Orders7Days</span><span class="stat-label">Orders, last 7 days</span>
+    </div>
+    <div class="stat c-green">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>
+        <span class="stat-num">@stats.OrdersTotal</span><span class="stat-label">Orders in total</span>
+    </div>
+    <div class="stat c-orange">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>
+        <span class="stat-num">@stats.Dishes</span><span class="stat-label">Dishes and packages</span>
+    </div>
 </div>
 
 <h2 class="section">Plan</h2>
@@ -103,7 +115,7 @@
             <span class="muted"> Adds sample dishes and food packages, and puts the dishes on today's menu.</span>
         </form>
     }
-    <form asp-action="AddDish" asp-route-id="@st.Id" method="post" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end">
+    <form asp-action="AddDish" asp-route-id="@st.Id" method="post" class="form-row" style="--cols:2fr 1fr 1fr auto">
         <div>
             <label class="label" for="dishName">Dish name</label>
             <input class="input" id="dishName" name="Name" maxlength="100" required />
@@ -118,13 +130,15 @@
                 @foreach (var sName in series) { <option value="@sName">@sName</option> }
             </select>
         </div>
-        <button class="btn btn-sm" style="margin-top:0">Add dish</button>
+        <button class="btn btn-sm">Add dish</button>
     </form>
 </div>
 
+<div class="grid-2">
+<div>
 <h2 class="section">Name and web address</h2>
 <div class="card">
-    <form asp-action="RenameStore" asp-route-id="@st.Id" method="post" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+    <form asp-action="RenameStore" asp-route-id="@st.Id" method="post" class="form-row">
         <div>
             <label class="label" for="storeName">Carinderia name</label>
             <input class="input" id="storeName" name="Name" value="@st.Name" maxlength="100" required />
@@ -133,11 +147,13 @@
             <label class="label" for="storeSlug">Web address (/c/...)</label>
             <input class="input" id="storeSlug" name="Slug" value="@st.Slug" maxlength="60" required />
         </div>
-        <button class="btn btn-sm" style="margin-top:0">Save</button>
+        <button class="btn btn-sm">Save</button>
     </form>
     <p class="muted" style="margin:10px 0 0;font-size:.85rem">Changing the web address breaks any QR code already printed. Change the name freely.</p>
 </div>
 
+</div>
+<div>
 <h2 class="section">Pause this carinderia</h2>
 <div class="card" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
     <p class="muted" style="margin:0;max-width:640px">
@@ -153,6 +169,9 @@
     <form asp-action="ToggleSuspend" asp-route-id="@st.Id" method="post">
         <button class="btn btn-sm @(st.SuspendedByAdmin ? "" : "btn-outline")">@(st.SuspendedByAdmin ? "Resume" : "Pause this carinderia")</button>
     </form>
+</div>
+
+</div>
 </div>
 
 <h2 class="section">Latest orders</h2>

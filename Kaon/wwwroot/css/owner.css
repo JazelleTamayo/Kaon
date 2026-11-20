@@ -601,3 +601,67 @@ a.dd-item { text-decoration: none; }
 .cancel-opt input { width: 18px; height: 18px; accent-color: #b3261e; }
 .btn-danger { background: #b3261e; }
 .cancel-note { display: block; font-size: .75rem; color: #7a6a60; margin-top: 2px; }
+
+
+/* ===== Polish: shared across admin, owner and customer pages ===== */
+
+/* Links inside page content use the brand colour */
+.page a:not([class]) { color: var(--orange); font-weight: 600; text-decoration: none; }
+.page a:not([class]):hover { text-decoration: underline; }
+
+/* Clear focus ring for keyboard users */
+:where(a, button, input, select, textarea, summary):focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+/* Each page fades in gently */
+.page { animation: pageIn .32s ease-out both; }
+@keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Buttons respond to touch */
+.btn, .btn-ghost, .fchip { transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .12s; }
+.btn:active, .btn-ghost:active, .fchip:active { transform: translateY(1px) scale(.99); }
+.btn:hover { box-shadow: 0 8px 18px rgba(232,80,31,.22); }
+
+/* Tables: easy to follow a row */
+.table tbody tr { transition: background .15s; }
+.table tbody tr:hover { background: #fff8ee; }
+
+/* Cards */
+.card { transition: box-shadow .2s, transform .2s; }
+.card-lift:hover { box-shadow: 0 14px 32px rgba(43,24,16,.10); transform: translateY(-2px); }
+
+/* Fields in one row that stack on phones */
+.form-row { display: grid; gap: 12px; align-items: end; grid-template-columns: var(--cols, 1fr 1fr auto); }
+.form-row .btn { margin-top: 0; }
+.form-row .label { margin-top: 0; }
+@media (max-width: 700px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-row .btn { width: 100%; }
+}
+
+/* Two columns on wide screens, one on phones */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; align-items: start; }
+.grid-2 > div > .card { min-height: 100%; }
+@media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* Hero chips sit on a dark background */
+.o-hero .o-hero-actions .chip { box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+
+@media (prefers-reduced-motion: reduce) {
+    .page, .card, .btn, .btn-ghost, .fchip, .table tbody tr { animation: none !important; transition: none !important; }
+    .card-lift:hover { transform: none; }
+}
+
+/* Billing: the actions for one carinderia, lined up */
+.bill-actions { display: grid; grid-template-columns: auto auto; gap: 8px; justify-content: end; align-items: center; }
+.bill-actions form { display: grid; grid-template-columns: 112px auto; gap: 6px; align-items: center; margin: 0; }
+.bill-actions form:last-child { grid-column: 1 / -1; justify-self: end; display: block; }
+.bill-actions .input { margin: 0; height: 38px; padding: 0 10px; }
+.bill-actions .btn-ghost { white-space: nowrap; }
+@media (max-width: 700px) {
+    .bill-actions { grid-template-columns: 1fr; justify-content: stretch; }
+    .bill-actions form { grid-template-columns: 1fr auto; }
+    .bill-actions form:last-child { justify-self: start; }
+}
+
+/* Status badges stay on one line */
+.chip { white-space: nowrap; }

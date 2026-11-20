@@ -6,14 +6,19 @@
     var pending = (Dictionary<int, DateTime>)ViewBag.PendingLinks;
 }
 
-<div class="page-head">
-    <div>
-        <h1>Kaon team</h1>
-        <p class="muted">The people who can use this admin area. Each person chooses their own password from a private link.</p>
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Kaon team</span>
+        <h1>People who run Kaon</h1>
+        <p>Everyone here can use this admin area. Each person chooses their own password from a private link.</p>
+        <div class="o-hero-actions">
+            <a class="btn btn-sm btn-yellow" asp-action="AddAdmin">+ Add a team member</a>
+        </div>
     </div>
-    <a class="btn btn-sm" asp-action="AddAdmin">+ Add a team member</a>
-</div>
+</section>
 
+<div style="height:16px"></div>
 <div class="card table-wrap">
     <table class="table table-stack">
         <thead><tr><th>Name</th><th>Email</th><th>Status</th><th></th></tr></thead>
