@@ -19,7 +19,7 @@ a { color: inherit; }
 .lp-links { display: flex; gap: 28px; }
 .lp-links a { text-decoration: none; font-weight: 500; font-size: .95rem; color: var(--muted); }
 .lp-links a:hover { color: var(--orange); }
-.lp-links .lp-home { color: var(--brown); font-weight: 600; }
+.lp-links a.is-active { color: var(--brown); font-weight: 600; box-shadow: 0 2px 0 var(--orange); }
 .lp-actions { display: flex; align-items: center; gap: 14px; }
 .lp-link { text-decoration: none; font-weight: 600; font-size: .95rem; }
 .lp-link:hover { color: var(--orange); }

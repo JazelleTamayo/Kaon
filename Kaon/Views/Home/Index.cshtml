@@ -9,7 +9,7 @@
 
 <main>
     <!-- Hero -->
-    <section class="hero">
+    <section id="top" class="hero">
         <div class="wrap hero-grid">
             <div class="hero-copy">
                 <span class="eyebrow">For local carinderia owners</span>
@@ -50,7 +50,7 @@
     </section>
 
     <!-- Sample daily menu -->
-    <section class="menu-sec">
+    <section id="how" class="menu-sec">
         <div class="wrap">
             <div class="menu-head">
                 <div>
@@ -85,7 +85,7 @@
     </section>
 
     <!-- How it works -->
-    <section id="how" class="sec">
+    <section id="steps" class="sec">
         <div class="wrap">
             <span class="eyebrow">How it works</span>
             <h2>Get your carinderia online in three steps</h2>
@@ -193,11 +193,31 @@
 </footer>
 
 <script>
+    // Highlight the nav link of the section you are looking at
+    (function () {
+        var map = [
+            ['top', 'top'], ['how', 'how'], ['steps', 'how'], ['owners', 'owners'], ['pricing', 'pricing']
+        ];
+        var links = {};
+        document.querySelectorAll('.lp-links a[data-spy]').forEach(function (a) { links[a.dataset.spy] = a; });
+        function update() {
+            var line = window.innerHeight * 0.35, current = 'top';
+            map.forEach(function (m) {
+                var el = document.getElementById(m[0]);
+                if (el && el.getBoundingClientRect().top <= line) current = m[1];
+            });
+            Object.keys(links).forEach(function (k) { links[k].classList.toggle('is-active', k === current); });
+        }
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
+    })();
+
     // Scroll reveal. Content stays visible if this script does not run.
     (function () {
         document.documentElement.classList.add('js');
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', ''.sec h2', '.menu-head', '.owner-grid > div:first-child .cta-row'];
+        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.sec h2', '.menu-head'];
         var els = [];
         groups.forEach(function (sel) {
             document.querySelectorAll(sel).forEach(function (el, i) {
