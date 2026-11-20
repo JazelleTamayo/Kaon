@@ -227,6 +227,46 @@ public class AccountController : Controller
         return user.Role == "Admin" ? Redirect("/admin/login") : RedirectToAction(nameof(Login));
     }
 
+    // My account: everyone sees and edits their own details here, and finds their password settings
+    [HttpGet, Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> Profile()
+    {
+        var me = await Me();
+        if (me == null) return RedirectToAction(nameof(Login));
+        await FillProfile(me);
+        return View(new ProfileForm { FullName = me.FullName, Phone = me.Phone });
+    }
+
+    [HttpPost, Microsoft.AspNetCore.Authorization.Authorize, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(ProfileForm form)
+    {
+        var me = await Me();
+        if (me == null) return RedirectToAction(nameof(Login));
+        if (!ModelState.IsValid) { await FillProfile(me); return View(form); }
+
+        me.FullName = form.FullName.Trim();
+        me.Phone = string.IsNullOrWhiteSpace(form.Phone) ? null : form.Phone.Trim();
+        await _db.SaveChangesAsync();
+        await SignInUser(me);   // the new name shows in the menu right away
+        TempData["Saved"] = "Your details are saved.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    private async Task<AppUser?> Me()
+    {
+        var id = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    private async Task FillProfile(AppUser me)
+    {
+        ViewBag.Email = me.Email;
+        ViewBag.Role = me.Role switch { "Admin" => "Kaon admin", "Owner" => "Carinderia owner", _ => "Customer" };
+        ViewBag.StoreName = me.StoreId is int sid
+            ? await _db.StoreSettings.AsNoTracking().Where(x => x.Id == sid).Select(x => x.Name).FirstOrDefaultAsync()
+            : null;
+    }
+
     // Everyone can change their own password. A temporary password must be changed here first.
     [HttpGet, Microsoft.AspNetCore.Authorization.Authorize]
     public IActionResult ChangePassword() => View(new ChangePasswordForm());

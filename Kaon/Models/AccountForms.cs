@@ -35,3 +35,12 @@ public class RegisterForm
     [Range(typeof(bool), "true", "true", ErrorMessage = "Please agree to the Privacy Notice to continue.")]
     public bool AcceptPrivacy { get; set; }
 }
+// "My account": the details a person may change about themselves (email and role stay as they are)
+public class ProfileForm
+{
+    [Required(ErrorMessage = "Please enter your name."), StringLength(100)]
+    public string FullName { get; set; } = "";
+
+    [StringLength(20)]
+    public string? Phone { get; set; }
+}

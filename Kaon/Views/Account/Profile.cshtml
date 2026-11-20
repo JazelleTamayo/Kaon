@@ -1,0 +1,57 @@
+@model ProfileForm
+@{
+    ViewData["Title"] = "My account";
+    ViewData["Wide"] = true;
+    var email = (string)ViewBag.Email;
+    var role = (string)ViewBag.Role;
+    var storeName = ViewBag.StoreName as string;
+}
+
+<section class="o-hero sm admin">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">My account</span>
+        <h1>@Model.FullName</h1>
+        <p>@role@(storeName != null ? " · " + storeName : "")</p>
+    </div>
+</section>
+
+<div style="height:16px"></div>
+
+<div class="grid-2">
+    <div>
+        <h2 class="section">Your details</h2>
+        <form asp-action="Profile" method="post" class="card">
+            <div asp-validation-summary="ModelOnly" class="form-alert"></div>
+
+            <label class="label" asp-for="FullName">Full name</label>
+            <input class="input" asp-for="FullName" autocomplete="name" />
+            <span class="error" asp-validation-for="FullName"></span>
+
+            <label class="label" asp-for="Phone">Mobile number</label>
+            <input class="input" asp-for="Phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XX XXX XXXX" />
+            <span class="error" asp-validation-for="Phone"></span>
+
+            <label class="label" for="emailShown">Email</label>
+            <input class="input" id="emailShown" value="@email" readonly aria-readonly="true" />
+            <p class="muted" style="margin:6px 0 0;font-size:.85rem">You log in with this email. It can't be changed here.</p>
+
+            <button class="btn">Save my details</button>
+        </form>
+    </div>
+    <div>
+        <h2 class="section">Password</h2>
+        <div class="card">
+            <p class="muted" style="margin-top:0">Choose a password only you know, with at least 8 characters. Nobody else, including the Kaon team, can see it.</p>
+            <a class="btn btn-outline" asp-action="ChangePassword">Change my password</a>
+        </div>
+
+        <h2 class="section">Sign out</h2>
+        <div class="card">
+            <p class="muted" style="margin-top:0">You are also signed out when you close the browser, or after an hour without activity.</p>
+            <form asp-action="Logout" method="post">
+                <button class="btn btn-outline">Log out</button>
+            </form>
+        </div>
+    </div>
+</div>

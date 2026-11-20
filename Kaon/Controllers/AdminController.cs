@@ -88,6 +88,9 @@ public class AdminController : Controller
         var q = _db.CarinderiaRequests.AsNoTracking();
         if (!all) q = q.Where(r => r.Status == "New");
         ViewBag.All = all;
+        // For approved requests: the owner account it became (to show its progress and open the carinderia)
+        ViewBag.Owners = (await _db.Users.AsNoTracking().Where(u => u.Role == "Owner").ToListAsync())
+            .GroupBy(u => u.Email).ToDictionary(g => g.Key, g => g.First());
         return View((await q.ToListAsync()).OrderByDescending(r => r.CreatedAt).ToList());
     }
 
@@ -103,8 +106,8 @@ public class AdminController : Controller
     public async Task<IActionResult> CreateOwner(CreateOwnerForm form)
     {
         var email = form.Email.Trim().ToLower();
-        if (await _db.Users.AnyAsync(u => u.Email == email))
-            ModelState.AddModelError(nameof(form.Email), "That email already has an account.");
+        if (await StaffEmailTaken(email))
+            ModelState.AddModelError(nameof(form.Email), "That email already has an owner or Kaon team account.");
 
         StoreSettings? store = null;
         if (form.StoreId is int existingId and > 0)
@@ -122,10 +125,42 @@ public class AdminController : Controller
             return View(form);
         }
 
+        var owner = await CreateOwnerAccount(form.FullName, email, form.Phone, store, form.CarinderiaName, form.RequestId);
+        await InviteAndShow(owner, "Invitation ready");
+        return RedirectToAction(nameof(Invite));
+    }
+
+    // Approve a request in one step: create the carinderia and its owner, then send the invitation
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveRequest(int id)
+    {
+        var r = await _db.CarinderiaRequests.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && x.Status == "New");
+        if (r == null) return RedirectToAction(nameof(Requests));
+
+        if (await StaffEmailTaken(r.Email))
+        {
+            TempData["Warn"] = r.Email + " already has an owner or Kaon team account. Open \"Review first\" to use another email.";
+            return RedirectToAction(nameof(Requests));
+        }
+
+        var owner = await CreateOwnerAccount(r.OwnerName, r.Email, r.Phone, null, r.CarinderiaName, r.Id);
+        await InviteAndShow(owner, "Request approved");
+        return RedirectToAction(nameof(Invite));
+    }
+
+    private Task<bool> StaffEmailTaken(string email)
+    {
+        email = email.Trim().ToLower();
+        return _db.Users.AnyAsync(u => u.Email == email && u.Role != "Customer");
+    }
+
+    // A carinderia owner account with no password yet (and a new carinderia unless one is given)
+    private async Task<AppUser> CreateOwnerAccount(string fullName, string email, string? phone, StoreSettings? store, string? newStoreName, int? requestId)
+    {
         // A new carinderia is its own place: its own link, menu, orders and payment details. It starts empty.
         if (store == null)
         {
-            var name = form.CarinderiaName!.Trim();
+            var name = newStoreName!.Trim();
             store = new StoreSettings
             {
                 Name = name,
@@ -144,28 +179,35 @@ public class AdminController : Controller
         // The account starts with NO password. It cannot be used until the owner sets one.
         var owner = new AppUser
         {
-            FullName = form.FullName.Trim(),
-            Email = email,
-            Phone = string.IsNullOrWhiteSpace(form.Phone) ? null : form.Phone.Trim(),
+            FullName = fullName.Trim(),
+            Email = email.Trim().ToLower(),
+            Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
             Role = "Owner",
             StoreId = store.Id,
             PasswordHash = ""
         };
         _db.Users.Add(owner);
         AdminLog.Add(_db, User, "Created the owner account for " + owner.FullName + " (" + owner.Email + ")", store);
-        if (form.RequestId != null && await _db.CarinderiaRequests.FirstOrDefaultAsync(r => r.Id == form.RequestId && r.Status == "New") is { } req)
+        if (requestId != null && await _db.CarinderiaRequests.FirstOrDefaultAsync(x => x.Id == requestId && x.Status == "New") is { } req)
+        {
             req.Status = "Approved";
+            AdminLog.Add(_db, User, "Approved the request from " + req.CarinderiaName, store);
+        }
         await _db.SaveChangesAsync();
 
         // Module 9: every new carinderia starts with the free trial month
         _db.Subscriptions.Add(Billing.NewFor(owner.Id, await _db.PlatformSettings.AsNoTracking().FirstAsync(), DateTime.UtcNow));
         await _db.SaveChangesAsync();
+        return owner;
+    }
 
+    // Make the one-time link, email it (when email is set up), and show it once to the admin
+    private async Task InviteAndShow(AppUser owner, string heading)
+    {
         var link = await IssueLink(owner, "Invite");
         TempData["InvMail"] = await _email.SendAsync(owner.Email, "Your Kaon account is ready",
             EmailTemplates.Invite(owner.FullName, link, LinkHours));
-        ShowOnce("Invitation ready", owner.FullName, owner.Email, link, "Invite");
-        return RedirectToAction(nameof(Invite));
+        ShowOnce(heading, owner.FullName, owner.Email, link, "Invite");
     }
 
     // A new one-time link so the person can choose a new password themselves.

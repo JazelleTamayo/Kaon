@@ -13,6 +13,10 @@
 
 <h1>@ViewBag.Heading</h1>
 <p class="muted">@ViewBag.Name · @email</p>
+@if ((string)ViewBag.Heading == "Request approved")
+{
+    <div class="flash" role="status">The carinderia and the owner account are created. The free trial has started.</div>
+}
 
 <div class="card cred-card">
     <div>

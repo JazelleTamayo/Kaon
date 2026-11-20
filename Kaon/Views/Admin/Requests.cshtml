@@ -3,6 +3,7 @@
     ViewData["Title"] = "Requests";
     ViewData["Wide"] = true;
     var all = (bool)ViewBag.All;
+    var owners = (Dictionary<string, AppUser>)ViewBag.Owners;
 }
 
 <section class="o-hero sm admin">
@@ -37,12 +38,37 @@ else
                         <td data-label="Owner">@r.OwnerName</td>
                         <td data-label="Contact">@r.Phone<div class="muted">@r.Email</div></td>
                         <td data-label="Address">@r.Address</td>
-                        <td data-label="Status"><span class="chip @(r.Status == "New" ? "chip-pending" : r.Status == "Approved" ? "chip-ready" : "chip-soldout")">@(r.Status == "New" ? "Waiting" : r.Status)</span></td>
+                        @{ owners.TryGetValue(r.Email, out var made); }
+                        <td data-label="Status">
+                            @if (r.Status == "New") { <span class="chip chip-pending">Waiting for you</span> }
+                            else if (r.Status == "Approved" && made != null && made.PasswordHash == "")
+                            {
+                                <span class="chip chip-pending">Approved</span>
+                                <div class="muted" style="font-size:.75rem">Owner has not set a password yet</div>
+                            }
+                            else if (r.Status == "Approved") { <span class="chip chip-ready">Active</span> }
+                            else { <span class="chip chip-soldout">@r.Status</span> }
+                        </td>
                         <td class="actions">
                             @if (r.Status == "New")
                             {
-                                <a class="btn btn-sm" asp-action="CreateOwner" asp-route-requestId="@r.Id">Create account</a>
-                                <form asp-action="DeclineRequest" asp-route-id="@r.Id" method="post"><button class="btn-ghost danger">Decline</button></form>
+                                <form asp-action="ApproveRequest" asp-route-id="@r.Id" method="post"
+                                      onsubmit="return confirm('Approve @r.CarinderiaName.Replace("'", "") and send the invitation to @r.Email?');">
+                                    <button class="btn btn-sm" style="margin:0">Approve and send invite</button>
+                                </form>
+                                <a class="btn-ghost" asp-action="CreateOwner" asp-route-requestId="@r.Id">Review first</a>
+                                <form asp-action="DeclineRequest" asp-route-id="@r.Id" method="post"
+                                      onsubmit="return confirm('Decline the request from @r.CarinderiaName.Replace("'", "")?');">
+                                    <button class="btn-ghost danger">Decline</button>
+                                </form>
+                            }
+                            else if (made?.StoreId != null)
+                            {
+                                <a class="btn-ghost" asp-action="Store" asp-route-id="@made.StoreId">Open carinderia</a>
+                                @if (made.PasswordHash == "")
+                                {
+                                    <form asp-action="SendLink" asp-route-id="@made.Id" method="post"><button class="btn-ghost">New invite link</button></form>
+                                }
                             }
                         </td>
                     </tr>
