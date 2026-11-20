@@ -35,6 +35,25 @@
     </div>
 </section>
 
+<div class="stats o-stats">
+    <div class="stat c-orange">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>
+        <span class="stat-num" data-count="@Model.Active.Count">@Model.Active.Count</span><span class="stat-label">Active orders now</span>
+    </div>
+    <div class="stat c-yellow">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <span class="stat-num" data-count="@waiting">@waiting</span><span class="stat-label">Waiting to accept</span>
+    </div>
+    <div class="stat c-teal">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
+        <span class="stat-num" data-count="@Model.OrdersToday">@Model.OrdersToday</span><span class="stat-label">Orders today</span>
+    </div>
+    <div class="stat c-green">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M16.5 7.5c-.8-1.4-2.4-2-4.5-2-2.6 0-4.2 1.2-4.2 3 0 4.4 9 2 9 6.5 0 1.9-1.8 3.2-4.8 3.2-2.3 0-4-.8-5-2.3"/></svg></span>
+        <span class="stat-num" data-count="@((int)Model.SalesToday)" data-prefix="₱">₱@Model.SalesToday.ToString("N0")</span><span class="stat-label">Sales (completed)</span>
+    </div>
+</div>
+
 @if ((int)ViewBag.DishCount == 0)
 {
     <section class="card start-card">
@@ -62,25 +81,6 @@
         </ol>
     </section>
 }
-
-<div class="stats o-stats">
-    <div class="stat c-orange">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>
-        <span class="stat-num" data-count="@Model.Active.Count">@Model.Active.Count</span><span class="stat-label">Active orders now</span>
-    </div>
-    <div class="stat c-yellow">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-        <span class="stat-num" data-count="@waiting">@waiting</span><span class="stat-label">Waiting to accept</span>
-    </div>
-    <div class="stat c-teal">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
-        <span class="stat-num" data-count="@Model.OrdersToday">@Model.OrdersToday</span><span class="stat-label">Orders today</span>
-    </div>
-    <div class="stat c-green">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M16.5 7.5c-.8-1.4-2.4-2-4.5-2-2.6 0-4.2 1.2-4.2 3 0 4.4 9 2 9 6.5 0 1.9-1.8 3.2-4.8 3.2-2.3 0-4-.8-5-2.3"/></svg></span>
-        <span class="stat-num" data-count="@((int)Model.SalesToday)" data-prefix="₱">₱@Model.SalesToday.ToString("N0")</span><span class="stat-label">Sales (completed)</span>
-    </div>
-</div>
 
 <nav class="quick" aria-label="Quick actions">
     <a asp-controller="OwnerMenu" asp-action="Create">
