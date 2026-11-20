@@ -46,20 +46,7 @@ public class AccountController : Controller
         };
     }
 
-    private async Task SignInUser(AppUser user)
-    {
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.FullName),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role)
-        };
-        if (user.MustChangePassword) claims.Add(new Claim("must_change", "1"));
-        var identity = new ClaimsIdentity(claims, Scheme);
-        await HttpContext.SignInAsync(Scheme, new ClaimsPrincipal(identity),
-            new AuthenticationProperties { IsPersistent = true });
-    }
+    private Task SignInUser(AppUser user) => Helpers.SignIn.UserAsync(HttpContext, user);
 
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -82,7 +69,8 @@ public class AccountController : Controller
         // carinderia's customers (and staff) are considered. Without a link, any account with this email.
         var linked = await LinkedStore();
         var candidates = await _db.Users
-            .Where(u => u.Email == email && (u.Role != "Customer" || (linked != null && u.StoreId == linked.Id)))
+            .Where(u => u.Email == email && u.Role != "Admin" &&
+                        (u.Role != "Customer" || (linked != null && u.StoreId == linked.Id)))
             .ToListAsync();
 
         // Too many wrong passwords: the account rests for a few minutes
@@ -236,7 +224,7 @@ public class AccountController : Controller
         await _db.SaveChangesAsync();
 
         TempData["Saved"] = "Your password is set. You can log in now.";
-        return RedirectToAction(nameof(Login));
+        return user.Role == "Admin" ? Redirect("/admin/login") : RedirectToAction(nameof(Login));
     }
 
     // Everyone can change their own password. A temporary password must be changed here first.
@@ -318,9 +306,10 @@ public class AccountController : Controller
     [HttpPost]
     public async Task<IActionResult> Logout()
     {
+        var wasAdmin = User.IsInRole("Admin");
         await HttpContext.SignOutAsync(Scheme);
         HttpContext.Session.Clear();
-        return RedirectToAction(nameof(Login));
+        return wasAdmin ? Redirect("/admin/login") : RedirectToAction(nameof(Login));
     }
 
     public IActionResult AccessDenied() => GoHome();

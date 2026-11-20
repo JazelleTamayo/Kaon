@@ -6,7 +6,7 @@
     ViewData["PanelTitle"] = storeName != null ? storeName : "Every order, one dashboard.";
     ViewData["PanelText"] = storeName != null
         ? "Log in to see today's menu, order ahead and follow your order in real time."
-        : "Carinderia owners and the Kaon team log in here.";
+        : "Carinderia owners log in here.";
 }
 
 @if (storeName != null)
@@ -17,7 +17,7 @@
 }
 else
 {
-    <span class="auth-kicker">Owners and the Kaon team</span>
+    <span class="auth-kicker">Carinderia owners</span>
     <h1 class="auth-title">Log in to Kaon</h1>
     <p class="auth-sub">Customers: open your carinderia's own link or scan its QR code to log in and order.</p>
 }

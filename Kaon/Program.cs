@@ -36,6 +36,16 @@ builder.Services.AddAuthentication("KaonCookie")
         options.Cookie.SameSite = SameSiteMode.Lax;                  // not sent along with other sites' requests
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;   // https-only when the site runs on https
 
+        // The Kaon team's pages send a signed-out visitor to the admin login, not the shared one
+        var defaultRedirect = options.Events.OnRedirectToLogin;
+        options.Events.OnRedirectToLogin = context =>
+        {
+            var path = context.Request.Path;
+            if (path.StartsWithSegments("/Admin") || path.StartsWithSegments("/AdminBilling"))
+                context.RedirectUri = "/admin/login";
+            return defaultRedirect(context);
+        };
+
         // Check on every page request that the account still exists and is switched on,
         // so turning an account off takes effect straight away.
         options.Events.OnValidatePrincipal = async context =>

@@ -1,0 +1,56 @@
+@model LoginForm
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Kaon admin</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body class="lp auth-body" style="background:#2B1810;min-height:100vh;display:grid;place-items:center;padding:24px">
+    <main style="width:min(420px,100%)">
+        <a class="lp-brand" href="/admin/login" style="color:#fff;justify-content:center;margin-bottom:20px;text-decoration:none" aria-label="Kaon admin"><partial name="_Mark" /><span>kaon</span></a>
+        <div class="auth-box" style="background:#FFF4E3;border-radius:24px;padding:32px;margin:0 auto;max-width:none">
+            <span class="auth-kicker">Kaon team only</span>
+            <h1 class="auth-title">Admin log in</h1>
+            <p class="auth-sub">For Kaon admins. Carinderia owners log in from the main Kaon page.</p>
+
+            <form asp-action="Index" method="post" class="auth-form" novalidate>
+                <div asp-validation-summary="ModelOnly" class="form-alert"></div>
+
+                <div class="fld">
+                    <label class="fld-label" asp-for="Email">Email</label>
+                    <div class="fld-box">
+                        <svg class="fld-ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg>
+                        <input class="fld-input" asp-for="Email" type="email" autocomplete="off" placeholder="you@kaon" />
+                    </div>
+                    <span class="error" asp-validation-for="Email"></span>
+                </div>
+
+                <div class="fld">
+                    <label class="fld-label" asp-for="Password">Password</label>
+                    <div class="fld-box">
+                        <svg class="fld-ico" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                        <input class="fld-input" asp-for="Password" type="password" autocomplete="new-password" placeholder="Your password" />
+                    </div>
+                    <span class="error" asp-validation-for="Password"></span>
+                </div>
+
+                <a class="forgot" asp-controller="Account" asp-action="ForgotPassword">Forgot password?</a>
+
+                <button class="btn btn-go">Log in <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
