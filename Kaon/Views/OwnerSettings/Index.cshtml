@@ -13,7 +13,7 @@
 </section>
 <div style="height:18px"></div>
 
-<div class="card">
+<div class="card" id="share">
     <strong>Your carinderia's own link</strong>
     <p class="muted" style="margin:.3rem 0">Share this link, or print it as a QR code. Customers can reach your carinderia only through it.</p>
     @{ var myLink = Url.Action("Landing", "Store", new { slug = Model.Slug }, Context.Request.Scheme); }

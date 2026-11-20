@@ -32,6 +32,7 @@ public class AdminBillingController : Controller
         return View(new AdminBillingVm
         {
             Platform = await _db.PlatformSettings.AsNoTracking().FirstAsync(),
+            StoreNames = await _db.StoreSettings.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name),
             Rows = owners.Select(o =>
             {
                 var s = subs.FirstOrDefault(x => x.OwnerId == o.Id);

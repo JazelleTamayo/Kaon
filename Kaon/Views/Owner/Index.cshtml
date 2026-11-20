@@ -29,6 +29,7 @@
                     <span class="dot"></span> @(Model.Store.IsOpen ? "Open for orders" : "Closed")
                 </button>
             </form>
+            <a class="alert-toggle" style="text-decoration:none" asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">Your QR code and link</a>
             <button type="button" class="alert-toggle" id="alertBtn">Turn on alerts</button>
         </div>
     </div>

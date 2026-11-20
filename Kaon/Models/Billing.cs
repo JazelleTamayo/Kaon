@@ -178,4 +178,7 @@ public class AdminBillingVm
     public List<SubscriptionPayment> PendingPayments { get; set; } = new();
     public List<SubscriptionPayment> RecentPayments { get; set; } = new();
     public decimal ConfirmedTotal { get; set; }
+
+    // Store id -> carinderia name, so every owner is shown with their carinderia
+    public Dictionary<int, string> StoreNames { get; set; } = new();
 }

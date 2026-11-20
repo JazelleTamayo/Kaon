@@ -1,4 +1,7 @@
 @model AdminBillingVm
+@functions {
+    string Store(AdminBillingVm vm, Kaon.Models.AppUser? u) => u?.StoreId is int id && vm.StoreNames.TryGetValue(id, out var n) ? n : "No carinderia";
+}
 @{
     ViewData["Title"] = "Billing";
     ViewData["Wide"] = true;
@@ -22,7 +25,7 @@
     <a class="btn btn-sm" asp-action="Settings">Fee and GCash settings</a>
 </div>
 
-<div class="stats o-stats">
+<div class="stats o-stats" style="margin-top:16px">
     <div class="stat c-yellow"><span class="stat-num">@trials</span><span class="stat-label">On free trial</span></div>
     <div class="stat c-green"><span class="stat-num">@active</span><span class="stat-label">Paying</span></div>
     <div class="stat c-orange"><span class="stat-num">@expired</span><span class="stat-label">Ended</span></div>
@@ -38,12 +41,12 @@ else
 {
     <div class="card table-wrap">
         <table class="table table-stack">
-            <thead><tr><th>Carinderia owner</th><th>Sent</th><th>Amount</th><th>Reference</th><th></th></tr></thead>
+            <thead><tr><th>Carinderia</th><th>Sent</th><th>Amount</th><th>Reference</th><th></th></tr></thead>
             <tbody>
                 @foreach (var p in Model.PendingPayments)
                 {
                     <tr>
-                        <td><strong>@p.Subscription!.Owner!.FullName</strong></td>
+                        <td><strong>@Store(Model, p.Subscription!.Owner)</strong><div class="muted">@p.Subscription!.Owner!.FullName</div></td>
                         <td data-label="Sent">@p.SubmittedAt.ToLocalTime().ToString("MMM d, h:mm tt")</td>
                         <td data-label="Amount">₱@p.Amount.ToString("N2") <span class="muted">(@p.Months mo)</span></td>
                         <td data-label="Reference">@(p.Reference ?? "-")</td>
@@ -71,13 +74,13 @@ else
 {
     <div class="card table-wrap">
         <table class="table table-stack">
-            <thead><tr><th>Owner</th><th>Plan</th><th>Access until</th><th></th></tr></thead>
+            <thead><tr><th>Carinderia</th><th>Plan</th><th>Access until</th><th></th></tr></thead>
             <tbody>
                 @foreach (var r in Model.Rows)
                 {
                     var sub = r.Subscription;
                     <tr>
-                        <td><strong>@r.Owner.FullName</strong><div class="muted">@r.Owner.Email</div></td>
+                        <td><strong>@Store(Model, r.Owner)</strong><div class="muted">@r.Owner.FullName · @r.Owner.Email</div></td>
                         <td data-label="Plan">
                             @if (sub == null) { <span class="chip chip-soldout">No plan yet</span> }
                             else
@@ -128,12 +131,12 @@ else
     <h2 class="section">Recent payments</h2>
     <div class="card table-wrap">
         <table class="table table-stack">
-            <thead><tr><th>Owner</th><th>Amount</th><th>Result</th><th>Covers</th></tr></thead>
+            <thead><tr><th>Carinderia</th><th>Amount</th><th>Result</th><th>Covers</th></tr></thead>
             <tbody>
                 @foreach (var p in Model.RecentPayments)
                 {
                     <tr>
-                        <td>@p.Subscription!.Owner!.FullName</td>
+                        <td><strong>@Store(Model, p.Subscription!.Owner)</strong><div class="muted">@p.Subscription!.Owner!.FullName</div></td>
                         <td data-label="Amount">₱@p.Amount.ToString("N2") <span class="muted">(@p.Months mo)</span></td>
                         <td data-label="Result">
                             <span class="chip @(p.Status == SubscriptionPaymentStatus.Confirmed ? "chip-ready" : "chip-cancelled")">@p.Status</span>
