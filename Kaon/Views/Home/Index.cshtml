@@ -20,7 +20,6 @@
                 </p>
                 <div class="cta-row">
                     <a class="lp-btn lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
-                    <a class="lp-btn lp-btn-lg lp-btn-outline" asp-controller="Account" asp-action="Login">Owner log in</a>
                 </div>
                 <ul class="hero-points">
                     <li><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> 30 days free</li>
@@ -183,14 +182,6 @@
         </div>
     </section>
 
-    <!-- Final call to action -->
-    <section class="final">
-        <div class="wrap final-in">
-            <h2>Ready to take orders online?</h2>
-            <p>Request your carinderia's account and the Kaon team will set you up.</p>
-            <a class="lp-btn lp-btn-yellow lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
-        </div>
-    </section>
 </main>
 
 <footer class="lp-foot">
@@ -206,7 +197,7 @@
     (function () {
         document.documentElement.classList.add('js');
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.final-in', '.sec h2', '.menu-head', '.owner-grid > div:first-child .cta-row'];
+        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', ''.sec h2', '.menu-head', '.owner-grid > div:first-child .cta-row'];
         var els = [];
         groups.forEach(function (sel) {
             document.querySelectorAll(sel).forEach(function (el, i) {
