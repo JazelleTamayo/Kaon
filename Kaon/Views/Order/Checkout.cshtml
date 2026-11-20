@@ -191,9 +191,6 @@
         document.querySelectorAll('input[name="PaymentMethod"]').forEach(r => r.addEventListener('change', payUpdate));
         payUpdate();
 
-        document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
-            if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy);
-            b.textContent = 'Copied';
-        }));
+        // Copy buttons are handled for every page in /js/alerts.js
     </script>
 }
