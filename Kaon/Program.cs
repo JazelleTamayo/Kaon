@@ -83,18 +83,39 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
+// Where payment proofs and QR pictures are kept. On Azure point this at the persistent disk (for example /home/data)
+// so they survive a new deployment.
+ProofStorage.Root = builder.Configuration["Kaon:DataDir"];
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<KaonDbContext>();
+
+    // SQLite does not create the folder of its file, so make it (for example /home/data on Azure)
+    var dbFile = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(db.Database.GetConnectionString()).DataSource;
+    var dbFolder = string.IsNullOrWhiteSpace(dbFile) ? null : Path.GetDirectoryName(Path.GetFullPath(dbFile));
+    if (!string.IsNullOrEmpty(dbFolder)) Directory.CreateDirectory(dbFolder);
+
     db.Database.Migrate();
 
-    if (!db.StoreSettings.Any())
+    // One sample carinderia (Jamaica Foods) with starter dishes and food packages is made ONLY
+    //  - when developing locally, or
+    //  - on a real site when Kaon:Seed:SampleCarinderia is true (and only if there are no carinderias yet).
+    // Otherwise everything starts empty: carinderias sign up themselves.
+    var seedOwnerEmail = builder.Configuration["Kaon:Seed:OwnerEmail"];
+    var seedOwnerPassword = builder.Configuration["Kaon:Seed:OwnerPassword"];
+    var seedSample = app.Environment.IsDevelopment() ||
+        (builder.Configuration.GetValue<bool>("Kaon:Seed:SampleCarinderia") &&
+         !string.IsNullOrWhiteSpace(seedOwnerEmail) && !string.IsNullOrWhiteSpace(seedOwnerPassword));
+    var firstRun = false;
+    if (seedSample && !db.StoreSettings.Any())
     {
         db.StoreSettings.Add(new StoreSettings
         {
             DeliveryFee = builder.Configuration.GetValue<decimal?>("Kaon:DeliveryFee") ?? 30
         });
         db.SaveChanges();
+        firstRun = true;
     }
 
     // Module 9: how Kaon charges carinderias. The price is a placeholder until the team confirms it.
@@ -109,7 +130,9 @@ using (var scope = app.Services.CreateScope())
         db.SaveChanges();
     }
 
-    DemoData.Seed(db, builder.Configuration["Kaon:Demo:GCashNumber"]);
+    // Locally this runs at every start (it also upgrades older databases); on a real site only once, when the sample is created
+    if (app.Environment.IsDevelopment() || firstRun)
+        DemoData.Seed(db, builder.Configuration["Kaon:Demo:GCashNumber"]);
 
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AppUser>>();
 
@@ -144,6 +167,14 @@ using (var scope = app.Services.CreateScope())
     {
         var owner = new AppUser { FullName = "Kaon Owner", Email = "owner@kaon.local", Role = "Owner", StoreId = db.StoreSettings.OrderBy(x => x.Id).First().Id };
         owner.PasswordHash = hasher.HashPassword(owner, "Owner123!");
+        db.Users.Add(owner);
+        db.SaveChanges();
+    }
+    // On a real site: the owner of the one sample carinderia, with the email and password from settings
+    else if (firstRun)
+    {
+        var owner = new AppUser { FullName = "Jamaica Foods Owner", Email = seedOwnerEmail!.Trim().ToLower(), Role = "Owner", StoreId = db.StoreSettings.OrderBy(x => x.Id).First().Id };
+        owner.PasswordHash = hasher.HashPassword(owner, seedOwnerPassword!);
         db.Users.Add(owner);
         db.SaveChanges();
     }

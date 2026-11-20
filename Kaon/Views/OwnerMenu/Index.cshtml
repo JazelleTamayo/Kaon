@@ -1,4 +1,4 @@
-@model OwnerMenuVm
+﻿@model OwnerMenuVm
 @{
     ViewData["Title"] = "Menu";
     ViewData["Wide"] = true;
@@ -45,7 +45,7 @@
     @if (!today.Any())
     {
         <div class="banner banner-closed">
-            <strong>No dishes are picked for today.</strong> Customers see an empty menu until you add some.
+            <strong>No dishes are picked for today.</strong> Customers see an empty menu until you add some. Go to the <strong>My dishes</strong> tab and press <em>Add to daily menu</em> on a dish.
         </div>
     }
 
@@ -105,47 +105,6 @@
         </div>
     }
 
-    <h2 class="section">Add dishes to today's menu</h2>
-    @if (!catalog.Any())
-    {
-        <div class="card">
-            <p class="muted" style="margin:0 0 10px">You have no dishes yet. Add your first dish, then put it on today's menu.</p>
-            <a class="btn btn-sm" asp-action="Create">+ Add a dish</a>
-        </div>
-    }
-    else if (!notToday.Any())
-    {
-        <div class="card"><p class="muted" style="margin:0">All of your dishes are on today's menu.</p></div>
-    }
-    else
-    {
-        <div class="card table-wrap">
-            <table class="table table-stack">
-                <thead><tr><th>Dish</th><th class="num">Price</th><th>Servings today</th></tr></thead>
-                <tbody>
-                    @foreach (var m in notToday)
-                    {
-                        <tr>
-                            <td>
-                                <div class="menu-cell">
-                                    @if (!string.IsNullOrEmpty(m.ImageUrl)) { <img class="thumb" src="@m.ImageUrl" alt="" /> }
-                                    else { <span class="thumb thumb-ph"></span> }
-                                    <strong>@m.Name</strong>
-                                </div>
-                            </td>
-                            <td class="num" data-label="Price">@Pesos(m.Price)</td>
-                            <td data-label="Servings today">
-                                <form asp-action="AddToday" asp-route-menuItemId="@m.Id" method="post" class="add-today">
-                                    <input class="input" name="stock" type="number" min="1" max="9999" inputmode="numeric" placeholder="Servings" aria-label="How many servings of @m.Name today (leave empty for no limit)" />
-                                    <button class="btn-ghost">+ Add to daily menu</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
 </section>
 
 @* ================= My dishes (the catalog) ================= *@
@@ -183,7 +142,13 @@
                             <td class="num" data-label="Price">@Pesos(m.Price)</td>
                             <td data-label="Today">
                                 @if (todayIds.Contains(m.Id)) { <span class="chip chip-ready">On today's menu</span> }
-                                else { <span class="chip chip-soldout">Not on today's menu</span> }
+                                else
+                                {
+                                    <form asp-action="AddToday" asp-route-menuItemId="@m.Id" method="post" class="add-today">
+                                        <input class="input" name="stock" type="number" min="1" max="9999" inputmode="numeric" placeholder="Servings" aria-label="How many servings of @m.Name today (leave empty for no limit)" />
+                                        <button class="btn-ghost">+ Add to daily menu</button>
+                                    </form>
+                                }
                             </td>
                             <td class="actions">
                                 <a class="btn-ghost" asp-action="Edit" asp-route-id="@m.Id">Edit</a>
@@ -197,7 +162,6 @@
                 </tbody>
             </table>
         </div>
-        <p class="muted" style="margin-top:10px;font-size:.9rem">To put a dish on today's menu, open the <strong>Today's menu</strong> tab and use <em>Add dishes to today's menu</em>.</p>
     }
 </section>
 
