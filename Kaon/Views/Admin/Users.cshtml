@@ -23,12 +23,13 @@
 
 <div class="card table-wrap">
     <table class="table table-stack">
-        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Carinderia</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
         <tbody>
             @foreach (var u in Model)
             {
                 <tr>
                     <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
+                    <td data-label="Carinderia">@(u.Role == "Owner" && u.StoreId is int sid && ((Dictionary<int, string>)ViewBag.StoreNames).TryGetValue(sid, out var storeName) ? storeName : "-")</td>
                     <td data-label="Email">@u.Email</td>
                     <td data-label="Role"><span class="series-tag">@u.Role</span></td>
                     <td data-label="Status">

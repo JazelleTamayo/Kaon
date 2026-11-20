@@ -60,6 +60,7 @@ public class AdminController : Controller
         if (role is "Owner" or "Admin") query = query.Where(u => u.Role == role);
         ViewBag.Role = role ?? "";
         ViewBag.MyId = MyId;
+        ViewBag.StoreNames = await _db.StoreSettings.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name);
         return View(await query.OrderBy(u => u.Role).ThenBy(u => u.FullName).ToListAsync());
     }
 

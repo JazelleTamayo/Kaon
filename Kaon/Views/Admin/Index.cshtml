@@ -8,8 +8,8 @@
     <div class="o-hero-bg" aria-hidden="true"></div>
     <div class="o-hero-in">
         <span class="o-kicker">Kaon admin</span>
-        <h1>Carinderias and accounts</h1>
-        <p>Invite carinderia owners with a private link. They choose their own password.</p>
+        <h1>Carinderias</h1>
+        <p>Each carinderia with its owner. Invite owners with a private link; they choose their own password.</p>
         <div class="o-hero-actions">
             <a class="btn btn-sm btn-yellow" asp-action="CreateOwner">+ Add a carinderia owner</a>
             <a class="btn btn-sm btn-wline" asp-action="Requests">Requests@(Model.NewRequests > 0 ? " (" + Model.NewRequests + ")" : "")</a>
@@ -21,7 +21,7 @@
 <div class="stats o-stats">
     <div class="stat c-orange">
         <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg></span>
-        <span class="stat-num">@Model.Owners.Count(o => o.IsActive)</span><span class="stat-label">Active carinderia owners</span>
+        <span class="stat-num">@Model.Stores.Count</span><span class="stat-label">Carinderias</span>
     </div>
     <div class="stat c-teal">
         <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
@@ -37,78 +37,88 @@
     </div>
 </div>
 
-<h2 class="section">Carinderia owners</h2>
-@if (!Model.Owners.Any())
+<h2 class="section">Carinderias and their owners</h2>
+@if (!Model.Stores.Any())
 {
-    <div class="card"><p class="muted" style="margin:0">No owner accounts yet. Add the first carinderia owner.</p></div>
+    <div class="card"><p class="muted" style="margin:0">No carinderias yet. Add the first carinderia owner.</p></div>
 }
-else
+
+@foreach (var st in Model.Stores)
 {
+    var link = Url.Action("Landing", "Store", new { slug = st.Slug }, Context.Request.Scheme);
+    var owners = Model.Owners.Where(o => o.StoreId == st.Id).ToList();
+    <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
+            <div>
+                <h3 style="margin:0 0 4px">@st.Name</h3>
+                <div class="muted" style="font-size:.85rem">Customer link: <a href="@link">@link</a></div>
+            </div>
+            <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span>
+        </div>
+
+        @if (!owners.Any())
+        {
+            <p class="muted" style="margin:0">No owner yet.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table table-stack">
+                    <thead><tr><th>Owner</th><th>Email</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var u in owners)
+                        {
+                            <tr>
+                                <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
+                                <td data-label="Email">@u.Email</td>
+                                <td data-label="Status">
+                                    @if (!u.IsActive) { <span class="chip chip-soldout">Switched off</span> }
+                                    else if (u.PasswordHash == "")
+                                    {
+                                        <span class="chip chip-pending">Invite pending</span>
+                                        @if (Model.PendingLinks.TryGetValue(u.Id, out var until))
+                                        {
+                                            <div class="muted" style="font-size:.75rem">Link valid until @until.ToLocalTime().ToString("MMM d, h:mm tt")</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="muted" style="font-size:.75rem">Link expired. Send a new one.</div>
+                                        }
+                                    }
+                                    else { <span class="chip chip-ready">Active</span> }
+                                </td>
+                                <td class="actions">
+                                    <form asp-action="SendLink" asp-route-id="@u.Id" method="post">
+                                        <button class="btn-ghost">@(u.PasswordHash == "" ? "New invite link" : "Send reset link")</button>
+                                    </form>
+                                    <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post">
+                                        <button class="btn-ghost @(u.IsActive ? "danger" : "")">@(u.IsActive ? "Switch off" : "Switch on")</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
+
+@{ var unassigned = Model.Owners.Where(o => o.StoreId == null || !Model.Stores.Any(x => x.Id == o.StoreId)).ToList(); }
+@if (unassigned.Any())
+{
+    <h2 class="section">Owners with no carinderia</h2>
     <div class="card table-wrap">
         <table class="table table-stack">
-            <thead><tr><th>Owner</th><th>Carinderia</th><th>Email</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Owner</th><th>Email</th></tr></thead>
             <tbody>
-                @foreach (var u in Model.Owners)
+                @foreach (var u in unassigned)
                 {
-                    <tr>
-                        <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
-                        <td data-label="Carinderia">@(Model.Stores.FirstOrDefault(x => x.Id == u.StoreId)?.Name ?? "-")</td>
-                        <td data-label="Email">@u.Email</td>
-                        <td data-label="Status">
-                            @if (!u.IsActive) { <span class="chip chip-soldout">Switched off</span> }
-                            else if (u.PasswordHash == "")
-                            {
-                                <span class="chip chip-pending">Invite pending</span>
-                                @if (Model.PendingLinks.TryGetValue(u.Id, out var until))
-                                {
-                                    <div class="muted" style="font-size:.75rem">Link valid until @until.ToLocalTime().ToString("MMM d, h:mm tt")</div>
-                                }
-                                else
-                                {
-                                    <div class="muted" style="font-size:.75rem">Link expired. Send a new one.</div>
-                                }
-                            }
-                            else { <span class="chip chip-ready">Active</span> }
-                        </td>
-                        <td class="actions">
-                            <form asp-action="SendLink" asp-route-id="@u.Id" method="post">
-                                <button class="btn-ghost">@(u.PasswordHash == "" ? "New invite link" : "Send reset link")</button>
-                            </form>
-                            <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post">
-                                <button class="btn-ghost @(u.IsActive ? "danger" : "")">@(u.IsActive ? "Switch off" : "Switch on")</button>
-                            </form>
-                        </td>
-                    </tr>
+                    <tr><td><strong>@u.FullName</strong></td><td data-label="Email">@u.Email</td></tr>
                 }
             </tbody>
         </table>
     </div>
 }
 
-<h2 class="section">Carinderias on Kaon</h2>
-@if (!Model.Stores.Any())
-{
-    <div class="card"><p class="muted" style="margin:0">No carinderias yet.</p></div>
-}
-else
-{
-    <div class="card table-wrap">
-        <table class="table table-stack">
-            <thead><tr><th>Carinderia</th><th>Status</th><th>Its own link (for the QR code)</th></tr></thead>
-            <tbody>
-                @foreach (var st in Model.Stores)
-                {
-                    var link = Url.Action("Landing", "Store", new { slug = st.Slug }, Context.Request.Scheme);
-                    <tr>
-                        <td><strong>@st.Name</strong><div class="muted">@(Model.Owners.Count(o => o.StoreId == st.Id)) owner(s)</div></td>
-                        <td data-label="Status">
-                            <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span>
-                        </td>
-                        <td data-label="Link"><a href="@link">@link</a></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
 <p class="muted">Each carinderia is separate: its own menu, orders, payment details and customers. Customers reach one only through its own link or QR code.</p>
