@@ -95,6 +95,15 @@ public static class EmailTemplates
         link,
         "This link works once and expires in " + minutes + " minutes. If you did not ask for this, you can ignore this email and your password stays the same.");
 
+    // A short notice with no button
+    public static string Notice(string heading, string body) => $@"
+<div style=""font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;color:#2B1810"">
+  <h2 style=""color:#E8501F;margin:0 0 12px"">kaon</h2>
+  <h3 style=""margin:0 0 12px"">{WebUtility.HtmlEncode(heading)}</h3>
+  <p>{WebUtility.HtmlEncode(body)}</p>
+  <p style=""font-size:12px;color:#7a6a60"">This is an automatic message from Kaon.</p>
+</div>";
+
     public static string SubscriptionReminder(string name, string status, int daysLeft, string link) => $@"
 <div style=""font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;color:#2B1810"">
   <h2 style=""color:#E8501F;margin:0 0 12px"">kaon</h2>

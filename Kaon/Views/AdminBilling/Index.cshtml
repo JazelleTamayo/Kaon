@@ -36,6 +36,14 @@
     <div class="stat c-teal"><span class="stat-num">₱@Model.ConfirmedTotal.ToString("N0")</span><span class="stat-label">Confirmed payments</span></div>
 </div>
 
+<div class="card auto-note">
+    <div>
+        <strong>Kaon does this for you</strong>
+        <p class="muted" style="margin:4px 0 0">Reminders go to each owner by email 7, 3 and 1 day before their plan ends, and once when it ends. You are emailed when a request or a payment arrives. Owners are emailed when you confirm or reject a payment. Nothing to do here.</p>
+    </div>
+    <form asp-action="RunAutomation" method="post"><button class="btn btn-sm btn-outline" style="margin:0">Run checks now</button></form>
+</div>
+
 <h2 class="section">Payments to confirm</h2>
 @if (!Model.PendingPayments.Any())
 {
@@ -120,7 +128,7 @@ else
                             </form>
                             <form asp-action="Remind" method="post">
                                 <input type="hidden" name="ownerId" value="@r.Owner.Id" />
-                                <button class="btn-ghost">Email reminder</button>
+                                <button class="btn-ghost" title="Reminders are sent automatically. Use this to send one right now.">Remind now</button>
                             </form>
                         </td>
                     </tr>

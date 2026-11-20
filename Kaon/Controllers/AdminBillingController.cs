@@ -14,11 +14,27 @@ public class AdminBillingController : Controller
 {
     private readonly KaonDbContext _db;
     private readonly IEmailSender _email;
+    private readonly ILogger<AdminBillingController> _log;
+    private readonly IConfiguration _config;
 
-    public AdminBillingController(KaonDbContext db, IEmailSender email)
+    public AdminBillingController(KaonDbContext db, IEmailSender email, ILogger<AdminBillingController> log, IConfiguration config)
     {
         _db = db;
         _email = email;
+        _log = log;
+        _config = config;
+    }
+
+    // The same routine work the app does by itself every 15 minutes, on demand
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RunAutomation()
+    {
+        var baseUrl = _config["Kaon:PublicUrl"] ?? (Request.Scheme + "://" + Request.Host);
+        var r = await Automation.RunOnceAsync(_db, _email, baseUrl, DateTime.UtcNow, DateTime.Today);
+        AdminLog.Add(_db, User, "Ran the automatic checks (" + r.Reminders + " reminders sent, " + r.MenusPosted + " menus posted)");
+        await _db.SaveChangesAsync();
+        TempData["Saved"] = "Checked. " + r.Reminders + " reminder(s) sent, " + r.MenusPosted + " daily menu(s) posted.";
+        return RedirectToAction(nameof(Index));
     }
 
     public async Task<IActionResult> Index()
@@ -78,6 +94,9 @@ public class AdminBillingController : Controller
             Billing.Confirm(p.Subscription!, p, DateTime.UtcNow);
             AdminLog.Add(_db, User, "Confirmed a payment of ₱" + p.Amount.ToString("N0") + " (" + p.Months + " mo)", await StoreOfSubscription(p.Subscription!.OwnerId));
             await _db.SaveChangesAsync();
+            await Notify.ToAsync(_email, _log, p.Subscription!.Owner?.Email ?? (await _db.Users.AsNoTracking().Where(u => u.Id == p.Subscription.OwnerId).Select(u => u.Email).FirstAsync()),
+                "Your Kaon payment is confirmed", "Payment confirmed",
+                "Thank you! Your payment is confirmed. Your Kaon access now runs until " + p.PeriodEnd!.Value.ToLocalTime().ToString("MMMM d, yyyy") + ".");
             TempData["Saved"] = "Payment confirmed. Access now runs until " + p.PeriodEnd!.Value.ToLocalTime().ToString("MMM d, yyyy") + ".";
         }
         return RedirectToAction(nameof(Index));
@@ -95,6 +114,10 @@ public class AdminBillingController : Controller
             var rejSub = await _db.Subscriptions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == p.SubscriptionId);
             AdminLog.Add(_db, User, "Rejected a payment of ₱" + p.Amount.ToString("N0"), rejSub == null ? null : await StoreOfSubscription(rejSub.OwnerId));
             await _db.SaveChangesAsync();
+            var rejOwner = await _db.Users.AsNoTracking().Where(u => u.Id == rejSub!.OwnerId).Select(u => u.Email).FirstOrDefaultAsync();
+            if (rejOwner != null)
+                await Notify.ToAsync(_email, _log, rejOwner, "About your Kaon payment", "We could not confirm your payment",
+                    p.ReviewNote + " Please send the payment again from the Subscription page.");
             TempData["Saved"] = "Payment rejected. The owner can send it again.";
         }
         return RedirectToAction(nameof(Index));

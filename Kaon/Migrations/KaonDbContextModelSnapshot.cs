@@ -449,6 +449,9 @@ namespace Kaon.Migrations
                     b.Property<bool>("AcceptsCashless")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("AutoCopyMenu")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("BankAccountName")
                         .HasMaxLength(80)
                         .HasColumnType("TEXT");
@@ -488,6 +491,9 @@ namespace Kaon.Migrations
 
                     b.Property<bool>("IsOpen")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastAutoMenuOn")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -551,6 +557,12 @@ namespace Kaon.Migrations
 
                     b.Property<DateTime?>("PaidUntil")
                         .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReminderForAccessUntil")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ReminderStage")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("TrialEndsAt")
                         .HasColumnType("TEXT");

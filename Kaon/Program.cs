@@ -17,6 +17,7 @@ builder.Services.AddControllersWithViews(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<AutomationService>();
 builder.Services.AddScoped<StoreContext>();
 
 builder.Services.AddDbContext<KaonDbContext>(options =>

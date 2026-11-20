@@ -74,6 +74,10 @@ public class StoreSettings
     // Customers see it as not taking orders. The owner can still log in.
     public bool SuspendedByAdmin { get; set; }
 
+    // Every morning the dishes of the last open day are posted again, so the owner does not have to
+    public bool AutoCopyMenu { get; set; } = true;
+    public DateTime? LastAutoMenuOn { get; set; }
+
     // Does the carinderia have at least one way to be paid in advance?
     [NotMapped]
     public bool HasCashlessDetails =>

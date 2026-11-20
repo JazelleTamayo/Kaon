@@ -1,6 +1,8 @@
 @model StoreSettings
 @{
     ViewData["Title"] = "Store setup";
+    ViewData["Wide"] = true;
+    var myLink = Url.Action("Landing", "Store", new { slug = Model.Slug }, Context.Request.Scheme);
 }
 
 <section class="o-hero sm">
@@ -13,117 +15,157 @@
 </section>
 <div style="height:18px"></div>
 
-<div class="card" id="share">
-    <strong>Your carinderia's own link</strong>
-    <p class="muted" style="margin:.3rem 0">Share this link, or print it as a QR code. Customers can reach your carinderia only through it.</p>
-    @{ var myLink = Url.Action("Landing", "Store", new { slug = Model.Slug }, Context.Request.Scheme); }
-    <div class="pa-num"><strong>@myLink</strong> <button type="button" class="copy-btn" data-copy="@myLink">Copy</button></div>
-
-    <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap;margin-top:1rem">
-        <img src="@Url.Action("QrImage", "OwnerSettings")" alt="QR code that opens your carinderia's page" width="160" height="160" style="border:1px solid #eee;border-radius:12px;padding:6px;background:#fff" />
-        <div>
-            <strong>Your QR code</strong>
-            <p class="muted" style="margin:.3rem 0 .75rem">Customers scan it with their phone camera to open your carinderia. Print it, or post the picture on Facebook.</p>
+<section class="share-card" id="share">
+    <div class="share-info">
+        <span class="share-kicker">Share your carinderia</span>
+        <h2>Your own link and QR code</h2>
+        <p class="muted">Customers reach your carinderia only through this link. Post it on Facebook or Messenger, and print the QR code for your counter.</p>
+        <div class="link-pill">
+            <span class="link-text">@myLink</span>
+            <button type="button" class="copy-btn" data-copy="@myLink">Copy</button>
+        </div>
+        <div class="share-actions">
             <a class="btn btn-sm" href="@Url.Action("QrImage", "OwnerSettings", new { download = true })">Download QR (PNG)</a>
-            <a class="btn btn-sm btn-outline" href="@Url.Action("Poster", "OwnerSettings")" target="_blank">Print a poster</a>
+            <a class="btn btn-sm btn-outline" href="@Url.Action("Poster", "OwnerSettings")" target="_blank" rel="noopener">Print a poster</a>
         </div>
     </div>
-</div>
+    <div class="share-qr">
+        <img src="@Url.Action("QrImage", "OwnerSettings")" alt="QR code that opens your carinderia's page" width="200" height="200" />
+        <span>Scan to order</span>
+    </div>
+</section>
 
 <form asp-action="Index" method="post" enctype="multipart/form-data">
-    <div asp-validation-summary="ModelOnly" class="error"></div>
+    <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 
-    <div class="card">
-        <label class="label" asp-for="Name">Carinderia name</label>
-        <input class="input" asp-for="Name" />
-        <span class="error" asp-validation-for="Name"></span>
+    <div class="grid-2">
+        <div>
+            <h2 class="section">Your store</h2>
+            <div class="card">
+                <label class="label" asp-for="Name">Carinderia name</label>
+                <input class="input" asp-for="Name" />
+                <span class="error" asp-validation-for="Name"></span>
 
-        <label class="label" asp-for="Hours">Opening hours</label>
-        <input class="input" asp-for="Hours" placeholder="7:00 AM - 7:00 PM" />
+                <div class="two-col">
+                    <div>
+                        <label class="label" asp-for="Hours">Opening hours</label>
+                        <input class="input" asp-for="Hours" placeholder="7:00 AM - 7:00 PM" />
+                    </div>
+                    <div>
+                        <label class="label" asp-for="Phone">Contact number</label>
+                        <input class="input" asp-for="Phone" type="tel" inputmode="tel" />
+                    </div>
+                </div>
 
-        <label class="label" asp-for="Phone">Contact number</label>
-        <input class="input" asp-for="Phone" type="tel" inputmode="tel" />
-
-        <label class="check">
-            <input type="checkbox" asp-for="IsOpen" />
-            <span>Open for orders today</span>
-        </label>
-    </div>
-
-    <div class="card">
-        <strong>How customers get their order</strong>
-        <label class="check">
-            <input type="checkbox" asp-for="PickupEnabled" />
-            <span>Pickup</span>
-        </label>
-        <label class="check">
-            <input type="checkbox" asp-for="DeliveryEnabled" />
-            <span>Home delivery</span>
-        </label>
-
-        <label class="label" asp-for="DeliveryFee">Delivery fee (₱, fixed)</label>
-        <input class="input" asp-for="DeliveryFee" type="number" step="0.01" min="0" inputmode="decimal" />
-        <span class="hint">Paid by the customer. Separate from your monthly subscription.</span>
-        <span class="error" asp-validation-for="DeliveryFee"></span>
-
-        <label class="label" asp-for="DeliveryArea">Delivery area</label>
-        <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
-    </div>
-
-    <div class="card">
-        <strong>How customers can pay</strong>
-        <label class="check">
-            <input type="checkbox" asp-for="AcceptsCash" />
-            <span>Cash (pay at pickup, or when the food is delivered)</span>
-        </label>
-        <label class="check">
-            <input type="checkbox" asp-for="AcceptsCashless" />
-            <span>Pay in advance with GCash (customer sends proof of payment)</span>
-        </label>
-
-        <label class="label" asp-for="GCashName">GCash account name</label>
-        <input class="input" asp-for="GCashName" />
-
-        <label class="label" asp-for="GCashNumber">GCash number</label>
-        <input class="input" asp-for="GCashNumber" type="tel" inputmode="tel" />
-        <span class="error" asp-validation-for="GCashNumber"></span>
-
-        <label class="label" asp-for="PaymentNote">Note for customers (optional)</label>
-        <input class="input" asp-for="PaymentNote" placeholder="For example: Send the exact amount, then upload your screenshot." />
-        <span class="hint">Customers see these details at checkout when they choose Pay in advance.</span>
-    </div>
-
-    <div class="card">
-        <strong>Other bank or e-wallet (optional)</strong>
-        <p class="muted" style="margin:2px 0 6px">For customers who pay by bank transfer, Maya, and so on.</p>
-        <label class="label" asp-for="BankName">Bank or e-wallet name</label>
-        <input class="input" asp-for="BankName" placeholder="For example: BDO, BPI, Maya" />
-        <span class="error" asp-validation-for="BankName"></span>
-
-        <label class="label" asp-for="BankAccountName">Account name</label>
-        <input class="input" asp-for="BankAccountName" />
-
-        <label class="label" asp-for="BankAccountNumber">Account number</label>
-        <input class="input" asp-for="BankAccountNumber" inputmode="numeric" />
-    </div>
-
-    <div class="card">
-        <strong>QR code customers can scan to pay</strong>
-        <p class="muted" style="margin:2px 0 6px">Upload a screenshot of your GCash, Maya or bank QR code. Customers see it at checkout.</p>
-        @if (!string.IsNullOrEmpty(Model.PaymentQr))
-        {
-            <div class="qr-current">
-                <img class="qr-preview" src="@Url.Action("Qr", "Payment")?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="Your payment QR code" />
-                <label class="check"><input type="checkbox" name="removeQr" value="true" /><span>Remove this QR code</span></label>
+                <label class="check">
+                    <input type="checkbox" asp-for="IsOpen" />
+                    <span>Open for orders today</span>
+                </label>
+                <label class="check">
+                    <input type="checkbox" asp-for="AutoCopyMenu" />
+                    <span>Post yesterday's dishes automatically each morning</span>
+                </label>
+                <span class="hint">You can still add or remove dishes any time. Portions are not copied.</span>
             </div>
-        }
-        <label class="label" for="qrFile">@(string.IsNullOrEmpty(Model.PaymentQr) ? "Upload QR code" : "Replace QR code")</label>
-        <input class="input" id="qrFile" name="qrFile" type="file" accept="image/jpeg,image/png,image/webp" />
-        <span class="hint">JPG, PNG or WebP, up to 5 MB.</span>
-        @Html.ValidationMessage("qrFile", new { @class = "error" })
+
+            <h2 class="section">How customers get their order</h2>
+            <div class="card">
+                <div class="check-row">
+                    <label class="check">
+                        <input type="checkbox" asp-for="PickupEnabled" />
+                        <span>Pickup</span>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" asp-for="DeliveryEnabled" />
+                        <span>Home delivery</span>
+                    </label>
+                </div>
+
+                <div class="two-col">
+                    <div>
+                        <label class="label" asp-for="DeliveryFee">Delivery fee (₱, fixed)</label>
+                        <input class="input" asp-for="DeliveryFee" type="number" step="0.01" min="0" inputmode="decimal" />
+                        <span class="error" asp-validation-for="DeliveryFee"></span>
+                    </div>
+                    <div>
+                        <label class="label" asp-for="DeliveryArea">Delivery area</label>
+                        <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
+                    </div>
+                </div>
+                <span class="hint">The delivery fee is paid by the customer. It is separate from your monthly subscription.</span>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="section">How customers can pay</h2>
+            <div class="card">
+                <div class="check-row">
+                    <label class="check">
+                        <input type="checkbox" asp-for="AcceptsCash" />
+                        <span>Cash on pickup or delivery</span>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" asp-for="AcceptsCashless" />
+                        <span>Pay in advance (GCash or bank)</span>
+                    </label>
+                </div>
+
+                <div class="two-col">
+                    <div>
+                        <label class="label" asp-for="GCashName">GCash account name</label>
+                        <input class="input" asp-for="GCashName" />
+                    </div>
+                    <div>
+                        <label class="label" asp-for="GCashNumber">GCash number</label>
+                        <input class="input" asp-for="GCashNumber" type="tel" inputmode="tel" />
+                        <span class="error" asp-validation-for="GCashNumber"></span>
+                    </div>
+                </div>
+
+                <label class="label" asp-for="PaymentNote">Note for customers (optional)</label>
+                <input class="input" asp-for="PaymentNote" placeholder="For example: Send the exact amount, then upload your screenshot." />
+                <span class="hint">Customers see these details at checkout when they choose to pay in advance.</span>
+            </div>
+
+            <h2 class="section">Other bank or e-wallet <span class="muted" style="font-weight:500">(optional)</span></h2>
+            <div class="card">
+                <div class="two-col">
+                    <div>
+                        <label class="label" asp-for="BankName">Bank or e-wallet</label>
+                        <input class="input" asp-for="BankName" placeholder="BDO, BPI, Maya..." />
+                        <span class="error" asp-validation-for="BankName"></span>
+                    </div>
+                    <div>
+                        <label class="label" asp-for="BankAccountName">Account name</label>
+                        <input class="input" asp-for="BankAccountName" />
+                    </div>
+                </div>
+                <label class="label" asp-for="BankAccountNumber">Account number</label>
+                <input class="input" asp-for="BankAccountNumber" inputmode="numeric" />
+            </div>
+
+            <h2 class="section">Payment QR code</h2>
+            <div class="card">
+                <p class="muted" style="margin:0 0 8px">Upload a screenshot of your GCash, Maya or bank QR code. Customers see it at checkout.</p>
+                @if (!string.IsNullOrEmpty(Model.PaymentQr))
+                {
+                    <div class="qr-current">
+                        <img class="qr-preview" src="@Url.Action("Qr", "Payment")?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="Your payment QR code" />
+                        <label class="check"><input type="checkbox" name="removeQr" value="true" /><span>Remove this QR code</span></label>
+                    </div>
+                }
+                <label class="label" for="qrFile">@(string.IsNullOrEmpty(Model.PaymentQr) ? "Upload QR code" : "Replace QR code")</label>
+                <input class="input" id="qrFile" name="qrFile" type="file" accept="image/jpeg,image/png,image/webp" />
+                <span class="hint">JPG, PNG or WebP, up to 5 MB.</span>
+                @Html.ValidationMessage("qrFile", new { @class = "error" })
+            </div>
+        </div>
     </div>
 
-    <button class="btn">Save settings</button>
+    <div class="save-bar">
+        <span class="muted">Changes apply to your customers as soon as you save.</span>
+        <button class="btn">Save settings</button>
+    </div>
 </form>
 
 @section Scripts {
