@@ -118,6 +118,23 @@ public static class DemoData
         }
     }
 
+    // Day-one menu for a carinderia that has no dishes yet (the Kaon team sets it up for the owner).
+    // Returns how many dishes were added, or 0 when the carinderia already has dishes.
+    public static int AddStarterMenu(KaonDbContext db, int storeId)
+    {
+        if (db.MenuItems.Any(m => m.StoreId == storeId)) return 0;
+
+        var meals = StarterMeals();
+        var packages = StarterPackages();
+        foreach (var m in meals.Concat(packages)) m.StoreId = storeId;
+        db.MenuItems.AddRange(meals);
+        db.MenuItems.AddRange(packages);
+        db.SaveChanges();   // ids are needed for today's menu
+        SeedTodayMenu(db, meals);
+        db.SaveChanges();
+        return meals.Count + packages.Count;
+    }
+
     private static List<MenuItem> StarterMeals() => new()
     {
         new() { Name = "Chicken Adobo", Description = "Braised in soy sauce and vinegar, with rice", Price = 70m, Category = "Meal", Series = "Chicken", ImageUrl = "/img/menu/adobo.webp" },

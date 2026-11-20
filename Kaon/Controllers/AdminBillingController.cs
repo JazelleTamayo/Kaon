@@ -63,6 +63,7 @@ public class AdminBillingController : Controller
         s.GCashName = form.GCashName?.Trim();
         s.GCashNumber = form.GCashNumber?.Trim();
         s.PaymentNote = form.PaymentNote?.Trim();
+        AdminLog.Add(_db, User, "Changed the billing settings (fee, free days or GCash details)");
         await _db.SaveChangesAsync();
         TempData["Saved"] = "Billing settings saved. The new fee applies to payments sent from now on.";
         return RedirectToAction(nameof(Index));
@@ -75,6 +76,7 @@ public class AdminBillingController : Controller
         if (p is { Status: SubscriptionPaymentStatus.Pending })
         {
             Billing.Confirm(p.Subscription!, p, DateTime.UtcNow);
+            AdminLog.Add(_db, User, "Confirmed a payment of ₱" + p.Amount.ToString("N0") + " (" + p.Months + " mo)", await StoreOfSubscription(p.Subscription!.OwnerId));
             await _db.SaveChangesAsync();
             TempData["Saved"] = "Payment confirmed. Access now runs until " + p.PeriodEnd!.Value.ToLocalTime().ToString("MMM d, yyyy") + ".";
         }
@@ -90,6 +92,8 @@ public class AdminBillingController : Controller
             p.Status = SubscriptionPaymentStatus.Rejected;
             p.ReviewedAt = DateTime.UtcNow;
             p.ReviewNote = string.IsNullOrWhiteSpace(note) ? "Payment could not be verified." : note.Trim();
+            var rejSub = await _db.Subscriptions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == p.SubscriptionId);
+            AdminLog.Add(_db, User, "Rejected a payment of ₱" + p.Amount.ToString("N0"), rejSub == null ? null : await StoreOfSubscription(rejSub.OwnerId));
             await _db.SaveChangesAsync();
             TempData["Saved"] = "Payment rejected. The owner can send it again.";
         }
@@ -114,6 +118,7 @@ public class AdminBillingController : Controller
         };
         _db.SubscriptionPayments.Add(p);
         Billing.Confirm(sub, p, DateTime.UtcNow);
+        AdminLog.Add(_db, User, "Recorded a payment in person (" + months + " mo, ₱" + p.Amount.ToString("N0") + ")", await StoreOfSubscription(ownerId));
         await _db.SaveChangesAsync();
         TempData["Saved"] = "Recorded " + months + " month(s) for " + sub.Owner!.FullName + ".";
         return RedirectToAction(nameof(Index));
@@ -128,6 +133,7 @@ public class AdminBillingController : Controller
 
         var now = DateTime.UtcNow;
         sub.TrialEndsAt = (sub.TrialEndsAt > now ? sub.TrialEndsAt : now).AddDays(days);
+        AdminLog.Add(_db, User, "Added " + days + " free days", await StoreOfSubscription(ownerId));
         await _db.SaveChangesAsync();
         TempData["Saved"] = sub.Owner!.FullName + " now has free access until " + sub.TrialEndsAt.ToLocalTime().ToString("MMM d, yyyy") + ".";
         return RedirectToAction(nameof(Index));
@@ -152,6 +158,13 @@ public class AdminBillingController : Controller
             ? "Email is not set up, so the reminder was not sent."
             : "Reminder " + (result == "outbox" ? "saved to the test outbox" : "emailed") + " for " + sub.Owner.FullName + ".";
         return RedirectToAction(nameof(Index));
+    }
+
+    // The carinderia an owner runs, for the activity log
+    private async Task<StoreSettings?> StoreOfSubscription(int ownerId)
+    {
+        var storeId = await _db.Users.AsNoTracking().Where(u => u.Id == ownerId).Select(u => u.StoreId).FirstOrDefaultAsync();
+        return storeId == null ? null : await _db.StoreSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == storeId);
     }
 
     private async Task<Subscription?> GetOrCreate(int ownerId)

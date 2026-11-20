@@ -12,6 +12,9 @@ public static class StoreGate
 {
     public static async Task<bool> IsPausedAsync(KaonDbContext db, int storeId)
     {
+        // Paused by the Kaon team
+        if (await db.StoreSettings.AsNoTracking().AnyAsync(s => s.Id == storeId && s.SuspendedByAdmin)) return true;
+
         var now = DateTime.UtcNow;
         var ownerIds = await db.Users.AsNoTracking()
             .Where(u => u.Role == "Owner" && u.IsActive && u.StoreId == storeId)

@@ -15,6 +15,7 @@ public class KaonDbContext : DbContext
     public DbSet<ItemOption> ItemOptions => Set<ItemOption>();
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
     public DbSet<DailyMenuEntry> DailyMenuEntries => Set<DailyMenuEntry>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<CarinderiaRequest> CarinderiaRequests => Set<CarinderiaRequest>();
     public DbSet<PlatformSettings> PlatformSettings => Set<PlatformSettings>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -26,6 +27,8 @@ public class KaonDbContext : DbContext
         modelBuilder.Entity<AppUser>().HasIndex(u => new { u.Email, u.StoreId }).IsUnique();
 
         modelBuilder.Entity<StoreSettings>().HasIndex(s => s.Slug).IsUnique();
+        modelBuilder.Entity<ActivityLog>().HasIndex(a => a.At);
+        modelBuilder.Entity<ActivityLog>().HasIndex(a => a.StoreId);
         modelBuilder.Entity<MenuItem>().HasIndex(m => m.StoreId);
         modelBuilder.Entity<Order>().HasIndex(o => o.StoreId);
         modelBuilder.Entity<AppUser>().HasIndex(u => u.StoreId);

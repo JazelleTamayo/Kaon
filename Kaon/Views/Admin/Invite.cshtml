@@ -26,22 +26,16 @@
 
     @if ((string?)ViewBag.Mail == "email")
     {
-        <div class="banner ok-banner">We also emailed this link to <strong>@email</strong>.</div>
-    }
-    else if ((string?)ViewBag.Mail == "outbox")
-    {
-        <div class="banner">Test mode: the email was saved as a file in <strong>App_Data/outbox</strong> (no email service is connected yet).</div>
+        <div class="banner ok-banner">We emailed this link to <strong>@email</strong>.</div>
     }
     else
     {
-        <div class="banner">No email service is connected, so please send the link to the owner yourself.</div>
+        <div class="banner"><strong>Email is not connected yet.</strong> Copy the link above and send it to @ViewBag.Name yourself.</div>
     }
 
     <div class="banner">
-        <strong>Only the owner chooses the password.</strong> You never see it.
-        Send this link <strong>privately</strong> (email or a direct message, not a group chat).
-        It works <strong>once</strong> and expires in <strong>@ViewBag.Hours hours</strong>.
-        This page is shown only once.
+        <strong>Send it only to @ViewBag.Name.</strong> The link works one time and stops after @ViewBag.Hours hours.
+        They choose their own password, so you never see it. You will not see this link again, but you can make a new one anytime.
     </div>
 </div>
 

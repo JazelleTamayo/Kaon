@@ -1,0 +1,25 @@
+@model AddAdminForm
+@{
+    ViewData["Title"] = "Add a team member";
+}
+
+<a class="back-link" asp-action="Team">&larr; Kaon team</a>
+<h1>Add a team member</h1>
+<p class="muted">They get no password from you. You get a private link to send them, and they choose their own.</p>
+
+<form asp-action="AddAdmin" method="post">
+    <div asp-validation-summary="ModelOnly" class="form-alert"></div>
+
+    <div class="card">
+        <label class="label" asp-for="FullName">Full name</label>
+        <input class="input" asp-for="FullName" autocomplete="off" />
+        <span class="error" asp-validation-for="FullName"></span>
+
+        <label class="label" asp-for="Email">Email (they log in with this)</label>
+        <input class="input" asp-for="Email" type="email" autocomplete="off" />
+        <span class="error" asp-validation-for="Email"></span>
+    </div>
+
+    <button class="btn">Create and get the link</button>
+    <a class="link" asp-action="Team">Cancel</a>
+</form>

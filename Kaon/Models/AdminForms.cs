@@ -68,6 +68,9 @@ public class AdminDashVm
     // Every carinderia on Kaon (the admin sees the stores, never their customers or orders)
     public List<StoreSettings> Stores { get; set; } = new();
 
+    // Counts per carinderia (store id -> numbers)
+    public Dictionary<int, StoreStats> Stats { get; set; } = new();
+
     // Owners who have an invitation link that is still waiting to be used, and when it expires
     public Dictionary<int, DateTime> PendingLinks { get; set; } = new();
 }

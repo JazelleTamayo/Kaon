@@ -29,7 +29,11 @@ public class EmailSender : IEmailSender
     public async Task<string?> SendAsync(string to, string subject, string htmlBody)
     {
         var host = _config["Email:Smtp:Host"];
-        if (!string.IsNullOrWhiteSpace(host))
+        // SMTP is used only when it is fully set up. A user name without a password is half finished,
+        // so it falls back to the test outbox (in development) instead of failing on every email.
+        var smtpReady = !string.IsNullOrWhiteSpace(host) &&
+            (string.IsNullOrWhiteSpace(_config["Email:Smtp:User"]) || !string.IsNullOrWhiteSpace(_config["Email:Smtp:Password"]));
+        if (smtpReady)
         {
             try
             {

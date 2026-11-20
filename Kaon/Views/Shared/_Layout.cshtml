@@ -88,9 +88,11 @@
                 }
                 else if (isAdmin)
                 {
-                    <a class="@On(ctrl == "Admin" && act != "Users")" asp-controller="Admin" asp-action="Index">Overview</a>
+                    <a class="@On(ctrl == "Admin" && (act == "Index" || act == "Store" || act == "CreateOwner"))" asp-controller="Admin" asp-action="Index">Overview</a>
                     <a class="@On(ctrl == "Admin" && act == "Requests")" asp-controller="Admin" asp-action="Requests">Requests @if (newRequests > 0) { <span class="nav-count" aria-label="@(newRequests) new requests">@newRequests</span> }</a>
                     <a class="@On(ctrl == "AdminBilling")" asp-controller="AdminBilling" asp-action="Index">Billing</a>
+                    <a class="@On(ctrl == "Admin" && (act == "Team" || act == "AddAdmin"))" asp-controller="Admin" asp-action="Team">Team</a>
+                    <a class="@On(ctrl == "Admin" && act == "Activity")" asp-controller="Admin" asp-action="Activity">Activity</a>
                 }
                 else if (isOwner)
                 {

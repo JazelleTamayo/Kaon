@@ -1,0 +1,208 @@
+@model StoreDetailVm
+@{
+    ViewData["Title"] = Model.Store.Name;
+    ViewData["Wide"] = true;
+    var st = Model.Store;
+    var stats = Model.Stats;
+    var series = (string[])ViewBag.Series;
+}
+
+<a class="back-link" asp-action="Index">&larr; All carinderias</a>
+
+<div class="page-head">
+    <div>
+        <h1>@st.Name</h1>
+        <p class="muted">
+            Customer link: <a href="@Model.Link">@Model.Link</a>
+        </p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        @if (st.SuspendedByAdmin) { <span class="chip chip-cancelled">Paused by Kaon</span> }
+        else { <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span> }
+        <span class="chip @stats.PlanClass">@stats.Plan</span>
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat c-teal"><span class="stat-num">@stats.Customers</span><span class="stat-label">Customers</span></div>
+    <div class="stat c-yellow"><span class="stat-num">@stats.Orders7Days</span><span class="stat-label">Orders, last 7 days</span></div>
+    <div class="stat c-green"><span class="stat-num">@stats.OrdersTotal</span><span class="stat-label">Orders in total</span></div>
+    <div class="stat c-orange"><span class="stat-num">@stats.Dishes</span><span class="stat-label">Dishes and packages</span></div>
+</div>
+
+<h2 class="section">Plan</h2>
+<div class="card" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
+    <div>
+        @if (stats.AccessUntil == null)
+        {
+            <strong>No plan yet.</strong> <span class="muted">Add an owner first.</span>
+        }
+        else
+        {
+            <strong>@stats.Plan</strong>
+            <span class="muted"> · access until @stats.AccessUntil.Value.ToLocalTime().ToString("MMM d, yyyy") (@stats.DaysLeft day@(stats.DaysLeft == 1 ? "" : "s") left)</span>
+        }
+    </div>
+    <a class="btn btn-sm btn-outline" asp-controller="AdminBilling" asp-action="Index">Open billing</a>
+</div>
+
+<h2 class="section">Owners</h2>
+<div class="card">
+    @if (!Model.Owners.Any())
+    {
+        <p class="muted" style="margin:0 0 12px">No owner yet.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table table-stack">
+                <thead><tr><th>Owner</th><th>Email</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var u in Model.Owners)
+                    {
+                        <tr>
+                            <td><strong>@u.FullName</strong>@if (!string.IsNullOrEmpty(u.Phone)) { <div class="muted">@u.Phone</div> }</td>
+                            <td data-label="Email">@u.Email</td>
+                            <td data-label="Status">
+                                @if (!u.IsActive) { <span class="chip chip-soldout">Switched off</span> }
+                                else if (u.PasswordHash == "")
+                                {
+                                    <span class="chip chip-pending">Invite pending</span>
+                                    @if (Model.PendingLinks.TryGetValue(u.Id, out var until))
+                                    {
+                                        <div class="muted" style="font-size:.75rem">Link valid until @until.ToLocalTime().ToString("MMM d, h:mm tt")</div>
+                                    }
+                                    else { <div class="muted" style="font-size:.75rem">Link expired. Send a new one.</div> }
+                                }
+                                else { <span class="chip chip-ready">Active</span> }
+                            </td>
+                            <td class="actions">
+                                <form asp-action="SendLink" asp-route-id="@u.Id" method="post">
+                                    <button class="btn-ghost">@(u.PasswordHash == "" ? "New invite link" : "Send reset link")</button>
+                                </form>
+                                <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post">
+                                    <button class="btn-ghost @(u.IsActive ? "danger" : "")">@(u.IsActive ? "Switch off" : "Switch on")</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <a class="btn btn-sm" asp-action="CreateOwner" asp-route-storeId="@st.Id">+ Add another owner</a>
+</div>
+
+<h2 class="section">Set up the menu for the owner</h2>
+<div class="card">
+    <p class="muted" style="margin-top:0">Help the owner start on day one. They can change names, prices and photos later.</p>
+    @if (stats.Dishes == 0)
+    {
+        <form asp-action="AddStarterMenu" asp-route-id="@st.Id" method="post" style="margin-bottom:16px">
+            <button class="btn btn-sm">Add the sample starter menu</button>
+            <span class="muted"> Adds sample dishes and food packages, and puts the dishes on today's menu.</span>
+        </form>
+    }
+    <form asp-action="AddDish" asp-route-id="@st.Id" method="post" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end">
+        <div>
+            <label class="label" for="dishName">Dish name</label>
+            <input class="input" id="dishName" name="Name" maxlength="100" required />
+        </div>
+        <div>
+            <label class="label" for="dishPrice">Price (₱)</label>
+            <input class="input" id="dishPrice" name="Price" type="number" min="1" step="1" inputmode="numeric" required />
+        </div>
+        <div>
+            <label class="label" for="dishSeries">Series</label>
+            <select class="input" id="dishSeries" name="Series">
+                @foreach (var sName in series) { <option value="@sName">@sName</option> }
+            </select>
+        </div>
+        <button class="btn btn-sm" style="margin-top:0">Add dish</button>
+    </form>
+</div>
+
+<h2 class="section">Name and web address</h2>
+<div class="card">
+    <form asp-action="RenameStore" asp-route-id="@st.Id" method="post" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+        <div>
+            <label class="label" for="storeName">Carinderia name</label>
+            <input class="input" id="storeName" name="Name" value="@st.Name" maxlength="100" required />
+        </div>
+        <div>
+            <label class="label" for="storeSlug">Web address (/c/...)</label>
+            <input class="input" id="storeSlug" name="Slug" value="@st.Slug" maxlength="60" required />
+        </div>
+        <button class="btn btn-sm" style="margin-top:0">Save</button>
+    </form>
+    <p class="muted" style="margin:10px 0 0;font-size:.85rem">Changing the web address breaks any QR code already printed. Change the name freely.</p>
+</div>
+
+<h2 class="section">Pause this carinderia</h2>
+<div class="card" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
+    <p class="muted" style="margin:0;max-width:640px">
+        @if (st.SuspendedByAdmin)
+        {
+            <text>This carinderia is paused. Customers see "isn't taking orders right now". The owner can still log in.</text>
+        }
+        else
+        {
+            <text>Stops new orders at this carinderia, for example for an unpaid account or on the owner's request. The owner can still log in, and customers keep their existing orders.</text>
+        }
+    </p>
+    <form asp-action="ToggleSuspend" asp-route-id="@st.Id" method="post">
+        <button class="btn btn-sm @(st.SuspendedByAdmin ? "" : "btn-outline")">@(st.SuspendedByAdmin ? "Resume" : "Pause this carinderia")</button>
+    </form>
+</div>
+
+<h2 class="section">Latest orders</h2>
+<div class="card table-wrap">
+    @if (!Model.RecentOrders.Any())
+    {
+        <p class="muted" style="margin:0">No orders yet.</p>
+    }
+    else
+    {
+        <table class="table table-stack">
+            <thead><tr><th>Order</th><th>When</th><th>Status</th><th>Type</th><th>Total</th></tr></thead>
+            <tbody>
+                @foreach (var o in Model.RecentOrders)
+                {
+                    <tr>
+                        <td><strong>#@o.Id</strong></td>
+                        <td data-label="When">@o.CreatedAt.ToString("MMM d, h:mm tt")</td>
+                        <td data-label="Status"><span class="chip chip-@o.Status.ToString().ToLower()">@o.Status</span></td>
+                        <td data-label="Type">@(o.OrderType == OrderType.Pickup ? "Pickup" : "Delivery")</td>
+                        <td data-label="Total">₱@o.Total.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <p class="muted" style="margin:12px 0 0;font-size:.85rem">For support only. Customer names, contacts, addresses and payment proofs are private and are not shown to the Kaon team.</p>
+</div>
+
+<h2 class="section">Recent activity</h2>
+<div class="card table-wrap">
+    @if (!Model.Activity.Any())
+    {
+        <p class="muted" style="margin:0">Nothing yet.</p>
+    }
+    else
+    {
+        <table class="table table-stack">
+            <thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Activity)
+                {
+                    <tr>
+                        <td>@a.At.ToLocalTime().ToString("MMM d, h:mm tt")</td>
+                        <td data-label="Who">@a.AdminName</td>
+                        <td data-label="What">@a.Action</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <p style="margin:12px 0 0"><a asp-action="Activity" asp-route-storeId="@st.Id">See all activity for this carinderia</a></p>
+</div>

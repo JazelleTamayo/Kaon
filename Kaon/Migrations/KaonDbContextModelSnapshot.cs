@@ -17,6 +17,44 @@ namespace Kaon.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
 
+            modelBuilder.Entity("Kaon.Models.ActivityLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AdminId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AdminName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StoreName")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("ActivityLogs");
+                });
+
             modelBuilder.Entity("Kaon.Models.AppUser", b =>
                 {
                     b.Property<int>("Id")
@@ -483,6 +521,9 @@ namespace Kaon.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("StarterPackagesAdded")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SuspendedByAdmin")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

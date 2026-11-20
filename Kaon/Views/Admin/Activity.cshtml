@@ -1,0 +1,50 @@
+@model List<ActivityLog>
+@{
+    ViewData["Title"] = "Activity";
+    ViewData["Wide"] = true;
+    var stores = (List<StoreSettings>)ViewBag.Stores;
+    var storeId = (int?)ViewBag.StoreId;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Activity</h1>
+        <p class="muted">What the Kaon team did, newest first. It never shows passwords or customers' personal details.</p>
+    </div>
+</div>
+
+<form method="get" asp-action="Activity" style="display:flex;gap:10px;align-items:center;margin:12px 0 16px;flex-wrap:wrap">
+    <label for="sid" class="muted">Show</label>
+    <select class="input" id="sid" name="storeId" style="max-width:280px" onchange="this.form.submit()">
+        <option value="">All carinderias</option>
+        @foreach (var s in stores) { <option value="@s.Id" selected="@(storeId == s.Id)">@s.Name</option> }
+    </select>
+    <noscript><button class="btn btn-sm">Show</button></noscript>
+</form>
+
+<div class="card table-wrap">
+    @if (!Model.Any())
+    {
+        <p class="muted" style="margin:0">No activity yet.</p>
+    }
+    else
+    {
+        <table class="table table-stack">
+            <thead><tr><th>When</th><th>Who</th><th>What</th><th>Carinderia</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td>@a.At.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+                        <td data-label="Who">@a.AdminName</td>
+                        <td data-label="What">@a.Action</td>
+                        <td data-label="Carinderia">
+                            @if (a.StoreId != null) { <a asp-action="Store" asp-route-id="@a.StoreId">@a.StoreName</a> }
+                            else { <span class="muted">-</span> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

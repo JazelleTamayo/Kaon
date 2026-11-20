@@ -70,6 +70,10 @@ public class StoreSettings
     // Internal: today's menu was carried over from the old menu once (see DemoData)
     public bool DailyMenuSeeded { get; set; }
 
+    // The Kaon team can pause a carinderia (for example, an unpaid account or a request to close).
+    // Customers see it as not taking orders. The owner can still log in.
+    public bool SuspendedByAdmin { get; set; }
+
     // Does the carinderia have at least one way to be paid in advance?
     [NotMapped]
     public bool HasCashlessDetails =>

@@ -46,13 +46,20 @@
 {
     var link = Url.Action("Landing", "Store", new { slug = st.Slug }, Context.Request.Scheme);
     var owners = Model.Owners.Where(o => o.StoreId == st.Id).ToList();
+    var stat = Model.Stats.TryGetValue(st.Id, out var sv) ? sv : new StoreStats();
     <div class="card" style="margin-bottom:16px">
         <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
             <div>
-                <h3 style="margin:0 0 4px">@st.Name</h3>
+                <h3 style="margin:0 0 4px"><a asp-action="Store" asp-route-id="@st.Id" style="text-decoration:none;color:inherit">@st.Name</a></h3>
                 <div class="muted" style="font-size:.85rem">Customer link: <a href="@link">@link</a></div>
+                <div class="muted" style="font-size:.85rem;margin-top:4px">@stat.Customers customer@(stat.Customers == 1 ? "" : "s") · @stat.Orders7Days order@(stat.Orders7Days == 1 ? "" : "s") in 7 days · @stat.OrdersTotal in total</div>
             </div>
-            <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                @if (st.SuspendedByAdmin) { <span class="chip chip-cancelled">Paused by Kaon</span> }
+                else { <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span> }
+                <span class="chip @stat.PlanClass">@stat.Plan@(stat.AccessUntil != null && stat.Plan != "Ended" && stat.Plan != "Paused by Kaon" ? " · " + stat.DaysLeft + "d left" : "")</span>
+                <a class="btn btn-sm btn-outline" asp-action="Store" asp-route-id="@st.Id" style="margin-top:0">Manage</a>
+            </div>
         </div>
 
         @if (!owners.Any())
