@@ -5,7 +5,7 @@
     --muted: rgba(43, 24, 16, .72);
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+html { scroll-behavior: smooth; scroll-padding-top: 44px; }
 body.lp { margin: 0; font-family: 'Poppins', Arial, sans-serif; color: var(--brown); background: var(--cream); line-height: 1.6; }
 .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 20px; }
 h1, h2, h3, p { margin: 0; }
