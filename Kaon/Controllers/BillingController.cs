@@ -16,10 +16,15 @@ public class BillingController : Controller
     private readonly KaonDbContext _db;
     private readonly IWebHostEnvironment _env;
 
-    public BillingController(KaonDbContext db, IWebHostEnvironment env)
+    private readonly IEmailSender _email;
+    private readonly ILogger<BillingController> _log;
+
+    public BillingController(KaonDbContext db, IWebHostEnvironment env, IEmailSender email, ILogger<BillingController> log)
     {
         _db = db;
         _env = env;
+        _email = email;
+        _log = log;
     }
 
     private int MyId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -81,6 +86,10 @@ public class BillingController : Controller
             Proof = file
         });
         await _db.SaveChangesAsync();
+        // Automatic: the Kaon team is told a payment is waiting
+        var who = await _db.Users.AsNoTracking().Where(u => u.Id == MyId).Select(u => u.FullName).FirstOrDefaultAsync() ?? "An owner";
+        await Notify.AdminsAsync(_db, _email, _log, "A Kaon payment is waiting", "A payment is waiting to be confirmed",
+            who + " sent a subscription payment. Open Billing in the admin area to confirm it.");
         TempData["Saved"] = "Thank you! We got your payment. The Kaon team will confirm it soon.";
         return RedirectToAction(nameof(Index));
     }

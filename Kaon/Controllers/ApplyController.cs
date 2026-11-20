@@ -1,3 +1,4 @@
+using Kaon.Helpers;
 using Kaon.Data;
 using Kaon.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,9 @@ namespace Kaon.Controllers;
 public class ApplyController : Controller
 {
     private readonly KaonDbContext _db;
-    public ApplyController(KaonDbContext db) => _db = db;
+    private readonly IEmailSender _email;
+    private readonly ILogger<ApplyController> _log;
+    public ApplyController(KaonDbContext db, IEmailSender email, ILogger<ApplyController> log) { _db = db; _email = email; _log = log; }
 
     [HttpGet("/for-carinderias")]
     public async Task<IActionResult> Index()
@@ -50,6 +53,13 @@ public class ApplyController : Controller
             Message = string.IsNullOrWhiteSpace(form.Message) ? null : form.Message.Trim()
         });
         await _db.SaveChangesAsync();
+
+        // Automatic messages: the applicant knows it arrived, and the Kaon team is told
+        var name = form.CarinderiaName.Trim();
+        await Notify.ToAsync(_email, _log, email, "We got your Kaon request", "We got your request",
+            "Thank you! The Kaon team received the request for " + name + " and will contact you soon. Your first month is free.");
+        await Notify.AdminsAsync(_db, _email, _log, "New carinderia request: " + name, "A carinderia asked to join Kaon",
+            name + " (" + form.OwnerName.Trim() + ") sent a request. Open the Requests tab in the admin area to approve it.");
         return RedirectToAction(nameof(Thanks));
     }
 

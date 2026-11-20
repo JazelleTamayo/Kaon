@@ -58,6 +58,11 @@ public class Subscription
     // The last time the owner was emailed a reminder (so one click is not sent twice in a row)
     public DateTime? LastReminderAt { get; set; }
 
+    // Automatic reminders: the most urgent one already sent for the current end date
+    // (7, 3 or 1 day before, or -1 once it has ended). It starts over when the end date changes.
+    public int ReminderStage { get; set; }
+    public DateTime? ReminderForAccessUntil { get; set; }
+
     public List<SubscriptionPayment> Payments { get; set; } = new();
 
     // The last moment the owner can still use Kaon
