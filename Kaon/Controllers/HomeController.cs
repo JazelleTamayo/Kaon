@@ -1,13 +1,20 @@
+using Kaon.Data;
 using Kaon.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace Kaon.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        private readonly KaonDbContext _db;
+        public HomeController(KaonDbContext db) => _db = db;
+
+        public async Task<IActionResult> Index()
         {
+            // The price and trial length come from the Kaon admin's billing settings
+            ViewBag.Plan = await _db.PlatformSettings.AsNoTracking().FirstOrDefaultAsync() ?? new PlatformSettings();
             return View();
         }
 

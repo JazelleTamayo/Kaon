@@ -1,6 +1,7 @@
 @{
     Layout = "_Landing";
     ViewData["Title"] = "Kaon";
+    var plan = (PlatformSettings)ViewBag.Plan;
 }
 
 
@@ -149,6 +150,44 @@
                     <div class="mini-card"><span>#214</span><em>Pickup</em></div>
                     <div class="mini-card"><span>#216</span><em class="t">Delivery</em></div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="sec">
+        <div class="wrap">
+            <span class="eyebrow">Pricing</span>
+            <h2>One simple monthly fee. No commissions.</h2>
+            <div class="price-grid">
+                <article class="price-card">
+                    <div class="price-tag">Start free</div>
+                    <div class="price-big">@plan.TrialDays days <small>free</small></div>
+                    <p>Try Kaon with your own customers first. You pay nothing to request your account.</p>
+                </article>
+                <article class="price-card price-main">
+                    <div class="price-tag">Then</div>
+                    <div class="price-big">₱@plan.MonthlyFee.ToString("N0") <small>/ month</small></div>
+                    <p>A low, fixed fee for your carinderia. No percentage of your sales, and no per-order charge.</p>
+                </article>
+                <article class="price-card">
+                    <div class="price-tag">Delivery</div>
+                    <div class="price-big">Paid by the customer</div>
+                    <p>A small, fixed delivery fee is added to delivery orders. It is kept separate from your subscription.</p>
+                </article>
+            </div>
+            <div class="bill-steps">
+                <h3>How billing works</h3>
+                <ol>
+                    <li><b>Request your account.</b> No payment is needed.</li>
+                    <li><b>Your first @plan.TrialDays days are free,</b> starting when your account is created.</li>
+                    <li><b>We remind you</b> in your dashboard before the free month ends.</li>
+                    <li><b>Pay by GCash</b> and upload your proof. The Kaon team confirms it and your plan is extended.</li>
+                </ol>
+                <p class="muted">If a plan lapses, you can still log in to pay. Orders and menu tools unlock again once your payment is confirmed.</p>
+            </div>
+            <div class="cta-row">
+                <a class="lp-btn lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
             </div>
         </div>
     </section>

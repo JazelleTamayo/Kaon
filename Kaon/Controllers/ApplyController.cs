@@ -13,13 +13,18 @@ public class ApplyController : Controller
     public ApplyController(KaonDbContext db) => _db = db;
 
     [HttpGet("/for-carinderias")]
-    public IActionResult Index() => View(new ApplyForm());
+    public async Task<IActionResult> Index()
+    {
+        ViewBag.Plan = await _db.PlatformSettings.AsNoTracking().FirstOrDefaultAsync() ?? new PlatformSettings();
+        return View(new ApplyForm());
+    }
 
     [HttpPost("/for-carinderias"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(ApplyForm form)
     {
         // A bot filled the hidden field: pretend it worked
         if (!string.IsNullOrEmpty(form.Website)) return RedirectToAction(nameof(Thanks));
+        ViewBag.Plan = await _db.PlatformSettings.AsNoTracking().FirstOrDefaultAsync() ?? new PlatformSettings();
         if (!ModelState.IsValid) return View(form);
 
         var email = form.Email.Trim().ToLower();
