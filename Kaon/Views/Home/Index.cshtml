@@ -49,8 +49,39 @@
         </div>
     </section>
 
+    <!-- How it works -->
+    <section id="how" class="sec">
+        <div class="wrap">
+            <span class="eyebrow">How it works</span>
+            <h2>Get your carinderia online in three steps</h2>
+            <div class="steps3">
+                <article class="step3">
+                    <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M11 18h2"/></svg></div>
+                    <h3>1. Request your account</h3>
+                    <p>Send a short request. The Kaon team sets up your carinderia and sends you a private link to choose your own password.</p>
+                </article>
+                <article class="step3">
+                    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></div>
+                    <h3>2. Set up your menu</h3>
+                    <p>Add your store details, post today's dishes and food packages, and choose how you get paid.</p>
+                </article>
+                <article class="step3">
+                    <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></svg></div>
+                    <h3>3. Share your link and QR</h3>
+                    <p>Post your own link on Facebook or Messenger and print the QR at your counter. Customers order ahead and you see every order in one list.</p>
+                </article>
+            </div>
+            <div class="status-strip" aria-label="Order status">
+                <span class="chip c-pend">Pending</span><i></i>
+                <span class="chip c-prep">Preparing</span><i></i>
+                <span class="chip c-ready">Ready</span><i></i>
+                <span class="chip c-del">Out for Delivery</span>
+            </div>
+        </div>
+    </section>
+
     <!-- Sample daily menu -->
-    <section id="how" class="menu-sec">
+    <section id="preview" class="menu-sec">
         <div class="wrap">
             <div class="menu-head">
                 <div>
@@ -80,37 +111,6 @@
                     <h3>Family Food Package</h3><p>3 viands + 4 rice</p>
                     <div class="dish-foot"><b>₱350</b><span class="chip c-pend">Only 4 left</span></div>
                 </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- How it works -->
-    <section id="steps" class="sec">
-        <div class="wrap">
-            <span class="eyebrow">How it works</span>
-            <h2>Get your carinderia online in three steps</h2>
-            <div class="steps3">
-                <article class="step3">
-                    <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M11 18h2"/></svg></div>
-                    <h3>1. Request your account</h3>
-                    <p>Send a short request. The Kaon team sets up your carinderia and sends you a private link to choose your own password.</p>
-                </article>
-                <article class="step3">
-                    <div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></div>
-                    <h3>2. Set up your menu</h3>
-                    <p>Add your store details, post today's dishes and food packages, and choose how you get paid.</p>
-                </article>
-                <article class="step3">
-                    <div class="ico"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></svg></div>
-                    <h3>3. Share your link and QR</h3>
-                    <p>Post your own link on Facebook or Messenger and print the QR at your counter. Customers order ahead and you see every order in one list.</p>
-                </article>
-            </div>
-            <div class="status-strip" aria-label="Order status">
-                <span class="chip c-pend">Pending</span><i></i>
-                <span class="chip c-prep">Preparing</span><i></i>
-                <span class="chip c-ready">Ready</span><i></i>
-                <span class="chip c-del">Out for Delivery</span>
             </div>
         </div>
     </section>
@@ -196,7 +196,7 @@
     // Highlight the nav link of the section you are looking at
     (function () {
         var map = [
-            ['top', 'top'], ['how', 'how'], ['steps', 'how'], ['owners', 'owners'], ['pricing', 'pricing']
+            ['top', 'top'], ['how', 'how'], ['preview', 'how'], ['owners', 'owners'], ['pricing', 'pricing']
         ];
         var links = {};
         document.querySelectorAll('.lp-links a[data-spy]').forEach(function (a) { links[a.dataset.spy] = a; });
