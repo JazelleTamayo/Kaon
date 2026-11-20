@@ -26,6 +26,14 @@ public class StoreDetailVm
     public List<ActivityLog> Activity { get; set; } = new();
 }
 
+// What the carinderia's customer page shows, for the owner or admin to look at (nothing can be ordered)
+public class StorePreviewVm
+{
+    public StoreSettings Store { get; set; } = new();
+    public List<DailyMenuEntry> Entries { get; set; } = new();
+    public List<MenuItem> Packages { get; set; } = new();
+}
+
 public class RenameStoreForm
 {
     [Required(ErrorMessage = "Please enter the carinderia's name."), StringLength(100)]

@@ -2,6 +2,7 @@ using Kaon.Data;
 using Kaon.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Kaon.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kaon.Controllers;
@@ -36,6 +37,23 @@ public class StoreController : Controller
             // A customer of another carinderia: the page explains and offers to log out
             if (User.IsInRole("Customer"))
                 ViewBag.OtherStore = (await _stores.StoreAsync()).Name;
+
+            // An owner or the admin: show what customers see (look only), in the same browser
+            if (User.IsInRole("Owner") || User.IsInRole("Admin"))
+            {
+                var shown = await StoreGate.ForCustomersAsync(_db, store.Id);
+                var today = DateTime.Today;
+                var entries = await _db.DailyMenuEntries.AsNoTracking().Include(e => e.MenuItem)
+                    .Where(e => e.Date == today && e.MenuItem!.StoreId == store.Id).ToListAsync();
+                var packages = await _db.MenuItems.AsNoTracking().Include(m => m.Options)
+                    .Where(m => m.StoreId == store.Id && m.Category == MenuItem.PackageCategory).ToListAsync();
+                return View("Preview", new StorePreviewVm
+                {
+                    Store = shown,
+                    Entries = entries.OrderBy(e => Array.IndexOf(MenuSeries.All, e.MenuItem!.SeriesName)).ThenBy(e => e.MenuItem!.Name).ToList(),
+                    Packages = packages.OrderBy(m => m.Name).ToList()
+                });
+            }
         }
         else
         {

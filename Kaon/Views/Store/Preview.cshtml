@@ -1,0 +1,88 @@
+@model StorePreviewVm
+@{
+    ViewData["Title"] = Model.Store.Name;
+    ViewData["Wide"] = true;
+    var store = Model.Store;
+    var mine = User.IsInRole("Owner");
+}
+
+<div class="banner preview-banner" role="status">
+    <div>
+        <strong>Customer preview.</strong>
+        This is what customers see at <strong>@store.Name</strong>. You are logged in as @(mine ? "the owner" : "the Kaon admin"), so you can look but not order.
+    </div>
+    <div class="preview-actions">
+        @if (mine) { <a class="btn btn-sm" asp-controller="Owner" asp-action="Index" style="margin:0">Back to my dashboard</a> }
+        else { <a class="btn btn-sm" asp-controller="Admin" asp-action="Index" style="margin:0">Back to admin</a> }
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            <button class="btn btn-sm btn-outline" style="margin:0">Log out to try as a customer</button>
+        </form>
+    </div>
+</div>
+
+<section class="hero-banner hero-sm">
+    <div class="hero-bg alt" aria-hidden="true"></div>
+    <div class="hero-in">
+        <h1>@store.Name</h1>
+        <p>
+            @if (!string.IsNullOrWhiteSpace(store.Hours)) { <text>@store.Hours · </text> }
+            @(store.PickupEnabled && store.DeliveryEnabled ? "Pickup or delivery" : store.PickupEnabled ? "Pickup" : "Delivery")
+            @if (!store.IsOpen) { <text> · <strong>@(store.PausedByBilling ? "Not taking orders right now" : "Closed right now")</strong></text> }
+        </p>
+    </div>
+</section>
+
+@if (store.OffersDailyMenu)
+{
+    <h2 class="section">Daily menu</h2>
+    @if (!Model.Entries.Any())
+    {
+        <div class="card"><p class="muted" style="margin:0">No dishes are picked for today yet, so customers see "Today's menu isn't posted yet".</p></div>
+    }
+    else
+    {
+        <div class="dish-grid">
+            @foreach (var e in Model.Entries)
+            {
+                var item = e.MenuItem!;
+                <article class="dish-card @(e.CanOrder ? "" : "is-out")">
+                    <div class="dish-img">
+                        @if (!string.IsNullOrEmpty(item.ImageUrl)) { <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" /> }
+                        else { <span class="dish-ph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span> }
+                        @if (!e.CanOrder) { <span class="dish-badge badge-out">Sold out</span> }
+                        else if (e.ReadyState == DishReadyState.Preparing) { <span class="dish-badge badge-state badge-preparing">Preparing</span> }
+                        else { <span class="dish-badge badge-state badge-ready">Ready to serve</span> }
+                    </div>
+                    <div class="dish-body">
+                        <span class="series-tag">@item.SeriesName</span>
+                        <h3 class="dish-name">@item.Name</h3>
+                        @if (!string.IsNullOrEmpty(item.Description)) { <p class="dish-desc">@item.Description</p> }
+                        <div class="dish-foot"><span class="price">₱@item.Price.ToString("N2")</span></div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+}
+
+@if (store.OffersPackages && Model.Packages.Any())
+{
+    <h2 class="section">Food packages</h2>
+    <div class="dish-grid">
+        @foreach (var item in Model.Packages)
+        {
+            <article class="dish-card @(item.CanOrder ? "" : "is-out")">
+                <div class="dish-img">
+                    @if (!string.IsNullOrEmpty(item.ImageUrl)) { <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" /> }
+                    else { <span class="dish-ph" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span> }
+                    @if (!item.CanOrder) { <span class="dish-badge badge-out">Not offered today</span> }
+                </div>
+                <div class="dish-body">
+                    <span class="series-tag">@item.SeriesName</span>
+                    <h3 class="dish-name">@item.Name</h3>
+                    <div class="from-price">From <strong>₱@item.FromPrice.ToString("N0")</strong></div>
+                </div>
+            </article>
+        }
+    </div>
+}

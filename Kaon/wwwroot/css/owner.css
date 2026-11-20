@@ -732,3 +732,8 @@ a.dd-item { text-decoration: none; }
 /* "Kaon does this for you" note */
 .auto-note { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; background: linear-gradient(135deg, #fff 60%, #e9f7ef); border-left: 5px solid var(--green); margin-top: 16px; }
 .auto-note > div { max-width: 760px; }
+
+/* Customer preview for the owner and admin */
+.preview-banner { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin: 0 0 16px; border-left: 5px solid var(--orange); }
+.preview-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.preview-actions form { margin: 0; }
