@@ -4,6 +4,7 @@ using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,17 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<StoreFilter>();
     options.Filters.Add<SubscriptionFilter>();
 });
+
+// On a real server, keep the key that protects the login cookie in a file. Without it, every restart or
+// recycle of the app makes a new key and signs everybody out.
+if (!builder.Environment.IsDevelopment())
+{
+    var keyRoot = builder.Configuration["Kaon:DataDir"];
+    if (string.IsNullOrWhiteSpace(keyRoot)) keyRoot = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(keyRoot, "keys")))
+        .SetApplicationName("Kaon");
+}
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<AutomationService>();
