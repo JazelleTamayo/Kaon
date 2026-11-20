@@ -24,21 +24,17 @@
 </section>
 
 <div class="stats o-stats">
-    <div class="stat c-teal">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
-        <span class="stat-num">@stats.Customers</span><span class="stat-label">Customers</span>
-    </div>
-    <div class="stat c-yellow">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
-        <span class="stat-num">@stats.Orders7Days</span><span class="stat-label">Orders, last 7 days</span>
-    </div>
-    <div class="stat c-green">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>
-        <span class="stat-num">@stats.OrdersTotal</span><span class="stat-label">Orders in total</span>
-    </div>
     <div class="stat c-orange">
         <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>
         <span class="stat-num">@stats.Dishes</span><span class="stat-label">Dishes and packages</span>
+    </div>
+    <div class="stat c-yellow">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <span class="stat-num">@(stats.AccessUntil == null ? "-" : stats.DaysLeft.ToString())</span><span class="stat-label">Days of access left</span>
+    </div>
+    <div class="stat c-green">
+        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+        <span class="stat-num">@Model.Owners.Count</span><span class="stat-label">Owner@(Model.Owners.Count == 1 ? "" : "s")</span>
     </div>
 </div>
 
@@ -174,32 +170,7 @@
 </div>
 </div>
 
-<h2 class="section">Latest orders</h2>
-<div class="card table-wrap">
-    @if (!Model.RecentOrders.Any())
-    {
-        <p class="muted" style="margin:0">No orders yet.</p>
-    }
-    else
-    {
-        <table class="table table-stack">
-            <thead><tr><th>Order</th><th>When</th><th>Status</th><th>Type</th><th>Total</th></tr></thead>
-            <tbody>
-                @foreach (var o in Model.RecentOrders)
-                {
-                    <tr>
-                        <td><strong>#@o.Id</strong></td>
-                        <td data-label="When">@o.CreatedAt.ToString("MMM d, h:mm tt")</td>
-                        <td data-label="Status"><span class="chip chip-@o.Status.ToString().ToLower()">@o.Status</span></td>
-                        <td data-label="Type">@(o.OrderType == OrderType.Pickup ? "Pickup" : "Delivery")</td>
-                        <td data-label="Total">₱@o.Total.ToString("N2")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-    <p class="muted" style="margin:12px 0 0;font-size:.85rem">For support only. Customer names, contacts, addresses and payment proofs are private and are not shown to the Kaon team.</p>
-</div>
+<p class="muted" style="margin-top:24px;font-size:.85rem">Customers and orders belong to the carinderia. The Kaon team does not see customer names, contacts, addresses, orders or payment proofs, and does not see how many there are.</p>
 
 <h2 class="section">Recent activity</h2>
 <div class="card table-wrap">

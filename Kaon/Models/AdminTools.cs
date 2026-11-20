@@ -2,12 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Kaon.Models;
 
-// Numbers about one carinderia. Counts only: no customer names, contacts, addresses or payment proofs.
+// What the Kaon team may see about one carinderia: its menu size and its plan.
+// Never customers or orders: how many customers or orders a carinderia has is that carinderia's own business.
 public class StoreStats
 {
-    public int Customers { get; set; }
-    public int OrdersTotal { get; set; }
-    public int Orders7Days { get; set; }
     public int Dishes { get; set; }
 
     // "Free trial", "Paying", "Ended" or "No owner"
@@ -25,8 +23,6 @@ public class StoreDetailVm
     public Dictionary<int, DateTime> PendingLinks { get; set; } = new();
     public StoreStats Stats { get; set; } = new();
 
-    // The latest orders: number, time, status, type and amount only
-    public List<Order> RecentOrders { get; set; } = new();
     public List<ActivityLog> Activity { get; set; } = new();
 }
 

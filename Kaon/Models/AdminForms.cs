@@ -61,10 +61,12 @@ public class CreateOwnerForm
 public class AdminDashVm
 {
     public List<AppUser> Owners { get; set; } = new();
-    public int CustomerCount { get; set; }
     public int NewRequests { get; set; }
-    public int OrdersToday { get; set; }
-    public int OrdersTotal { get; set; }
+
+    // Business numbers for the Kaon team (no customers, no orders)
+    public int PayingCount { get; set; }
+    public int TrialCount { get; set; }
+    public int EndedCount { get; set; }
     // Every carinderia on Kaon (the admin sees the stores, never their customers or orders)
     public List<StoreSettings> Stores { get; set; } = new();
 

@@ -31,8 +31,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var today = DateTime.Today;
-        var orders = await _db.Orders.AsNoTracking().Select(o => o.CreatedAt).ToListAsync();
         var now = DateTime.UtcNow;
 
         var pending = await _db.PasswordTokens.AsNoTracking()
@@ -42,15 +40,16 @@ public class AdminController : Controller
             .ToListAsync();
 
         var stores = await _db.StoreSettings.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        var stats = await StatsAsync(stores);
         return View(new AdminDashVm
         {
             Owners = await _db.Users.AsNoTracking().Where(u => u.Role == "Owner").OrderBy(u => u.FullName).ToListAsync(),
-            CustomerCount = await _db.Users.CountAsync(u => u.Role == "Customer"),
-            NewRequests = await _db.CarinderiaRequests.CountAsync(r => r.Status == "New"),   // a number only
-            OrdersToday = orders.Count(c => c >= today && c < today.AddDays(1)),
-            OrdersTotal = orders.Count,
+            NewRequests = await _db.CarinderiaRequests.CountAsync(r => r.Status == "New"),
             Stores = stores,
-            Stats = await StatsAsync(stores),
+            Stats = stats,
+            PayingCount = stats.Values.Count(x => x.Plan == "Paying"),
+            TrialCount = stats.Values.Count(x => x.Plan == "Free trial"),
+            EndedCount = stats.Values.Count(x => x.Plan == "Ended"),
             PendingLinks = pending.ToDictionary(p => p.UserId, p => p.Expires)
         });
     }
@@ -223,17 +222,10 @@ public class AdminController : Controller
     }
 
 
-    // ---------- numbers about the carinderias (counts only) ----------
+    // ---------- the carinderias: menu size and plan only (never customers or orders) ----------
     private async Task<Dictionary<int, StoreStats>> StatsAsync(List<StoreSettings> stores)
     {
         var ids = stores.Select(x => x.Id).ToList();
-        var since = DateTime.Now.AddDays(-7);
-        var customers = await _db.Users.AsNoTracking().Where(u => u.Role == "Customer" && u.StoreId != null && ids.Contains(u.StoreId.Value))
-            .GroupBy(u => u.StoreId!.Value).Select(g => new { Id = g.Key, N = g.Count() }).ToDictionaryAsync(x => x.Id, x => x.N);
-        var ordersAll = await _db.Orders.AsNoTracking().Where(o => ids.Contains(o.StoreId))
-            .GroupBy(o => o.StoreId).Select(g => new { Id = g.Key, N = g.Count() }).ToDictionaryAsync(x => x.Id, x => x.N);
-        var orders7 = await _db.Orders.AsNoTracking().Where(o => ids.Contains(o.StoreId) && o.CreatedAt >= since)
-            .GroupBy(o => o.StoreId).Select(g => new { Id = g.Key, N = g.Count() }).ToDictionaryAsync(x => x.Id, x => x.N);
         var dishes = await _db.MenuItems.AsNoTracking().Where(m => ids.Contains(m.StoreId))
             .GroupBy(m => m.StoreId).Select(g => new { Id = g.Key, N = g.Count() }).ToDictionaryAsync(x => x.Id, x => x.N);
 
@@ -246,9 +238,6 @@ public class AdminController : Controller
         {
             var stat = new StoreStats
             {
-                Customers = customers.GetValueOrDefault(st.Id),
-                OrdersTotal = ordersAll.GetValueOrDefault(st.Id),
-                Orders7Days = orders7.GetValueOrDefault(st.Id),
                 Dishes = dishes.GetValueOrDefault(st.Id)
             };
 
@@ -297,8 +286,6 @@ public class AdminController : Controller
             Owners = await _db.Users.AsNoTracking().Where(u => u.Role == "Owner" && u.StoreId == id).OrderBy(u => u.FullName).ToListAsync(),
             PendingLinks = pending.ToDictionary(x => x.UserId, x => x.Expires),
             Stats = (await StatsAsync(new List<StoreSettings> { store }))[id],
-            RecentOrders = (await _db.Orders.AsNoTracking().Include(o => o.Items).Where(o => o.StoreId == id).ToListAsync())
-                .OrderByDescending(o => o.CreatedAt).Take(10).ToList(),
             Activity = await _db.ActivityLogs.AsNoTracking().Where(a => a.StoreId == id).OrderByDescending(a => a.At).Take(10).ToListAsync()
         };
         ViewBag.Series = MenuSeries.All;
