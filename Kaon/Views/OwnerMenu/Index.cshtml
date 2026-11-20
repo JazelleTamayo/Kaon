@@ -105,8 +105,9 @@ else
                             }
                             else
                             {
-                                <form asp-action="AddToday" asp-route-menuItemId="@m.Id" method="post">
-                                    <button class="btn-ghost">+ Add to today</button>
+                                <form asp-action="AddToday" asp-route-menuItemId="@m.Id" method="post" class="add-today">
+                                    <input class="input" name="stock" type="number" min="1" max="9999" inputmode="numeric" placeholder="Servings" aria-label="How many servings of @m.Name today (leave empty for no limit)" />
+                                    <button class="btn-ghost">+ Add to daily menu</button>
                                 </form>
                             }
                         </td>

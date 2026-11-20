@@ -261,7 +261,7 @@ public class OwnerMenuController : Controller
 
     // Add a catalog dish to today's menu
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddToday(int menuItemId)
+    public async Task<IActionResult> AddToday(int menuItemId, int? stock)
     {
         var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
@@ -271,9 +271,11 @@ public class OwnerMenuController : Controller
             var m = await _db.MenuItems.FirstOrDefaultAsync(x => x.Id == menuItemId && x.StoreId == sid);
             if (m != null && !m.IsPackage)
             {
-                _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = menuItemId, Date = today });
+                // How many servings are available today (empty = no limit)
+                int? servings = stock is > 0 ? Math.Min(stock.Value, 9999) : null;
+                _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = menuItemId, Date = today, Stock = servings });
                 await _db.SaveChangesAsync();
-                TempData["Saved"] = m.Name + " added to today's menu.";
+                TempData["Saved"] = m.Name + " added to today's menu" + (servings != null ? " with " + servings + " servings." : " with no limit on servings.");
             }
         }
         return RedirectToAction(nameof(Index));
