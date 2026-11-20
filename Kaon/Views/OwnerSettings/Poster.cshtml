@@ -1,0 +1,55 @@
+@model StoreSettings
+@{
+    Layout = null;
+    var link = (string)ViewBag.Link;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@Model.Name - QR poster</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root { --orange: #E8501F; --dark: #2A1A12; --cream: #FFF4E3; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Poppins', system-ui, sans-serif; color: var(--dark); background: #f3ece2; }
+        .bar { display: flex; gap: .75rem; justify-content: center; padding: 1rem; }
+        .bar button, .bar a { font: inherit; font-weight: 600; padding: .6rem 1.2rem; border-radius: 999px; border: 0; cursor: pointer; text-decoration: none; background: var(--orange); color: #fff; }
+        .bar a { background: #fff; color: var(--dark); border: 1px solid #ddd; }
+        .sheet { width: min(21cm, 100%); margin: 0 auto 2rem; background: var(--cream); border-radius: 18px; padding: 2.5rem 2rem; text-align: center; border: 6px solid var(--orange); }
+        .kicker { letter-spacing: .14em; text-transform: uppercase; font-size: .85rem; font-weight: 700; color: var(--orange); }
+        h1 { font-size: clamp(2rem, 7vw, 3.2rem); line-height: 1.1; margin: .4rem 0 .2rem; }
+        .sub { font-size: 1.15rem; margin: 0 0 1.5rem; }
+        .qr { background: #fff; display: inline-block; padding: 1rem; border-radius: 18px; }
+        .qr img { display: block; width: min(320px, 70vw); height: auto; }
+        .scan { font-size: 1.6rem; font-weight: 700; margin: 1.25rem 0 .25rem; }
+        .steps { margin: 0 0 1rem; font-size: 1.05rem; }
+        .url { font-size: .95rem; word-break: break-all; color: #6b5a4e; }
+        .foot { margin-top: 1.5rem; font-size: .85rem; color: #6b5a4e; }
+        @@media print {
+            body { background: #fff; }
+            .bar { display: none; }
+            .sheet { margin: 0; width: 100%; border-radius: 0; min-height: 26cm; display: flex; flex-direction: column; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <button type="button" onclick="window.print()">Print</button>
+        <a href="@Url.Action("Index", "OwnerSettings")">Back to my store</a>
+    </div>
+    <div class="sheet">
+        <div class="kicker">Order ahead</div>
+        <h1>@Model.Name</h1>
+        <p class="sub">Skip the line. Order from your phone.</p>
+        <div class="qr"><img src="@Url.Action("QrImage", "OwnerSettings")" alt="QR code to order from @Model.Name" /></div>
+        <div class="scan">Scan to order</div>
+        <p class="steps">Open your phone camera, point it at the code, and tap the link.</p>
+        <div class="url">@link</div>
+        <div class="foot">Powered by Kaon</div>
+    </div>
+</body>
+</html>

@@ -4,6 +4,7 @@ using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 
 namespace Kaon.Controllers;
 
@@ -24,6 +25,36 @@ public class OwnerSettingsController : Controller
 
     [HttpGet]
     public async Task<IActionResult> Index() => View(await _stores.StoreAsync());
+
+    // The carinderia's own link, the one the QR code opens
+    private async Task<string> OwnLinkAsync()
+    {
+        var store = await _stores.StoreAsync();
+        return Url.Action("Landing", "Store", new { slug = store.Slug }, Request.Scheme)!;
+    }
+
+    // The QR code picture for THIS carinderia's link (made here; the link is never sent to another website)
+    [HttpGet]
+    public async Task<IActionResult> QrImage(bool download = false)
+    {
+        var link = await OwnLinkAsync();
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(link, QRCodeGenerator.ECCLevel.M);
+        var png = new PngByteQRCode(data).GetGraphic(20);
+
+        var store = await _stores.StoreAsync();
+        if (download) Response.Headers.ContentDisposition = "attachment; filename=\"" + store.Slug + "-qr.png\"";
+        Response.Headers["Cache-Control"] = "private, no-store";
+        return File(png, "image/png");
+    }
+
+    // A poster the owner can print and put on the counter
+    [HttpGet]
+    public async Task<IActionResult> Poster()
+    {
+        ViewBag.Link = await OwnLinkAsync();
+        return View(await _stores.StoreAsync());
+    }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Index(StoreSettings form, IFormFile? qrFile, bool removeQr)

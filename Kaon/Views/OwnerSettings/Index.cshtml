@@ -18,6 +18,16 @@
     <p class="muted" style="margin:.3rem 0">Share this link, or print it as a QR code. Customers can reach your carinderia only through it.</p>
     @{ var myLink = Url.Action("Landing", "Store", new { slug = Model.Slug }, Context.Request.Scheme); }
     <div class="pa-num"><strong>@myLink</strong> <button type="button" class="copy-btn" data-copy="@myLink">Copy</button></div>
+
+    <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap;margin-top:1rem">
+        <img src="@Url.Action("QrImage", "OwnerSettings")" alt="QR code that opens your carinderia's page" width="160" height="160" style="border:1px solid #eee;border-radius:12px;padding:6px;background:#fff" />
+        <div>
+            <strong>Your QR code</strong>
+            <p class="muted" style="margin:.3rem 0 .75rem">Customers scan it with their phone camera to open your carinderia. Print it, or post the picture on Facebook.</p>
+            <a class="btn btn-sm" href="@Url.Action("QrImage", "OwnerSettings", new { download = true })">Download QR (PNG)</a>
+            <a class="btn btn-sm btn-outline" href="@Url.Action("Poster", "OwnerSettings")" target="_blank">Print a poster</a>
+        </div>
+    </div>
 </div>
 
 <form asp-action="Index" method="post" enctype="multipart/form-data">
