@@ -25,6 +25,7 @@ public class OwnerController : Controller
         var all = await _db.Orders.Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync();
         var todays = all.Where(o => o.CreatedAt >= today && o.CreatedAt < today.AddDays(1)).ToList();
 
+        ViewBag.DishCount = await _db.MenuItems.CountAsync(m => m.StoreId == sid);
         return View(new BoardVm
         {
             Active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList(),

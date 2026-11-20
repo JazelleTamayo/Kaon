@@ -51,9 +51,6 @@ public class CreateOwnerForm
     // Leave empty to open a NEW carinderia for this owner, or pick a carinderia that already exists
     public int? StoreId { get; set; }
 
-    // Set when the account is created from a request, so the request is marked done
-    public int? RequestId { get; set; }
-
     [StringLength(100)]
     public string? CarinderiaName { get; set; }
 }
@@ -61,7 +58,6 @@ public class CreateOwnerForm
 public class AdminDashVm
 {
     public List<AppUser> Owners { get; set; } = new();
-    public int NewRequests { get; set; }
 
     // Business numbers for the Kaon team (no customers, no orders)
     public int PayingCount { get; set; }

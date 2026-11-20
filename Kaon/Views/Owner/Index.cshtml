@@ -35,6 +35,34 @@
     </div>
 </section>
 
+@if ((int)ViewBag.DishCount == 0)
+{
+    <section class="card start-card">
+        <div>
+            <span class="share-kicker">Get started</span>
+            <h2>Welcome! Three quick steps to open your carinderia</h2>
+        </div>
+        <ol class="steps-num">
+            <li><div>
+                <strong>Add your dishes</strong>
+                <p class="muted" style="margin:2px 0 8px">Add your own, or start with sample dishes and change them later.</p>
+                <div class="share-actions">
+                    <a class="btn btn-sm" asp-controller="OwnerMenu" asp-action="Create" style="margin:0">Add a dish</a>
+                    <form asp-controller="OwnerMenu" asp-action="StarterMenu" method="post"><button class="btn btn-sm btn-outline" style="margin:0">Add sample dishes</button></form>
+                </div>
+            </div></li>
+            <li><div>
+                <strong>Set how you get paid</strong>
+                <p class="muted" style="margin:2px 0 0">Your hours, delivery and GCash details. <a asp-controller="OwnerSettings" asp-action="Index">Open Store setup</a></p>
+            </div></li>
+            <li><div>
+                <strong>Share your link and QR code</strong>
+                <p class="muted" style="margin:2px 0 0">Customers order from your own link. <a asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">Get my QR code</a></p>
+            </div></li>
+        </ol>
+    </section>
+}
+
 <div class="stats o-stats">
     <div class="stat c-orange">
         <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>

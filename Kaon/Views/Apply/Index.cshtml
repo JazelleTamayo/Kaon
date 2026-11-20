@@ -1,4 +1,4 @@
-@model ApplyForm
+@model OwnerSignupForm
 @{
     Layout = "_Auth";
     var plan = (PlatformSettings)ViewBag.Plan;
@@ -8,8 +8,8 @@
 }
 
 <span class="auth-kicker">For carinderia owners</span>
-<h1 class="auth-title">Get Kaon for your carinderia</h1>
-<p class="auth-sub">Tell us about your carinderia and the Kaon team will contact you. <strong>@plan.TrialDays days free, then ₱@plan.MonthlyFee.ToString("N0")/month.</strong> Nothing to pay now. <a href="/#pricing">How billing works</a></p>
+<h1 class="auth-title">Create your carinderia</h1>
+<p class="auth-sub">Sign up and start right away. Your own link and QR code are ready as soon as you finish. <strong>@plan.TrialDays days free, then ₱@plan.MonthlyFee.ToString("N0")/month.</strong> No payment now. <a href="/#pricing">How billing works</a></p>
 
 <form asp-action="Index" method="post" class="auth-form" novalidate>
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
@@ -21,7 +21,7 @@
     </div>
     <div class="auth-grid">
         <div class="fld">
-            <label class="fld-label" asp-for="OwnerName">Owner's full name</label>
+            <label class="fld-label" asp-for="OwnerName">Your full name</label>
             <div class="fld-box"><input class="fld-input" asp-for="OwnerName" autocomplete="name" /></div>
             <span class="error" asp-validation-for="OwnerName"></span>
         </div>
@@ -32,18 +32,28 @@
         </div>
     </div>
     <div class="fld">
-        <label class="fld-label" asp-for="Email">Email (your login will use this)</label>
+        <label class="fld-label" asp-for="Email">Email (you log in with this)</label>
         <div class="fld-box"><input class="fld-input" asp-for="Email" type="email" autocomplete="email" /></div>
         <span class="error" asp-validation-for="Email"></span>
     </div>
-    <div class="fld">
-        <label class="fld-label" asp-for="Address">Carinderia address</label>
-        <div class="fld-box"><input class="fld-input" asp-for="Address" autocomplete="street-address" /></div>
-        <span class="error" asp-validation-for="Address"></span>
-    </div>
-    <div class="fld">
-        <label class="fld-label" asp-for="Message">Anything you'd like us to know (optional)</label>
-        <div class="fld-box"><input class="fld-input" asp-for="Message" /></div>
+    <div class="auth-grid">
+        <div class="fld">
+            <label class="fld-label" asp-for="Password">Password</label>
+            <div class="fld-box">
+                <input class="fld-input" asp-for="Password" type="password" autocomplete="new-password" placeholder="At least 8 characters" data-strength />
+                <button type="button" class="fld-eye" aria-label="Show password" data-eye>
+                    <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+            <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <span class="meter-text" data-meter-text></span>
+            <span class="error" asp-validation-for="Password"></span>
+        </div>
+        <div class="fld">
+            <label class="fld-label" asp-for="ConfirmPassword">Confirm password</label>
+            <div class="fld-box"><input class="fld-input" asp-for="ConfirmPassword" type="password" autocomplete="new-password" /></div>
+            <span class="error" asp-validation-for="ConfirmPassword"></span>
+        </div>
     </div>
 
     <div style="position:absolute;left:-9999px" aria-hidden="true">
@@ -56,7 +66,7 @@
     </label>
     <span class="error" asp-validation-for="AcceptPrivacy"></span>
 
-    <button class="btn btn-go">Send my request</button>
+    <button class="btn btn-go">Create my carinderia <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
 </form>
 
 <p class="auth-alt">Already a Kaon owner? <a asp-controller="Account" asp-action="Login">Log in</a></p>
@@ -69,4 +79,8 @@
         <li>Post your daily menu and food packages</li>
         <li>Get paid by cash, GCash or bank</li>
     </ul>
+}
+
+@section Scripts {
+    <script src="~/js/auth.js" asp-append-version="true"></script>
 }

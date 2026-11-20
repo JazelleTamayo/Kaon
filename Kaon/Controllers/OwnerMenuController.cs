@@ -247,6 +247,18 @@ public class OwnerMenuController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Day one: sample dishes so a new owner can see how it works and then change them
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> StarterMenu()
+    {
+        var sid = await _stores.RequireAsync();
+        var added = DemoData.AddStarterMenu(_db, sid);
+        TempData[added == 0 ? "Warn" : "Saved"] = added == 0
+            ? "You already have dishes, so nothing was added."
+            : added + " sample dishes were added and today's menu is ready. Change the names, prices and photos any time.";
+        return RedirectToAction(nameof(Index));
+    }
+
     // Add a catalog dish to today's menu
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddToday(int menuItemId)

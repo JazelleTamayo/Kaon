@@ -44,12 +44,11 @@ public class AdminController : Controller
         return View(new AdminDashVm
         {
             Owners = await _db.Users.AsNoTracking().Where(u => u.Role == "Owner").OrderBy(u => u.FullName).ToListAsync(),
-            NewRequests = await _db.CarinderiaRequests.CountAsync(r => r.Status == "New"),
+            EndedCount = stats.Values.Count(x => x.Plan == "Ended"),
             Stores = stores,
             Stats = stats,
             PayingCount = stats.Values.Count(x => x.Plan == "Paying"),
             TrialCount = stats.Values.Count(x => x.Plan == "Free trial"),
-            EndedCount = stats.Values.Count(x => x.Plan == "Ended"),
             PendingLinks = pending.ToDictionary(p => p.UserId, p => p.Expires)
         });
     }
@@ -69,37 +68,11 @@ public class AdminController : Controller
         ViewBag.Stores = await _db.StoreSettings.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
 
     [HttpGet]
-    public async Task<IActionResult> CreateOwner(int? requestId, int? storeId)
+    public async Task<IActionResult> CreateOwner(int? storeId)
     {
         await FillStores();
         var form = new CreateOwnerForm { StoreId = storeId };
-        // From a request: the details are filled in already
-        if (requestId != null && await _db.CarinderiaRequests.FirstOrDefaultAsync(r => r.Id == requestId && r.Status == "New") is { } r)
-        {
-            form.RequestId = r.Id; form.FullName = r.OwnerName; form.Email = r.Email;
-            form.Phone = r.Phone; form.CarinderiaName = r.CarinderiaName;
-        }
         return View(form);
-    }
-
-    // Carinderias that asked to join. The admin reviews each one and creates the account.
-    public async Task<IActionResult> Requests(bool all = false)
-    {
-        var q = _db.CarinderiaRequests.AsNoTracking();
-        if (!all) q = q.Where(r => r.Status == "New");
-        ViewBag.All = all;
-        // For approved requests: the owner account it became (to show its progress and open the carinderia)
-        ViewBag.Owners = (await _db.Users.AsNoTracking().Where(u => u.Role == "Owner").ToListAsync())
-            .GroupBy(u => u.Email).ToDictionary(g => g.Key, g => g.First());
-        return View((await q.ToListAsync()).OrderByDescending(r => r.CreatedAt).ToList());
-    }
-
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeclineRequest(int id)
-    {
-        var r = await _db.CarinderiaRequests.FirstOrDefaultAsync(x => x.Id == id && x.Status == "New");
-        if (r != null) { r.Status = "Declined"; AdminLog.Add(_db, User, "Declined the request from " + r.CarinderiaName); await _db.SaveChangesAsync(); TempData["Saved"] = "Request from " + r.CarinderiaName + " declined."; }
-        return RedirectToAction(nameof(Requests));
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -125,26 +98,8 @@ public class AdminController : Controller
             return View(form);
         }
 
-        var owner = await CreateOwnerAccount(form.FullName, email, form.Phone, store, form.CarinderiaName, form.RequestId);
+        var owner = await CreateOwnerAccount(form.FullName, email, form.Phone, store, form.CarinderiaName);
         await InviteAndShow(owner, "Invitation ready");
-        return BackHere(nameof(Index));
-    }
-
-    // Approve a request in one step: create the carinderia and its owner, then send the invitation
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> ApproveRequest(int id)
-    {
-        var r = await _db.CarinderiaRequests.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && x.Status == "New");
-        if (r == null) return RedirectToAction(nameof(Requests));
-
-        if (await StaffEmailTaken(r.Email))
-        {
-            TempData["Warn"] = r.Email + " already has an owner or Kaon team account. Open \"Review first\" to use another email.";
-            return RedirectToAction(nameof(Requests));
-        }
-
-        var owner = await CreateOwnerAccount(r.OwnerName, r.Email, r.Phone, null, r.CarinderiaName, r.Id);
-        await InviteAndShow(owner, "Request approved");
         return BackHere(nameof(Index));
     }
 
@@ -155,7 +110,7 @@ public class AdminController : Controller
     }
 
     // A carinderia owner account with no password yet (and a new carinderia unless one is given)
-    private async Task<AppUser> CreateOwnerAccount(string fullName, string email, string? phone, StoreSettings? store, string? newStoreName, int? requestId)
+    private async Task<AppUser> CreateOwnerAccount(string fullName, string email, string? phone, StoreSettings? store, string? newStoreName)
     {
         // A new carinderia is its own place: its own link, menu, orders and payment details. It starts empty.
         if (store == null)
@@ -188,11 +143,6 @@ public class AdminController : Controller
         };
         _db.Users.Add(owner);
         AdminLog.Add(_db, User, "Created the owner account for " + owner.FullName + " (" + owner.Email + ")", store);
-        if (requestId != null && await _db.CarinderiaRequests.FirstOrDefaultAsync(x => x.Id == requestId && x.Status == "New") is { } req)
-        {
-            req.Status = "Approved";
-            AdminLog.Add(_db, User, "Approved the request from " + req.CarinderiaName, store);
-        }
         await _db.SaveChangesAsync();
 
         // Module 9: every new carinderia starts with the free trial month

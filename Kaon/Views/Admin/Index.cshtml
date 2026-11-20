@@ -9,10 +9,9 @@
     <div class="o-hero-in">
         <span class="o-kicker">Kaon admin</span>
         <h1>Carinderias</h1>
-        <p>Each carinderia with its owner. Invite owners with a private link; they choose their own password.</p>
+        <p>Owners sign up on their own and appear here. You can also add an owner yourself and send them a private link.</p>
         <div class="o-hero-actions">
             <a class="btn btn-sm btn-yellow" asp-action="CreateOwner">+ Add a carinderia owner</a>
-            <a class="btn btn-sm btn-wline" asp-action="Requests">Requests</a>
         </div>
     </div>
 </section>
@@ -32,7 +31,7 @@
     </div>
     <div class="stat c-teal">
         <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg></span>
-        <span class="stat-num">@Model.NewRequests</span><span class="stat-label">Requests waiting</span>
+        <span class="stat-num">@Model.EndedCount</span><span class="stat-label">Ended</span>
     </div>
 </div>
 
