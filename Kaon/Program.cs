@@ -30,7 +30,7 @@ builder.Services.AddAuthentication("KaonCookie")
     {
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);       // signed out after an hour with no activity (open pages that refresh themselves count as activity)
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;                              // scripts cannot read the sign-in cookie
         options.Cookie.SameSite = SameSiteMode.Lax;                  // not sent along with other sites' requests
@@ -179,6 +179,25 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Signed-in pages are never kept in the browser's cache, so pressing Back after logging out
+// does not show them again
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    var isAsset = path.StartsWithSegments("/css") || path.StartsWithSegments("/js") ||
+                  path.StartsWithSegments("/img") || path.StartsWithSegments("/lib") || path.StartsWithSegments("/_framework");
+    if (!isAsset && context.User.Identity?.IsAuthenticated == true)
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Cache-Control"] = "no-store";
+            context.Response.Headers["Pragma"] = "no-cache";
+            return Task.CompletedTask;
+        });
+    }
+    await next();
+});
 
 app.MapStaticAssets();
 

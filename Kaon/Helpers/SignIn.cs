@@ -21,6 +21,7 @@ public static class SignIn
         if (user.MustChangePassword) claims.Add(new Claim("must_change", "1"));
         var identity = new ClaimsIdentity(claims, Scheme);
         await http.SignInAsync(Scheme, new ClaimsPrincipal(identity),
-            new AuthenticationProperties { IsPersistent = true });
+            // Not persistent: the sign-in ends when the browser is closed
+            new AuthenticationProperties { IsPersistent = false });
     }
 }
