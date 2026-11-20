@@ -216,7 +216,7 @@ public class AdminController : Controller
     public async Task<IActionResult> SendLink(int id)
     {
         var user = await _db.Users.FindAsync(id);
-        if (user == null || user.Id == MyId) return RedirectToAction(nameof(Index));
+        if (user == null || user.Id == MyId || user.Role != "Owner") return RedirectToAction(nameof(Index));
 
         var purpose = user.PasswordHash == "" ? "Invite" : "Reset";
         var link = await IssueLink(user, purpose);
@@ -234,14 +234,14 @@ public class AdminController : Controller
     public async Task<IActionResult> ToggleActive(int id, string? back)
     {
         var user = await _db.Users.FindAsync(id);
-        if (user != null && user.Id != MyId && user.Role is "Owner" or "Admin")
+        if (user != null && user.Id != MyId && user.Role == "Owner")
         {
             user.IsActive = !user.IsActive;
             AdminLog.Add(_db, User, (user.IsActive ? "Switched on " : "Switched off ") + user.FullName + "'s account", user.StoreId is int sid1 ? await _db.StoreSettings.FindAsync(sid1) : null);
             await _db.SaveChangesAsync();
             TempData["Saved"] = user.FullName + (user.IsActive ? " is switched on." : " is switched off. They can't log in.");
         }
-        return back == "team" ? RedirectToAction(nameof(Team)) : back == "users" ? RedirectToAction(nameof(Users)) : RedirectToAction(nameof(Index));
+        return back == "users" ? RedirectToAction(nameof(Users)) : RedirectToAction(nameof(Index));
     }
 
     // Shown once, right after creating. A refresh does not show it again.
@@ -409,43 +409,6 @@ public class AdminController : Controller
         await _db.SaveChangesAsync();
         TempData["Saved"] = dish.Name + " was added to " + store.Name + " and to today's menu.";
         return RedirectToAction(nameof(Store), new { id });
-    }
-
-    // ---------- the Kaon team ----------
-    [HttpGet("admin/team")]
-    public async Task<IActionResult> Team()
-    {
-        var now = DateTime.UtcNow;
-        var pending = await _db.PasswordTokens.AsNoTracking()
-            .Where(t => t.UsedAt == null && t.ExpiresAt > now)
-            .GroupBy(t => t.UserId).Select(g => new { UserId = g.Key, Expires = g.Max(x => x.ExpiresAt) }).ToListAsync();
-        ViewBag.PendingLinks = pending.ToDictionary(x => x.UserId, x => x.Expires);
-        ViewBag.MyId = MyId;
-        return View(await _db.Users.AsNoTracking().Where(u => u.Role == "Admin").OrderBy(u => u.FullName).ToListAsync());
-    }
-
-    [HttpGet("admin/team/add")]
-    public IActionResult AddAdmin() => View(new AddAdminForm());
-
-    [HttpPost("admin/team/add"), ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddAdmin(AddAdminForm form)
-    {
-        var email = form.Email.Trim().ToLower();
-        if (await _db.Users.AnyAsync(u => u.Email == email && u.Role != "Customer"))
-            ModelState.AddModelError(nameof(form.Email), "That email already has a Kaon team or owner account.");
-        if (!ModelState.IsValid) return View(form);
-
-        // Like owners: no password until the person chooses their own from the private link
-        var admin = new AppUser { FullName = form.FullName.Trim(), Email = email, Role = "Admin", PasswordHash = "" };
-        _db.Users.Add(admin);
-        AdminLog.Add(_db, User, "Added " + admin.FullName + " (" + admin.Email + ") to the Kaon team");
-        await _db.SaveChangesAsync();
-
-        var link = await IssueLink(admin, "Invite");
-        TempData["InvMail"] = await _email.SendAsync(admin.Email, "Your Kaon admin account is ready",
-            EmailTemplates.Invite(admin.FullName, link, LinkHours));
-        ShowOnce("Invitation ready", admin.FullName, admin.Email, link, "Invite");
-        return RedirectToAction(nameof(Invite));
     }
 
     // ---------- what the Kaon team did ----------

@@ -46,13 +46,3 @@ public class AddDishForm
     [StringLength(30)]
     public string? Series { get; set; }
 }
-
-public class AddAdminForm
-{
-    [Required(ErrorMessage = "Please enter the person's name."), StringLength(100)]
-    public string FullName { get; set; } = "";
-
-    [Required(ErrorMessage = "Please enter their email."),
-     EmailAddress(ErrorMessage = "That email doesn't look right."), StringLength(150)]
-    public string Email { get; set; } = "";
-}
