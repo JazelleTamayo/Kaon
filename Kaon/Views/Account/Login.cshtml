@@ -3,10 +3,10 @@
     Layout = "_Auth";
     var storeName = ViewBag.JoinStoreName as string;
     ViewData["Title"] = "Log in";
-    ViewData["PanelTitle"] = storeName != null ? storeName : "Hungry? Skip the line.";
+    ViewData["PanelTitle"] = storeName != null ? storeName : "Every order, one dashboard.";
     ViewData["PanelText"] = storeName != null
         ? "Log in to see today's menu, order ahead and follow your order in real time."
-        : "Log in to order ahead, or to manage your carinderia's orders.";
+        : "Carinderia owners log in here.";
 }
 
 @if (storeName != null)
@@ -17,9 +17,9 @@
 }
 else
 {
-    <span class="auth-kicker">Welcome back</span>
+    <span class="auth-kicker">Carinderia owners</span>
     <h1 class="auth-title">Log in to Kaon</h1>
-    <p class="auth-sub">Use your email and password. Carinderia owners and customers log in here.</p>
+    <p class="auth-sub">Customers: open your carinderia's own link or scan its QR code to log in and order.</p>
 }
 
 <form asp-action="Login" method="post" class="auth-form" novalidate>
