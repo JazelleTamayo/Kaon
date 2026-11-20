@@ -665,3 +665,17 @@ a.dd-item { text-decoration: none; }
 
 /* Status badges stay on one line */
 .chip { white-space: nowrap; }
+
+/* Pop-up (the invitation link) */
+.modal-open { overflow: hidden; }
+.modal-back { position: fixed; inset: 0; z-index: 100; background: rgba(43,24,16,.55); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; animation: modalFade .18s ease-out both; }
+.modal-card { position: relative; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 30px 70px rgba(0,0,0,.35); animation: modalPop .25s cubic-bezier(.2,.8,.2,1) both; }
+.modal-card h2 { margin: 6px 0 2px; font-size: 1.5rem; letter-spacing: -.02em; }
+.modal-kicker { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); background: #fde9cc; padding: 4px 12px; border-radius: 999px; }
+.modal-x { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; font-size: 1.8rem; line-height: 1; cursor: pointer; color: #7a6a60; }
+.modal-x:hover { color: var(--orange); }
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.modal-card .btn:not(.btn-sm) { width: 100%; }
+@keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalPop { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .modal-back, .modal-card { animation: none; } }

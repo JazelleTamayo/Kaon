@@ -1,0 +1,69 @@
+@* The one-time link, shown as a pop-up over the page the admin is on. It is shown once. *@
+@{
+    var link = TempData["InvLink"] as string;
+    if (link != null)
+    {
+        var heading = TempData["InvTitle"] as string ?? "Invitation ready";
+        var name = TempData["InvName"] as string ?? "";
+        var email = TempData["InvEmail"] as string ?? "";
+        var purpose = TempData["InvPurpose"] as string ?? "Invite";
+        var mail = TempData["InvMail"] as string;
+        var emailed = mail == "email";
+        var subject = purpose == "Invite" ? "Your Kaon account" : "Reset your Kaon password";
+        var body = (purpose == "Invite"
+            ? "Hello " + name + ",\n\nYour Kaon account is ready. Open this private link to choose your own password:\n\n"
+            : "Hello " + name + ",\n\nOpen this private link to choose a new Kaon password:\n\n")
+            + link + "\n\nThe link works once and expires in 48 hours. Please do not share it.";
+        var mailto = "mailto:" + email + "?subject=" + Uri.EscapeDataString(subject) + "&body=" + Uri.EscapeDataString(body);
+
+        <div class="modal-back" id="inviteModal" role="presentation">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
+                <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+                <span class="modal-kicker">@(purpose == "Invite" ? "Invitation" : "Password reset")</span>
+                <h2 id="inviteTitle">@heading</h2>
+                <p class="muted" style="margin:0 0 14px">@name · @email</p>
+
+                @if (emailed)
+                {
+                    <div class="banner ok-banner" style="margin:0 0 14px">Sent. We emailed this link to <strong>@email</strong>.</div>
+                }
+                else
+                {
+                    <div class="banner" style="margin:0 0 14px"><strong>Email is not connected yet.</strong> Copy the link and send it to @name yourself.</div>
+                }
+
+                <label class="label" for="linkBox" style="margin-top:0">Private link</label>
+                <input class="input link-box" id="linkBox" value="@link" readonly />
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-sm" id="copyBtn" style="margin:0">Copy link</button>
+                    <a class="btn btn-sm btn-outline" href="@mailto" style="margin:0">Write the email</a>
+                </div>
+
+                <p class="muted" style="margin:14px 0 0;font-size:.85rem">
+                    Only @name should get this link. It works one time and stops after 48 hours. They choose their own password, so you never see it.
+                    This pop-up is shown once, but you can make a new link any time.
+                </p>
+
+                <button type="button" class="btn" data-close style="margin-top:16px">Done</button>
+            </div>
+        </div>
+        <script>
+            (function () {
+                var m = document.getElementById('inviteModal');
+                var close = function () { m.remove(); document.body.classList.remove('modal-open'); };
+                document.body.classList.add('modal-open');
+                m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-close]')) close(); });
+                document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('inviteModal')) close(); });
+                var copy = document.getElementById('copyBtn');
+                copy.addEventListener('click', function () {
+                    var box = document.getElementById('linkBox');
+                    box.select();
+                    if (navigator.clipboard) navigator.clipboard.writeText(box.value);
+                    copy.textContent = 'Copied';
+                });
+                document.getElementById('linkBox').focus();
+                document.getElementById('linkBox').select();
+            })();
+        </script>
+    }
+}

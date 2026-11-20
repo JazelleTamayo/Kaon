@@ -208,6 +208,7 @@
              data-hide="@(onOrderPage ? "1" : "0")"></div>
         <script src="~/js/tracker.js" asp-append-version="true"></script>
     }
+    @if (isAdmin) { <partial name="_InviteModal" /> }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

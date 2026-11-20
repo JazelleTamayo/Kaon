@@ -127,7 +127,7 @@ public class AdminController : Controller
 
         var owner = await CreateOwnerAccount(form.FullName, email, form.Phone, store, form.CarinderiaName, form.RequestId);
         await InviteAndShow(owner, "Invitation ready");
-        return RedirectToAction(nameof(Invite));
+        return BackHere(nameof(Index));
     }
 
     // Approve a request in one step: create the carinderia and its owner, then send the invitation
@@ -145,7 +145,7 @@ public class AdminController : Controller
 
         var owner = await CreateOwnerAccount(r.OwnerName, r.Email, r.Phone, null, r.CarinderiaName, r.Id);
         await InviteAndShow(owner, "Request approved");
-        return RedirectToAction(nameof(Invite));
+        return BackHere(nameof(Index));
     }
 
     private Task<bool> StaffEmailTaken(string email)
@@ -226,7 +226,7 @@ public class AdminController : Controller
             purpose == "Invite" ? "Your Kaon account is ready" : "Reset your Kaon password",
             purpose == "Invite" ? EmailTemplates.Invite(user.FullName, link, LinkHours) : EmailTemplates.Reset(user.FullName, link, LinkHours * 60));
         ShowOnce(purpose == "Invite" ? "New invitation link" : "Password reset link", user.FullName, user.Email, link, purpose);
-        return RedirectToAction(nameof(Invite));
+        return BackHere(nameof(Index));
     }
 
     // Turn an account off or back on. It is signed out on its next request.
@@ -244,24 +244,16 @@ public class AdminController : Controller
         return back == "users" ? RedirectToAction(nameof(Users)) : RedirectToAction(nameof(Index));
     }
 
-    // Shown once, right after creating. A refresh does not show it again.
-    public IActionResult Invite()
+    // The page the admin came from (so the link pop-up appears right there), or the given page
+    private IActionResult BackHere(string fallbackAction)
     {
-        var title = TempData["InvTitle"] as string;
-        var link = TempData["InvLink"] as string;
-        if (title == null || link == null) return RedirectToAction(nameof(Index));
-
-        ViewBag.Heading = title;
-        ViewBag.Name = TempData["InvName"] as string;
-        ViewBag.Email = TempData["InvEmail"] as string;
-        ViewBag.Link = link;
-        ViewBag.Purpose = TempData["InvPurpose"] as string;
-        ViewBag.Mail = TempData["InvMail"] as string;
-        ViewBag.Hours = LinkHours;
-        Response.Headers["Cache-Control"] = "no-store";
-        Response.Headers["Referrer-Policy"] = "no-referrer";
-        return View();
+        var referer = Request.Headers.Referer.ToString();
+        if (Uri.TryCreate(referer, UriKind.Absolute, out var u) && u.Host == Request.Host.Host &&
+            !u.AbsolutePath.StartsWith("/Admin/CreateOwner", StringComparison.OrdinalIgnoreCase))
+            return LocalRedirect(u.PathAndQuery);
+        return RedirectToAction(fallbackAction);
     }
+
 
 
     // ---------- the carinderias: menu size and plan only (never customers or orders) ----------
