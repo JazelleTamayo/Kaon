@@ -171,16 +171,7 @@ public class OwnerMenuController : Controller
         }
 
         await _db.SaveChangesAsync();
-
-        // A new daily dish goes on today's menu straight away, so the owner does not have to remember
-        var addedToday = false;
-        if (form.Id == 0 && !isPackage)
-        {
-            _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = m.Id, Date = DateTime.Today });
-            await _db.SaveChangesAsync();
-            addedToday = true;
-        }
-        TempData["Saved"] = m.Name + (addedToday ? " saved and added to today's menu." : " saved.");
+        TempData["Saved"] = m.Name + " saved.";
         return RedirectToAction(nameof(Index));
     }
 
