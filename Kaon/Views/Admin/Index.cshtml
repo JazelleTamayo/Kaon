@@ -43,14 +43,12 @@
 
 @foreach (var st in Model.Stores)
 {
-    var link = Url.Action("Landing", "Store", new { slug = st.Slug }, Context.Request.Scheme);
     var owners = Model.Owners.Where(o => o.StoreId == st.Id).ToList();
     var stat = Model.Stats.TryGetValue(st.Id, out var sv) ? sv : new StoreStats();
     <div class="card card-lift" style="margin-bottom:16px">
         <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
             <div>
                 <h3 style="margin:0 0 4px"><a asp-action="Store" asp-route-id="@st.Id" style="text-decoration:none;color:inherit">@st.Name</a></h3>
-                <div class="muted" style="font-size:.85rem">Customer link: <a href="@link">@link</a></div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 @if (st.SuspendedByAdmin) { <span class="chip chip-cancelled">Paused by Kaon</span> }
