@@ -42,7 +42,8 @@ a { color: inherit; }
 :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
 
 /* Hero */
-.hero { padding: 28px 0 48px; overflow: hidden; }
+.hero { padding: 28px 0 48px; overflow: hidden; min-height: calc(100vh - 68px); min-height: calc(100svh - 68px); display: flex; align-items: center; }
+.hero > .wrap { width: 100%; }
 .hero-grid { display: grid; grid-template-columns: 1fr 1.05fr; gap: 40px; align-items: center; }
 .eyebrow { display: inline-block; font-size: .78rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--orange); margin-bottom: 14px; }
 .eyebrow-light { color: var(--yellow); }
