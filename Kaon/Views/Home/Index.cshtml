@@ -216,15 +216,12 @@
         </div>
     </section>
 
-    <!-- Closing photo -->
-    <section class="photo-band" aria-label="Trays of home-cooked viands at a carinderia">
-        <div class="wrap">
-            <div class="photo-band-in" role="img" aria-label="Trays of home-cooked viands at a carinderia counter">
-                <div class="photo-band-copy">
-                    <h2>Made for the neighborhood carinderia.</h2>
-                    <p>Your food, your customers, your orders. All in one place.</p>
-                </div>
-            </div>
+    <!-- Final call to action -->
+    <section class="final">
+        <div class="wrap final-in">
+            <h2>Ready to take orders online?</h2>
+            <p>Request your carinderia's account and the Kaon team will set you up.</p>
+            <a class="lp-btn lp-btn-yellow lp-btn-lg" asp-controller="Apply" asp-action="Index">Get Kaon for your carinderia</a>
         </div>
     </section>
 </main>
@@ -272,7 +269,7 @@
     (function () {
         document.documentElement.classList.add('js');
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.sec h2', '.menu-head', '.faq-list'];
+        var groups = ['.steps3 > *', '.menu-row > *', '.status-strip', '.checks li', '.board-art', '.sec h2', '.menu-head', '.faq-list', '.final-in'];
         var els = [];
         groups.forEach(function (sel) {
             document.querySelectorAll(sel).forEach(function (el, i) {
