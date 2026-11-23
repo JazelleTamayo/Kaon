@@ -45,7 +45,9 @@
     </div>
 </div>
 
-@{ var store = (StoreSettings)ViewBag.Store; }
+@{
+    var store = (StoreSettings)ViewBag.Store;
+}
 <div class="card pay-card">
     <div class="row">
         <strong>Payment</strong>
@@ -61,8 +63,10 @@
 
             @if (Model.PaymentStatus == PaymentStatus.ProofSent)
             {
-                <p class="pay-ok">We got your screenshot. Waiting for the carinderia to confirm.
-                    <a href="/Payment/Proof/@Model.Id" target="_blank" rel="noopener">View my proof</a></p>
+                <p class="pay-ok">
+                    We got your screenshot. Waiting for the carinderia to confirm.
+                    <a href="/Payment/Proof/@Model.Id" target="_blank" rel="noopener">View my proof</a>
+                </p>
             }
 
             <form asp-action="UploadProof" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
@@ -103,7 +107,7 @@
 @section Scripts {
     <script>
         const current = '@Model.Status';
-        if (current !== 'Completed') {
+        if (current !== 'Completed' && current !== 'Cancelled') {
             setInterval(async () => {
                 try {
                     const r = await fetch('@Url.Action("StatusJson", new { id = Model.Id })');

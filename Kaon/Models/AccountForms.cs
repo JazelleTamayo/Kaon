@@ -24,7 +24,7 @@ public class RegisterForm
     public string Email { get; set; } = "";
 
     [Required(ErrorMessage = "Please enter a password."),
-     MinLength(6, ErrorMessage = "Use at least 6 characters.")]
+     MinLength(8, ErrorMessage = "Use at least 8 characters.")]
     public string Password { get; set; } = "";
 
     [Required(ErrorMessage = "Please confirm your password."),

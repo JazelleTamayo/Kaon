@@ -87,6 +87,9 @@ public class AdminController : Controller
         {
             store = await _db.StoreSettings.FirstOrDefaultAsync(s => s.Id == existingId);
             if (store == null) ModelState.AddModelError(nameof(form.StoreId), "Choose a carinderia from the list.");
+            // One email can be used only once per carinderia (the database refuses a second one)
+            else if (await _db.Users.AnyAsync(u => u.Email == email && u.StoreId == store.Id))
+                ModelState.AddModelError(nameof(form.Email), "A customer of this carinderia already uses that email. Please use a different email for the owner.");
         }
         else if (string.IsNullOrWhiteSpace(form.CarinderiaName))
         {
@@ -146,7 +149,7 @@ public class AdminController : Controller
         await _db.SaveChangesAsync();
 
         // Module 9: every new carinderia starts with the free trial month
-        _db.Subscriptions.Add(Billing.NewFor(owner.Id, await _db.PlatformSettings.AsNoTracking().FirstAsync(), DateTime.UtcNow));
+        _db.Subscriptions.Add(await SubscriptionStart.ForOwnerAsync(_db, owner.Id, owner.StoreId, DateTime.UtcNow));
         await _db.SaveChangesAsync();
         return owner;
     }
@@ -191,7 +194,7 @@ public class AdminController : Controller
             await _db.SaveChangesAsync();
             TempData["Saved"] = user.FullName + (user.IsActive ? " is switched on." : " is switched off. They can't log in.");
         }
-        return back == "users" ? RedirectToAction(nameof(Users)) : RedirectToAction(nameof(Index));
+        return back == "users" ? RedirectToAction(nameof(Users)) : BackHere(nameof(Index));
     }
 
     // The page the admin came from (so the link pop-up appears right there), or the given page

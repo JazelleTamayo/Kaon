@@ -103,9 +103,13 @@ public class OrderController : Controller
         // Daily meals: only orderable if the owner picked them for today's menu.
         // Food packages keep using their own on/off switch.
         var today = DateTime.Today;
-        var todayEntries = await _db.DailyMenuEntries
+        // Grouped first: if a dish was ever put on today's menu twice, checkout still works
+        var todayEntries = (await _db.DailyMenuEntries
             .Where(e => e.Date == today && ids.Contains(e.MenuItemId))
-            .ToDictionaryAsync(e => e.MenuItemId);
+            .OrderBy(e => e.Id)
+            .ToListAsync())
+            .GroupBy(e => e.MenuItemId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         bool CanOrderLine(int menuItemId, MenuItem mi) => mi.IsPackage
             ? mi.CanOrder
@@ -198,6 +202,9 @@ public class OrderController : Controller
             PaymentStatus = proofName != null ? PaymentStatus.ProofSent : PaymentStatus.Unpaid
         };
 
+        // Portions to take from today's menu (only dishes with a limit)
+        var takes = new List<(int EntryId, int Qty, string Name)>();
+
         foreach (var line in cart)
         {
             var m = menu[line.MenuItemId];
@@ -214,7 +221,7 @@ public class OrderController : Controller
                 IsReadyToServe = entry?.ReadyState == DishReadyState.ReadyToServe,
                 DailyMenuEntryId = entry?.Id
             });
-            if (entry?.Stock != null) entry.Stock -= line.Quantity;
+            if (entry?.Stock != null) takes.Add((entry.Id, line.Quantity, m.Name));
         }
 
         // Remember the delivery address on the customer's profile for next time
@@ -224,8 +231,28 @@ public class OrderController : Controller
             if (user != null) user.Address = order.Address;
         }
 
+        // Take the portions and save the order together. Each portion count is lowered in the
+        // database only if enough are still left, so two customers ordering at the same moment
+        // can never both get the last serving.
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        foreach (var take in takes)
+        {
+            var taken = await _db.DailyMenuEntries
+                .Where(e => e.Id == take.EntryId && e.Stock != null && e.Stock >= take.Qty)
+                .ExecuteUpdateAsync(s => s.SetProperty(e => e.Stock, e => e.Stock - take.Qty));
+            if (taken == 0)
+            {
+                await tx.RollbackAsync();
+                ProofStorage.Delete(_env, proofName);
+                ModelState.AddModelError("", "Sorry, " + take.Name + " just sold out or has fewer portions left. Please lower the quantity in your cart.");
+                await FillCheckoutView();
+                return View(form);
+            }
+        }
+
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
+        await tx.CommitAsync();
 
         CartHelper.Clear(HttpContext.Session);
         HttpContext.Session.SetInt32("lastOrderId", order.Id);

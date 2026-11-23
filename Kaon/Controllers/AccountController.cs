@@ -123,6 +123,13 @@ public class AccountController : Controller
             return View(form);
         }
 
+        // An owner must run a carinderia, otherwise every owner page would turn them away
+        if (user.Role == "Owner" && (user.StoreId == null || !await _db.StoreSettings.AnyAsync(s => s.Id == user.StoreId)))
+        {
+            ModelState.AddModelError("", "This owner account isn't linked to a carinderia yet. Please contact the Kaon team.");
+            return View(form);
+        }
+
         await SignInUser(user);
         return user.MustChangePassword
             ? RedirectToAction(nameof(ChangePassword))
@@ -161,7 +168,9 @@ public class AccountController : Controller
             var (token, hash) = InviteTokens.New();
             _db.PasswordTokens.Add(new PasswordToken
             {
-                UserId = user.Id, TokenHash = hash, Purpose = "Reset",
+                UserId = user.Id,
+                TokenHash = hash,
+                Purpose = "Reset",
                 ExpiresAt = DateTime.UtcNow.AddHours(1)
             });
             await _db.SaveChangesAsync();
@@ -216,6 +225,8 @@ public class AccountController : Controller
         var user = t.User!;
         user.PasswordHash = _hasher.HashPassword(user, form.NewPassword);
         user.MustChangePassword = false;
+        user.FailedLogins = 0;      // a new password ends any "too many tries" pause
+        user.LockoutUntil = null;
 
         // The link works once. Any other link for this person stops working too.
         t.UsedAt = DateTime.UtcNow;
@@ -349,8 +360,29 @@ public class AccountController : Controller
         var wasAdmin = User.IsInRole("Admin");
         await HttpContext.SignOutAsync(Scheme);
         HttpContext.Session.Clear();
+
+        // Logged out from a carinderia's own page (/c/...): go back there, so the visitor
+        // can log in or sign up at that carinderia right away
+        var referer = Request.Headers.Referer.ToString();
+        if (Uri.TryCreate(referer, UriKind.Absolute, out var from) && from.Host == Request.Host.Host &&
+            from.AbsolutePath.StartsWith("/c/", StringComparison.OrdinalIgnoreCase))
+            return LocalRedirect(from.AbsolutePath);
+
         return wasAdmin ? Redirect("/admin/login") : RedirectToAction(nameof(Login));
     }
 
-    public IActionResult AccessDenied() => GoHome();
+    public async Task<IActionResult> AccessDenied()
+    {
+        // An owner whose account has no carinderia would bounce between the dashboard and this page
+        // forever. Sign them out and explain instead.
+        if (User.IsInRole("Owner") && await _stores.IdAsync() == null)
+        {
+            await HttpContext.SignOutAsync(Scheme);
+            HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+            ModelState.AddModelError("", "This owner account isn't linked to a carinderia yet. Please contact the Kaon team.");
+            await ShowLinkedStore();
+            return View(nameof(Login), new LoginForm());
+        }
+        return GoHome();
+    }
 }
