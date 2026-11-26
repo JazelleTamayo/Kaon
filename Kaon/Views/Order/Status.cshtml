@@ -40,6 +40,11 @@
     </div>
 }
 
+@if (Model.Status == OrderStatus.Completed)
+{
+    <partial name="_Survey" model="Model" />
+}
+
 @if (!string.IsNullOrWhiteSpace(Model.Notes))
 {
     <div class="card">
