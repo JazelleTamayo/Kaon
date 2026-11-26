@@ -17,7 +17,9 @@ public static class OrderText
         OrderStatus.Ready => o.OrderType == OrderType.Pickup
             ? "Your order is Ready. Pick it up."
             : "Your order is Ready. A rider will pick it up soon.",
-        OrderStatus.OutForDelivery => "Your order is on its way.",
+        OrderStatus.OutForDelivery => string.IsNullOrWhiteSpace(o.RiderName)
+            ? "Your order is on its way."
+            : "Your order is on its way with " + o.RiderName + ".",
         OrderStatus.Cancelled => string.IsNullOrWhiteSpace(o.CancelReason)
             ? "This order was cancelled by the carinderia. Please contact them for details."
             : "This order was cancelled by the carinderia. Reason: " + o.CancelReason,
@@ -92,4 +94,17 @@ public static class OrderText
     public static string MarkPaidLabel(Order o) => o.DepositAmount == null
         ? "Mark paid"
         : o.PaymentStatus == PaymentStatus.DepositPaid ? "Mark fully paid" : "Confirm deposit";
+
+    // Module 7: what is still to be collected in person when the order is handed over
+    public static decimal ToCollect(Order o) => o.PaymentStatus switch
+    {
+        PaymentStatus.Paid => 0,
+        PaymentStatus.DepositPaid => o.Total - (o.DepositAmount ?? 0),
+        _ => o.Total
+    };
+
+    // A short random code for a rider's private link (128 bits, cannot be guessed)
+    public static string NewRiderToken() =>
+        Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16))
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

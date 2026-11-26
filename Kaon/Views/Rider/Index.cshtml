@@ -1,0 +1,127 @@
+@model Order
+@using Kaon.Helpers
+@{
+    Layout = null;
+    var store = (StoreSettings)ViewBag.Store;
+    var token = (string)ViewBag.Token;
+    var collect = OrderText.ToCollect(Model);
+    var done = Model.Status == OrderStatus.Completed;
+    var onTheWay = Model.Status == OrderStatus.OutForDelivery;
+    var subtotal = Model.Items.Sum(i => i.UnitPrice * i.Quantity);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <partial name="_RiderHead" />
+    <title>Delivery #@Model.Id - @store.Name</title>
+</head>
+<body>
+    <header>
+        <div class="brand">kaon · rider</div>
+        <h1>Delivery #@Model.Id for @store.Name</h1>
+    </header>
+    <main>
+        @if (TempData["Warn"] is string warn) { <div class="warn" role="alert">@warn</div> }
+
+        @if (done)
+        {
+            <div class="card center">
+                <span class="status done">Delivered</span>
+                <p class="big" style="margin:12px 0 4px">Thank you, @Model.RiderName!</p>
+                <p class="muted" style="margin:0">Order #@Model.Id was delivered@(Model.CompletedAt != null ? " at " + Model.CompletedAt.Value.ToString("h:mm tt") : "").
+                    The customer's details are no longer shown.</p>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(store.Phone))
+            {
+                <a class="btn btn-line" href="tel:@store.Phone">Call @store.Name</a>
+            }
+        }
+        else
+        {
+            <div class="card">
+                <div class="row" style="align-items:center">
+                    <span class="status">@(onTheWay ? "On the way" : Model.Status == OrderStatus.Ready ? "Ready for pickup" : "Being prepared")</span>
+                    @if (Model.ScheduledFor != null)
+                    {
+                        <span class="muted">Deliver by <strong>@Model.ScheduledFor.Value.ToString(Model.ScheduledFor.Value.Date == DateTime.Today ? "h:mm tt" : "MMM d, h:mm tt")</strong></span>
+                    }
+                </div>
+                @if (!onTheWay && Model.Status != OrderStatus.Ready)
+                {
+                    <p class="muted" style="margin:10px 0 0">The kitchen is still preparing this order. Pick it up when it's ready.</p>
+                }
+            </div>
+
+            <div class="card">
+                <div class="label">Deliver to</div>
+                <div class="big">@Model.CustomerName</div>
+                <div class="addr">@Model.Address</div>
+                @if (!string.IsNullOrWhiteSpace(Model.Notes)) { <div class="note">Note: @Model.Notes</div> }
+                @if (!string.IsNullOrWhiteSpace(Model.Phone))
+                {
+                    <div class="call">
+                        <a class="btn btn-line" href="tel:@Model.Phone">Call customer</a>
+                        <a class="btn btn-line" href="sms:@Model.Phone">Text customer</a>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="label">Items</div>
+                <ul class="items">
+                    @foreach (var i in Model.Items)
+                    {
+                        <li><span><strong>@i.Quantity ×</strong> @i.ItemName</span><span>₱@((i.UnitPrice * i.Quantity).ToString("N2"))</span></li>
+                    }
+                </ul>
+                <div class="row muted" style="margin-top:8px"><span>Food</span><span>₱@subtotal.ToString("N2")</span></div>
+                <div class="row muted"><span>Delivery fee</span><span>₱@Model.DeliveryFee.ToString("N2")</span></div>
+                <div class="row" style="font-weight:700"><span>Total</span><span>₱@Model.Total.ToString("N2")</span></div>
+            </div>
+
+            <div class="card">
+                @if (collect > 0)
+                {
+                    <div class="collect">
+                        Collect from the customer
+                        <strong>₱@collect.ToString("N2")</strong>
+                        <span class="muted">@(Model.PaymentStatus == PaymentStatus.DepositPaid ? "The balance. The deposit is already paid." : Model.PaymentStatus == PaymentStatus.ProofSent ? "The customer says they paid by GCash. The carinderia is still checking it. Only collect if the carinderia tells you to." : "Cash on delivery")</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="collect paid">
+                        Already paid
+                        <strong>Nothing to collect</strong>
+                    </div>
+                }
+            </div>
+
+            <div class="actions">
+                @if (!onTheWay)
+                {
+                    <form asp-action="PickedUp" asp-route-token="@token" method="post">
+                        <button class="btn btn-main">I picked up the order</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Delivered" asp-route-token="@token" method="post" class="card" style="margin:0">
+                        @if (collect > 0)
+                        {
+                            var proofSent = Model.PaymentStatus == PaymentStatus.ProofSent;
+                            <label class="check"><input type="checkbox" name="collected" value="true" required="@(!proofSent)" /> I collected ₱@collect.ToString("N2") from the customer@(proofSent ? " (only if the carinderia asked you to)" : "")</label>
+                        }
+                        <button class="btn btn-done">Delivered</button>
+                    </form>
+                }
+                @if (!string.IsNullOrWhiteSpace(store.Phone))
+                {
+                    <a class="btn btn-line" href="tel:@store.Phone">Call @store.Name</a>
+                }
+            </div>
+            <p class="muted center" style="margin-top:16px">This link is only for you. Please don't share it.</p>
+        }
+    </main>
+</body>
+</html>

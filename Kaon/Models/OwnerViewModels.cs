@@ -8,6 +8,9 @@ public class BoardVm
     public int OrdersToday { get; set; }
     public decimal SalesToday { get; set; }
     public StoreSettings Store { get; set; } = new();
+
+    // Module 7: saved riders to choose from on delivery orders
+    public List<Rider> Riders { get; set; } = new();
 }
 
 public class SummaryVm

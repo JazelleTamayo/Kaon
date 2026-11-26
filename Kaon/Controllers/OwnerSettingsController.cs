@@ -25,7 +25,7 @@ public class OwnerSettingsController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        ViewBag.Qr = await QrCodes.StatsAsync(_db, await _stores.RequireAsync());
+        await FillPanels();
         return View(await _stores.StoreAsync());
     }
 
@@ -67,6 +67,52 @@ public class OwnerSettingsController : Controller
         });
     }
 
+    // QR scan counts (Module 12) and saved riders (Module 7) shown beside the store form
+    private async Task FillPanels()
+    {
+        var sid = await _stores.RequireAsync();
+        ViewBag.Qr = await QrCodes.StatsAsync(_db, sid);
+        ViewBag.Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync();
+    }
+
+    // ---------- Module 7: the carinderia's delivery riders ----------
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddRider(string? name, string? phone)
+    {
+        var sid = await _stores.RequireAsync();
+        name = name?.Trim(); phone = phone?.Trim();
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(phone) || name.Length > 60 || phone.Length > 20)
+        {
+            TempData["Warn"] = "Enter the rider's name and mobile number.";
+        }
+        else if (await _db.Riders.AnyAsync(r => r.StoreId == sid && r.IsActive && r.Phone == phone))
+        {
+            TempData["Warn"] = "A rider with that number is already on your list.";
+        }
+        else
+        {
+            _db.Riders.Add(new Rider { StoreId = sid, Name = name, Phone = phone });
+            await _db.SaveChangesAsync();
+            TempData["Saved"] = name + " is on your rider list.";
+        }
+        return Redirect(Url.Action(nameof(Index))! + "#riders");
+    }
+
+    // Orders already given to this rider keep their name, number and link
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveRider(int id)
+    {
+        var sid = await _stores.RequireAsync();
+        var rider = await _db.Riders.FirstOrDefaultAsync(r => r.Id == id && r.StoreId == sid);
+        if (rider != null)
+        {
+            rider.IsActive = false;
+            await _db.SaveChangesAsync();
+            TempData["Saved"] = rider.Name + " was removed from your rider list.";
+        }
+        return Redirect(Url.Action(nameof(Index))! + "#riders");
+    }
+
     // The old poster address still works
     [HttpGet]
     public IActionResult Poster() => RedirectToAction(nameof(Print), new { kind = "poster" });
@@ -98,7 +144,7 @@ public class OwnerSettingsController : Controller
             form.Id = current.Id;
             form.Slug = current.Slug;
             form.PaymentQr = current.PaymentQr;
-            ViewBag.Qr = await QrCodes.StatsAsync(_db, await _stores.RequireAsync());
+            await FillPanels();
             return View(form);
         }
 

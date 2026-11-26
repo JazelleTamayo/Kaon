@@ -60,6 +60,23 @@ public class Order
     [StringLength(200)]
     public string? CancelReason { get; set; }
 
+    // Module 7: the rider taking a delivery order. A copy of the name and number is kept on the order,
+    // so the order still shows who delivered it if the rider is later removed.
+    [StringLength(60)]
+    public string? RiderName { get; set; }
+
+    [StringLength(20)]
+    public string? RiderPhone { get; set; }
+
+    // The secret part of the rider's private link (/r/{token}). Cleared when the rider is removed from the order.
+    [StringLength(64)]
+    public string? RiderToken { get; set; }
+
+    public DateTime? RiderAssignedAt { get; set; }
+
+    // When the order was handed over (delivered, or picked up by the customer)
+    public DateTime? CompletedAt { get; set; }
+
     public List<OrderItem> Items { get; set; } = new();
 
     [NotMapped]

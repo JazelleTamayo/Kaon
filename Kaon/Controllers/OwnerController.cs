@@ -31,7 +31,8 @@ public class OwnerController : Controller
             Active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList(),
             OrdersToday = todays.Count(o => o.Status != OrderStatus.Cancelled),
             SalesToday = todays.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.Total),
-            Store = await _stores.StoreAsync()
+            Store = await _stores.StoreAsync(),
+            Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync()
         });
     }
 
@@ -80,6 +81,68 @@ public class OwnerController : Controller
         if (order != null && next != null)
         {
             order.Status = next.Value;
+            if (next == OrderStatus.Completed) order.CompletedAt = DateTime.Now;
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Module 7: give a delivery order to a rider. Pick a saved rider, or type a new one (saved for next time).
+    // The rider gets a private link with the address, the items and the amount to collect.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignRider(int id, int? riderId, string? name, string? phone)
+    {
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
+        if (order == null || order.OrderType != OrderType.Delivery || !IsActive(order)) return RedirectToAction(nameof(Index));
+
+        Rider? rider = null;
+        if (riderId != null)
+        {
+            rider = await _db.Riders.FirstOrDefaultAsync(r => r.Id == riderId && r.StoreId == sid && r.IsActive);
+        }
+        else if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(phone))
+        {
+            name = name.Trim(); phone = phone.Trim();
+            if (name.Length > 60) name = name[..60];
+            if (phone.Length > 20) phone = phone[..20];
+            rider = await _db.Riders.FirstOrDefaultAsync(r => r.StoreId == sid && r.IsActive && r.Phone == phone);
+            if (rider == null)
+            {
+                rider = new Rider { StoreId = sid, Name = name, Phone = phone };
+                _db.Riders.Add(rider);
+            }
+        }
+        if (rider == null)
+        {
+            TempData["Warn"] = "Choose a rider, or type the rider's name and number.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // A different rider gets a new link, so the old rider's link stops working
+        if (order.RiderToken == null || order.RiderPhone != rider.Phone)
+            order.RiderToken = OrderText.NewRiderToken();
+        order.RiderName = rider.Name;
+        order.RiderPhone = rider.Phone;
+        order.RiderAssignedAt = DateTime.Now;
+        await _db.SaveChangesAsync();
+
+        TempData["Saved"] = "Order #" + order.Id + " is with " + rider.Name + ". Send them the rider link.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Take the rider off an order. Their link stops working right away.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveRider(int id)
+    {
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
+        if (order != null && IsActive(order))
+        {
+            order.RiderName = null;
+            order.RiderPhone = null;
+            order.RiderToken = null;
+            order.RiderAssignedAt = null;
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
@@ -114,6 +177,7 @@ public class OwnerController : Controller
         if (order != null && IsActive(order))
         {
             order.Status = OrderStatus.Cancelled;
+            order.RiderToken = null;   // the rider's link stops working
 
             // The reason the customer will see: a quick choice, or the owner's own words for "Other"
             var why = (reason == "Other" ? otherReason : reason)?.Trim();

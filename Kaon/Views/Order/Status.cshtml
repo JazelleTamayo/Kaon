@@ -25,6 +25,21 @@
     <p class="status-msg">@OrderText.Message(Model)</p>
 </div>
 
+@* Module 7: once the order is on its way, the customer can reach the rider *@
+@if (Model.OrderType == OrderType.Delivery && Model.Status == OrderStatus.OutForDelivery && !string.IsNullOrWhiteSpace(Model.RiderName))
+{
+    <div class="card rider-box" style="margin-top:0">
+        <strong>Your rider: @Model.RiderName</strong>
+        @if (!string.IsNullOrWhiteSpace(Model.RiderPhone))
+        {
+            <div class="rider-actions">
+                <a class="btn btn-sm" href="tel:@Model.RiderPhone">Call @Model.RiderPhone</a>
+                <a class="btn-ghost" href="sms:@Model.RiderPhone">Text</a>
+            </div>
+        }
+    </div>
+}
+
 @if (!string.IsNullOrWhiteSpace(Model.Notes))
 {
     <div class="card">
