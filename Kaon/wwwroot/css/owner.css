@@ -781,3 +781,31 @@ a.dd-item { text-decoration: none; }
 .rider-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #f1dcc0; }
 .rider-list li:last-child { border-bottom: 0; }
 .rider-list form { margin: 0; }
+
+/* Module 14: feedback page */
+.fb-list { padding-top: 6px; padding-bottom: 6px; }
+.fb-item { padding: 10px 0; border-bottom: 1px dashed #f1dcc0; }
+.fb-item:last-child { border-bottom: 0; }
+.fb-stars { color: #F6B42C; letter-spacing: 1px; }
+.fb-stars .off { color: #e9dfd3; }
+.fb-comment { margin: 6px 0 4px; }
+.fb-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.fb-tags .chip-sm { margin-left: 0; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 11rem) 1fr 2rem; gap: 10px; align-items: center; padding: 4px 0; font-size: .9rem; }
+.bar { height: 10px; background: #f6ede2; border-radius: 999px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--orange); border-radius: 999px; }
+.bar-row strong { text-align: right; }
+.problem-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.problem-btn { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 14px; min-height: 64px; border-radius: 14px; border: 1.5px solid #f1dcc0; background: #fff; font: inherit; cursor: pointer; color: inherit; transition: border-color .15s, background .15s; }
+.problem-btn strong { font-size: 1rem; }
+.problem-btn span { font-size: .78rem; color: #7a6a60; }
+.problem-btn:hover, .problem-btn:focus-visible { border-color: var(--orange); background: #fff7ee; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; text-align: center; }
+.compare > div { background: #fff7ee; border-radius: 14px; padding: 10px; }
+.compare strong { display: block; font-size: 1.6rem; line-height: 1.1; }
+.compare span { font-size: .78rem; color: #7a6a60; }
+.problem-list { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid #f1dcc0; }
+.problem-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #f1dcc0; font-size: .9rem; }
+.problem-list .chip-sm { margin-left: 0; }
+.problem-list form { margin: 0; }
+@media (max-width: 560px) { .bar-row { grid-template-columns: 1fr 2rem; } .bar-row .bar { grid-column: 1 / -1; grid-row: 2; } }

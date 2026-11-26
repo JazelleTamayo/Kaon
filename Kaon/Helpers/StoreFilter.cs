@@ -9,7 +9,7 @@ namespace Kaon.Helpers;
 public class StoreFilter : IAsyncActionFilter
 {
     private static readonly HashSet<string> CustomerAreas = new() { "Menu", "Cart", "Order" };
-    private static readonly HashSet<string> OwnerAreas = new() { "Owner", "OwnerMenu", "OwnerSettings" };
+    private static readonly HashSet<string> OwnerAreas = new() { "Owner", "OwnerMenu", "OwnerSettings", "OwnerFeedback" };
     private readonly StoreContext _store;
 
     public StoreFilter(StoreContext store) => _store = store;

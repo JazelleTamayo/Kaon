@@ -24,6 +24,38 @@ public class OrderController : Controller
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+    // Module 14: a short survey after a completed order. One answer per order.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Feedback(int id, FeedbackForm form)
+    {
+        var uid = CurrentUserId;
+        var order = await _db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
+        if (order == null) return NotFound();
+
+        if (order.Status != OrderStatus.Completed)
+            TempData["Warn"] = "You can rate an order once you have received it.";
+        else if (await _db.OrderFeedbacks.AnyAsync(f => f.OrderId == id))
+            TempData["Saved"] = "You already rated this order. Thank you!";
+        else if (!ModelState.IsValid)
+            TempData["Warn"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct());
+        else
+        {
+            _db.OrderFeedbacks.Add(new OrderFeedback
+            {
+                OrderId = order.Id,
+                StoreId = order.StoreId,
+                Rating = form.Rating,
+                // The delivery-fee question is only asked for delivery orders
+                FeeReasonable = order.OrderType == OrderType.Delivery ? form.FeeReasonable : null,
+                TimeSaved = form.TimeSaved,
+                Comment = string.IsNullOrWhiteSpace(form.Comment) ? null : form.Comment.Trim()
+            });
+            await _db.SaveChangesAsync();
+            TempData["Saved"] = "Thank you for your feedback!";
+        }
+        return RedirectToAction(nameof(Status), new { id });
+    }
+
     // My orders, newest first
     public async Task<IActionResult> Index()
     {
@@ -34,6 +66,8 @@ public class OrderController : Controller
             .OrderByDescending(o => o.CreatedAt)
             .Take(50)
             .ToListAsync();
+        var ids = orders.Select(o => o.Id).ToList();
+        ViewBag.Rated = (await _db.OrderFeedbacks.AsNoTracking().Where(f => ids.Contains(f.OrderId)).Select(f => f.OrderId).ToListAsync()).ToHashSet();
         // One account, several carinderias: each order says where it was placed
         var storeIds = orders.Select(o => o.StoreId).Distinct().ToList();
         ViewBag.StoreNames = await _db.StoreSettings.AsNoTracking().Where(s => storeIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Name);
@@ -279,6 +313,7 @@ public class OrderController : Controller
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
         if (order == null) return NotFound();
         ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync(s => s.Id == order.StoreId);
+        ViewBag.Feedback = await _db.OrderFeedbacks.AsNoTracking().FirstOrDefaultAsync(f => f.OrderId == order.Id);
         return View(order);
     }
 

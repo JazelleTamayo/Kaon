@@ -1,0 +1,162 @@
+@model OwnerFeedbackVm
+@{
+    ViewData["Title"] = "Feedback";
+    ViewData["Wide"] = true;
+    var s = Model.Stats;
+    var last = Model.LastSurvey;
+    string Pct(double? v) => v == null ? "-" : Math.Round(v.Value) + "%";
+}
+
+<section class="o-hero sm">
+    <div class="o-hero-bg" aria-hidden="true"></div>
+    <div class="o-hero-in">
+        <span class="o-kicker">Feedback</span>
+        <h1>What customers say</h1>
+        <p>Customers can rate an order after they receive it. Write down any order that goes wrong, so you can see if Kaon helps.</p>
+    </div>
+</section>
+
+<div class="stats o-stats">
+    <div class="stat c-yellow">
+        <span class="stat-num">@(s.AverageRating == null ? "-" : s.AverageRating.Value.ToString("0.0") + " ★")</span>
+        <span class="stat-label">Average rating · @s.Responses answer@(s.Responses == 1 ? "" : "s")</span>
+    </div>
+    <div class="stat c-green">
+        <span class="stat-num">@Pct(s.FeeYesPercent)</span>
+        <span class="stat-label">Say the ₱@Model.DeliveryFee.ToString("N0") delivery fee is fair (goal: @FeedbackStats.FeeTargetPercent%)</span>
+    </div>
+    <div class="stat c-teal">
+        <span class="stat-num">@(s.AverageMinutesSaved == null ? "-" : "~" + Math.Round(s.AverageMinutesSaved.Value) + " min")</span>
+        <span class="stat-label">Waiting time saved per order</span>
+    </div>
+    <div class="stat c-orange">
+        <span class="stat-num">@s.ProblemsLast7Days</span>
+        <span class="stat-label">Orders that went wrong this week</span>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div>
+        <h2 class="section">Comments and ratings</h2>
+        @if (!Model.Recent.Any())
+        {
+            <div class="card"><p class="muted" style="margin:0">No feedback yet. Customers are asked once their order is completed.</p></div>
+        }
+        else
+        {
+            <div class="card fb-list">
+                @foreach (var f in Model.Recent)
+                {
+                    <div class="fb-item">
+                        <div class="row">
+                            <span class="fb-stars" aria-label="@f.Rating out of 5">@(new string('★', f.Rating))<span class="off">@(new string('★', 5 - f.Rating))</span></span>
+                            <span class="muted">Order #@f.OrderId · @f.CreatedAt.ToString("MMM d")</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(f.Comment)) { <p class="fb-comment">@f.Comment</p> }
+                        <div class="fb-tags">
+                            @if (f.FeeReasonable != null) { <span class="chip chip-sm @(f.FeeReasonable == true ? "chip-ready" : "chip-cancelled")">Fee @(f.FeeReasonable == true ? "fair" : "too high")</span> }
+                            @if (f.TimeSaved != null) { <span class="chip chip-sm chip-soldout">Saved: @TimeSaved.Text(f.TimeSaved).ToLower()</span> }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (s.TimeAnswers > 0)
+        {
+            <h2 class="section">Waiting time saved</h2>
+            <div class="card">
+                @foreach (var (text, count) in s.TimeSavedCounts)
+                {
+                    var pct = 100.0 * count / s.TimeAnswers;
+                    <div class="bar-row">
+                        <span>@text</span>
+                        <span class="bar"><span style="width:@pct.ToString("0", System.Globalization.CultureInfo.InvariantCulture)%"></span></span>
+                        <strong>@count</strong>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div>
+        <h2 class="section" id="problems">Orders that went wrong</h2>
+        <div class="card">
+            <p class="muted" style="margin-top:0">Tap what happened. Add the order number if it was a Kaon order.</p>
+            <form asp-action="LogProblem" method="post">
+                <div class="problem-btns">
+                    @foreach (var k in Enum.GetValues<ProblemKind>())
+                    {
+                        <button class="problem-btn" name="kind" value="@k">
+                            <strong>@ProblemText.Label(k)</strong>
+                            <span>@ProblemText.Hint(k)</span>
+                        </button>
+                    }
+                </div>
+                <div class="two-col" style="margin-top:10px">
+                    <div>
+                        <label class="label" for="orderId">Order # (optional)</label>
+                        <input class="input" id="orderId" name="orderId" type="number" min="1" inputmode="numeric" />
+                    </div>
+                    <div>
+                        <label class="label" for="note">Note (optional)</label>
+                        <input class="input" id="note" name="note" maxlength="300" placeholder="What happened?" />
+                    </div>
+                </div>
+            </form>
+
+            <div class="compare">
+                <div><strong>@(s.ProblemsPerWeekBefore?.ToString() ?? "?")</strong><span>a week before Kaon (your guess)</span></div>
+                <div><strong>@s.ProblemsPerWeekLast4Weeks.ToString("0.#")</strong><span>a week now (last 4 weeks)</span></div>
+            </div>
+            @if (s.ProblemsPerWeekBefore == null)
+            {
+                <p class="hint">Answer the short survey below to compare with before Kaon.</p>
+            }
+
+            @if (Model.Problems.Any())
+            {
+                <ul class="problem-list">
+                    @foreach (var p in Model.Problems)
+                    {
+                        <li>
+                            <span>
+                                <span class="chip chip-sm chip-soldout">@ProblemText.Label(p.Kind)</span>
+                                @(p.OrderId != null ? "Order #" + p.OrderId : "Walk-in")
+                                @if (!string.IsNullOrEmpty(p.Note)) { <span class="muted">· @p.Note</span> }
+                                <span class="muted">· @p.At.ToString("MMM d, h:mm tt")</span>
+                            </span>
+                            <form asp-action="DeleteProblem" asp-route-id="@p.Id" method="post"><button class="btn-ghost" title="Remove (logged by mistake)">Remove</button></form>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <h2 class="section" id="survey">Your survey</h2>
+        <form asp-action="Survey" method="post" class="card">
+            @if (last != null)
+            {
+                <p class="muted" style="margin-top:0">Last answered @last.CreatedAt.ToString("MMMM d"). Answer again any time. Kaon keeps every answer to see how things change.</p>
+            }
+            <fieldset class="survey-q" style="border:0;padding:0;margin:0 0 12px">
+                <legend style="font-weight:600;padding:0;margin-bottom:6px">How much does keeping pickup and delivery orders apart help you?</legend>
+                <div class="pill-pick">
+                    @for (var i = 1; i <= 5; i++)
+                    {
+                        var text = i switch { 1 => "1 · Not at all", 3 => "3 · Some", 5 => "5 · A lot", _ => i.ToString() };
+                        <label><input type="radio" name="SeparationRating" value="@i" required checked="@(last?.SeparationRating == i)" /> <span>@text</span></label>
+                    }
+                </div>
+            </fieldset>
+
+            <label class="label" for="ProblemsPerWeekBefore">Before Kaon, about how many orders a week were mixed up, forgotten or late?</label>
+            <input class="input" id="ProblemsPerWeekBefore" name="ProblemsPerWeekBefore" type="number" min="0" max="500" inputmode="numeric" value="@last?.ProblemsPerWeekBefore" style="max-width:160px" />
+
+            <label class="label" for="ownerComment">Anything else? (optional)</label>
+            <textarea class="input" id="ownerComment" name="Comment" maxlength="500" rows="2"></textarea>
+
+            <button class="btn" style="margin-top:12px">Save my answers</button>
+        </form>
+    </div>
+</div>

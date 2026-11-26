@@ -22,6 +22,9 @@ public class KaonDbContext : DbContext
     public DbSet<SubscriptionPayment> SubscriptionPayments => Set<SubscriptionPayment>();
     public DbSet<QrScan> QrScans => Set<QrScan>();
     public DbSet<Rider> Riders => Set<Rider>();
+    public DbSet<OrderFeedback> OrderFeedbacks => Set<OrderFeedback>();
+    public DbSet<OrderProblem> OrderProblems => Set<OrderProblem>();
+    public DbSet<OwnerSurvey> OwnerSurveys => Set<OwnerSurvey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +45,10 @@ public class KaonDbContext : DbContext
         modelBuilder.Entity<Subscription>().HasIndex(x => x.OwnerId).IsUnique();
         modelBuilder.Entity<QrScan>().HasIndex(x => new { x.StoreId, x.At });
         modelBuilder.Entity<Rider>().HasIndex(x => x.StoreId);
+        modelBuilder.Entity<OrderFeedback>().HasIndex(x => x.OrderId).IsUnique();
+        modelBuilder.Entity<OrderFeedback>().HasIndex(x => x.StoreId);
+        modelBuilder.Entity<OrderProblem>().HasIndex(x => new { x.StoreId, x.At });
+        modelBuilder.Entity<OwnerSurvey>().HasIndex(x => x.StoreId);
         modelBuilder.Entity<Order>().HasIndex(x => x.RiderToken).IsUnique();
         modelBuilder.Entity<Subscription>()
             .HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.Cascade);

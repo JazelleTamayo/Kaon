@@ -25,7 +25,7 @@ else
                 @(o.OrderType == OrderType.Pickup ? "Pickup" : "Home delivery") · @o.CreatedAt.ToString("MMM d, h:mm tt")
             </div>
             <div class="row" style="margin-top:6px">
-                <span class="muted">@o.Items.Sum(i => i.Quantity) item(s)</span>
+                <span class="muted">@o.Items.Sum(i => i.Quantity) item(s)@if (o.Status == OrderStatus.Completed && !((HashSet<int>)ViewBag.Rated).Contains(o.Id)) { <span class="chip chip-pending chip-sm">Rate this order</span> }</span>
                 <strong>₱@o.Total.ToString("N2")</strong>
             </div>
         </a>

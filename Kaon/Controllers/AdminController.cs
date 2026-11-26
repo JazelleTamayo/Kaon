@@ -274,7 +274,8 @@ public class AdminController : Controller
             PendingLinks = pending.ToDictionary(x => x.UserId, x => x.Expires),
             Stats = (await StatsAsync(new List<StoreSettings> { store }))[id],
             Activity = await _db.ActivityLogs.AsNoTracking().Where(a => a.StoreId == id).OrderByDescending(a => a.At).Take(10).ToListAsync(),
-            Qr = await QrCodes.StatsAsync(_db, id)
+            Qr = await QrCodes.StatsAsync(_db, id),
+            Feedback = await FeedbackNumbers.ForStoreAsync(_db, id)
         };
         ViewBag.Series = MenuSeries.All;
         return View(vm);
