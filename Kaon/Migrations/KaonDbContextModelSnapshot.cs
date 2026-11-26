@@ -288,6 +288,9 @@ namespace Kaon.Migrations
                     b.Property<decimal>("DeliveryFee")
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<decimal?>("DepositAmount")
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");

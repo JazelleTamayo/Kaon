@@ -36,6 +36,11 @@ public class Order
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
 
+    // Food packages only: 50% of the package subtotal, due up front. The rest is
+    // collected in person at pickup/delivery. Null for ordinary meal orders.
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal? DepositAmount { get; set; }
+
     [StringLength(60)]
     public string? PaymentRef { get; set; }
 

@@ -51,14 +51,24 @@
 <div class="card pay-card">
     <div class="row">
         <strong>Payment</strong>
-        <span class="chip @(Model.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : Model.PaymentStatus == PaymentStatus.ProofSent ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(Model)</span>
+        <span class="chip @(Model.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : Model.PaymentStatus is PaymentStatus.ProofSent or PaymentStatus.DepositPaid ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(Model)</span>
     </div>
     <div class="muted">@OrderText.PayMethodLabel(Model) · ₱@Model.Total.ToString("N2")</div>
-
-    @if (Model.PaymentMethod == PaymentMethod.Cashless && Model.PaymentStatus != PaymentStatus.Paid && Model.Status != OrderStatus.Cancelled)
+    @if (Model.DepositAmount != null)
     {
+        <div class="muted">Deposit now: ₱@Model.DepositAmount.Value.ToString("N2") · Balance (at @(Model.OrderType == OrderType.Delivery ? "delivery" : "pickup")): ₱@((Model.Total - Model.DepositAmount.Value).ToString("N2"))</div>
+    }
+
+    @{
+        var depositStillDue = Model.DepositAmount != null && Model.PaymentStatus is PaymentStatus.Unpaid or PaymentStatus.ProofSent;
+        var showPayBox = Model.PaymentMethod == PaymentMethod.Cashless && Model.Status != OrderStatus.Cancelled &&
+            (Model.DepositAmount == null ? Model.PaymentStatus != PaymentStatus.Paid : depositStillDue);
+    }
+    @if (showPayBox)
+    {
+        var amountDue = Model.DepositAmount ?? Model.Total;
         <div class="pay-box">
-            <div class="pay-send">Send <strong>₱@Model.Total.ToString("N2")</strong> to:</div>
+            <div class="pay-send">Send <strong>₱@amountDue.ToString("N2")</strong> to:</div>
             <partial name="_PayDetails" model="store" />
 
             @if (Model.PaymentStatus == PaymentStatus.ProofSent)

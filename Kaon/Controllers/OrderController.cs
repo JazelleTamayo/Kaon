@@ -65,7 +65,9 @@ public class OrderController : Controller
             Phone = user?.Phone ?? "",
             Address = user?.Address,
             OrderType = store.PickupEnabled ? OrderType.Pickup : OrderType.Delivery,
-            PaymentMethod = store.AcceptsCash ? PaymentMethod.Cash : PaymentMethod.Cashless
+            PaymentMethod = store.AcceptsCash ? PaymentMethod.Cash : PaymentMethod.Cashless,
+            // Food packages: the date was already chosen when it was added to the cart
+            ScheduledFor = cart.FirstOrDefault(c => c.IsPackage)?.ScheduledFor
         });
     }
 
@@ -144,14 +146,22 @@ public class OrderController : Controller
                     " not offered right now. Please remove " + mi.Name + " from your cart.");
         }
 
-        // Food packages are made ahead: the customer must say when they need them
+        // Food packages are made ahead: the customer must say when they need them,
+        // far enough out for the owner to source ingredients for the biggest item ordered.
         var hasPackage = cart.Any(c => menu.TryGetValue(c.MenuItemId, out var mi) && mi.IsPackage);
+        decimal? depositAmount = null;
         if (hasPackage)
         {
+            var packageLines = cart.Where(c => menu.TryGetValue(c.MenuItemId, out var mi) && mi.IsPackage).ToList();
+            var leadDays = packageLines.Count == 0 ? 0 : packageLines.Max(c => PackageLeadTime.DaysFor(c.Price));
+            var earliest = DateTime.Today.AddDays(leadDays);
+
             if (form.ScheduledFor == null)
                 ModelState.AddModelError(nameof(form.ScheduledFor), "Please tell us when you need your food package.");
-            else if (form.ScheduledFor < DateTime.Now.AddHours(24))
-                ModelState.AddModelError(nameof(form.ScheduledFor), "Food packages need at least 1 day notice.");
+            else if (form.ScheduledFor < earliest)
+                ModelState.AddModelError(nameof(form.ScheduledFor), "Food packages need at least " + leadDays + " days' notice.");
+
+            depositAmount = Math.Round(packageLines.Sum(c => c.Price * c.Quantity) * 0.5m, 2);
         }
 
         // Ordinary meals: an optional preferred time later today (packages use their own date above)
@@ -199,7 +209,8 @@ public class OrderController : Controller
             PaymentMethod = form.PaymentMethod,
             PaymentProof = proofName,
             PaymentRef = form.PaymentMethod == PaymentMethod.Cashless && !string.IsNullOrWhiteSpace(form.PaymentRef) ? form.PaymentRef.Trim() : null,
-            PaymentStatus = proofName != null ? PaymentStatus.ProofSent : PaymentStatus.Unpaid
+            PaymentStatus = proofName != null ? PaymentStatus.ProofSent : PaymentStatus.Unpaid,
+            DepositAmount = depositAmount
         };
 
         // Portions to take from today's menu (only dishes with a limit)

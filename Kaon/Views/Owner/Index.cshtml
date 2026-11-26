@@ -148,7 +148,7 @@
                     }
                     <div class="pay-line">
                         <span class="pay-method">@OrderText.PayMethodLabel(o)</span>
-                        <span class="chip @(o.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : o.PaymentStatus == PaymentStatus.ProofSent ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(o)</span>
+                        <span class="chip @(o.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : o.PaymentStatus is PaymentStatus.ProofSent or PaymentStatus.DepositPaid ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(o)</span>
                         @if (!string.IsNullOrEmpty(o.PaymentProof))
                         {
                             <a href="/Payment/Proof/@o.Id" target="_blank" rel="noopener">View proof</a>
@@ -158,6 +158,10 @@
                             <span class="muted">Ref: @o.PaymentRef</span>
                         }
                     </div>
+                    @if (o.DepositAmount != null)
+                    {
+                        <div class="muted" style="font-size:.85rem">Deposit ₱@o.DepositAmount.Value.ToString("N2") · Balance ₱@((o.Total - o.DepositAmount.Value).ToString("N2")) due at @(o.OrderType == OrderType.Delivery ? "delivery" : "pickup")</div>
+                    }
                     <ul class="order-lines">
                         @foreach (var i in o.Items)
                         {
@@ -181,7 +185,7 @@
                         @if (o.PaymentStatus != PaymentStatus.Paid)
                         {
                             <form asp-action="MarkPaid" asp-route-id="@o.Id" method="post">
-                                <button class="btn-ghost">Mark paid</button>
+                                <button class="btn-ghost">@OrderText.MarkPaidLabel(o)</button>
                             </form>
                         }
                     </div>

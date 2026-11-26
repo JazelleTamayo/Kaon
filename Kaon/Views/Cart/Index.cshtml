@@ -3,6 +3,8 @@
     ViewData["Title"] = "Your cart";
     var subtotal = Model.Sum(c => c.Price * c.Quantity);
     var fee = (decimal)ViewBag.DeliveryFee;
+    var hasPackage = Model.Any(c => c.IsPackage);
+    var scheduledFor = Model.FirstOrDefault(c => c.ScheduledFor != null)?.ScheduledFor;
 }
 
 <h1>Your cart</h1>
@@ -37,6 +39,18 @@ else
                     <button aria-label="More">+</button>
                 </form>
             </div>
+        </div>
+    }
+
+    @if (hasPackage)
+    {
+        <div class="card">
+            @if (scheduledFor != null)
+            {
+                <div class="row"><span>Needed by</span><strong>@scheduledFor.Value.ToString("MMM d, h:mm tt")</strong></div>
+            }
+            <div class="row"><span>Deposit due now (50%)</span><strong>₱@((subtotal * 0.5m).ToString("N2"))</strong></div>
+            <div class="row muted"><span>Balance due at pickup/delivery</span><span>₱@((subtotal * 0.5m).ToString("N2"))</span></div>
         </div>
     }
 

@@ -81,7 +81,15 @@ public static class OrderText
     public static string PayStatusLabel(Order o) => o.PaymentStatus switch
     {
         PaymentStatus.Paid => "Paid",
+        PaymentStatus.DepositPaid => "Deposit paid, balance due",
         PaymentStatus.ProofSent => "Proof sent",
-        _ => o.PaymentMethod == PaymentMethod.Cash ? "Pay in person" : "Waiting for payment"
+        _ => o.DepositAmount != null
+            ? (o.PaymentMethod == PaymentMethod.Cash ? "Deposit due in person" : "Waiting for deposit")
+            : o.PaymentMethod == PaymentMethod.Cash ? "Pay in person" : "Waiting for payment"
     };
+
+    // Owner dashboard: the "Mark paid" button's text, which changes once a deposit has been collected
+    public static string MarkPaidLabel(Order o) => o.DepositAmount == null
+        ? "Mark paid"
+        : o.PaymentStatus == PaymentStatus.DepositPaid ? "Mark fully paid" : "Confirm deposit";
 }

@@ -46,7 +46,7 @@ public class MenuController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Add(int id, int? optionId, int qty = 1, string? returnTo = null)
+    public async Task<IActionResult> Add(int id, int? optionId, int qty = 1, string? returnTo = null, DateTime? scheduledFor = null)
     {
         var back = returnTo == "Packages" ? nameof(Packages) : nameof(Index);
         var sid = await _stores.RequireAsync();
@@ -55,6 +55,18 @@ public class MenuController : Controller
         var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id && m.StoreId == sid);
         if (!store.IsOpen || item == null)
             return RedirectToAction(back);
+
+        var cart = CartHelper.Get(HttpContext.Session);
+
+        // A cart is either all daily-menu items or all food packages, never both:
+        // they have different checkout flows (today vs. a pre-order with a deposit).
+        if (cart.Any() && cart[0].IsPackage != item.IsPackage)
+        {
+            TempData["Warn"] = item.IsPackage
+                ? "Your cart has daily menu items. Please checkout or clear your cart before ordering a food package."
+                : "Your cart has a food package. Please checkout or clear your cart before adding daily menu items.";
+            return RedirectToAction(back);
+        }
 
         // Daily meals: only orderable if the owner picked them for today's menu.
         // Food packages keep using their own on/off switch.
@@ -89,7 +101,30 @@ public class MenuController : Controller
             }
         }
 
-        var cart = CartHelper.Get(HttpContext.Session);
+        // Food packages are a pre-order: the customer must say when they need it, far enough
+        // ahead for the owner to source ingredients. The whole cart shares one date.
+        if (item.IsPackage)
+        {
+            var price = option?.Price ?? item.Price;
+            var leadDays = PackageLeadTime.DaysFor(price);
+            foreach (var existing in cart)
+                leadDays = Math.Max(leadDays, PackageLeadTime.DaysFor(existing.Price));
+            var earliest = DateTime.Today.AddDays(leadDays);
+
+            if (scheduledFor == null)
+            {
+                TempData["Warn"] = "Please tell us when you need " + item.Name + ".";
+                return RedirectToAction(back);
+            }
+            if (scheduledFor < earliest)
+            {
+                TempData["Warn"] = item.Name + " needs at least " + leadDays + " days' notice. Please choose a later date.";
+                return RedirectToAction(back);
+            }
+
+            foreach (var existing in cart) existing.ScheduledFor = scheduledFor;
+        }
+
         var line = cart.FirstOrDefault(c => c.MenuItemId == id && c.OptionId == option?.Id);
         if (line == null)
         {
@@ -101,7 +136,8 @@ public class MenuController : Controller
                 Quantity = qty,
                 OptionId = option?.Id,
                 OptionLabel = option?.Label,
-                IsPackage = item.IsPackage
+                IsPackage = item.IsPackage,
+                ScheduledFor = item.IsPackage ? scheduledFor : null
             });
         }
         else

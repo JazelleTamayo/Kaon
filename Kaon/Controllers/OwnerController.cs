@@ -59,7 +59,8 @@ public class OwnerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // The owner confirms the money was received (cash collected, or GCash proof checked)
+    // The owner confirms money was received (cash collected, or a GCash proof checked).
+    // Food packages pay in two steps: the deposit first, then the balance at pickup/delivery.
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkPaid(int id)
     {
@@ -67,7 +68,13 @@ public class OwnerController : Controller
         var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
         if (order != null && order.Status != OrderStatus.Cancelled)
         {
-            order.PaymentStatus = PaymentStatus.Paid;
+            order.PaymentStatus = order.DepositAmount == null
+                ? PaymentStatus.Paid
+                : order.PaymentStatus switch
+                {
+                    PaymentStatus.DepositPaid or PaymentStatus.Paid => PaymentStatus.Paid,
+                    _ => PaymentStatus.DepositPaid
+                };
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));

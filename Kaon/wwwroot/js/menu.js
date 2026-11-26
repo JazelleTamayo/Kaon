@@ -145,6 +145,13 @@
     document.querySelectorAll('[data-pkg]').forEach(function (form) {
         var qty = form.querySelector('input[name="qty"]');
         var total = form.querySelector('[data-total]');
+        var when = form.querySelector('input[name="scheduledFor"]');
+        var leadHint = form.querySelector('[data-lead-hint]');
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function toLocalInput(d) {
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
 
         function update() {
             var sel = form.querySelector('select[name="optionId"]');
@@ -152,6 +159,16 @@
             var price = opt ? parseFloat(opt.getAttribute('data-price')) : 0;
             var q = Math.max(1, Math.min(100, parseInt(qty.value, 10) || 1));
             total.textContent = peso(price * q);
+
+            if (when && opt) {
+                var lead = parseInt(opt.getAttribute('data-lead'), 10) || 0;
+                var earliest = new Date();
+                earliest.setDate(earliest.getDate() + lead);
+                var minStr = toLocalInput(earliest);
+                when.min = minStr;
+                if (!when.value || when.value < minStr) when.value = minStr;
+                if (leadHint) leadHint.textContent = 'Needs at least ' + lead + ' days’ notice.';
+            }
         }
 
         form.addEventListener('change', update);

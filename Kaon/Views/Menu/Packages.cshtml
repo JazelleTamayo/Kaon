@@ -15,7 +15,7 @@
     <div class="hero-bg alt" aria-hidden="true"></div>
     <div class="hero-in">
         <h1>Food packages</h1>
-        <p>Party trays and lechon from @store.Name. Choose a size, then tell us when you need it at checkout. Please order at least 1 day ahead.</p>
+        <p>Party trays and lechon from @store.Name. These are pre-orders: choose a size and tell us when you need it, and pay a 50% deposit to confirm — bigger packages need more advance notice.</p>
     </div>
 </section>
 
@@ -69,9 +69,13 @@ else
                             <select class="size-select" id="size-@item.Id" name="optionId">
                                 @foreach (var o in opts)
                                 {
-                                    <option value="@o.Id" data-price="@o.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-label="@o.Label" data-money="₱@o.Price.ToString("N0")">@o.Label · ₱@o.Price.ToString("N0")</option>
+                                    <option value="@o.Id" data-price="@o.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-label="@o.Label" data-money="₱@o.Price.ToString("N0")" data-lead="@PackageLeadTime.DaysFor(o.Price)">@o.Label · ₱@o.Price.ToString("N0")</option>
                                 }
                             </select>
+
+                            <label class="size-label" for="when-@item.Id">When do you need it?</label>
+                            <input class="input" id="when-@item.Id" name="scheduledFor" type="datetime-local" required />
+                            <span class="hint" data-lead-hint></span>
 
                             <div class="pkg-buy">
                                 <div class="stepper" aria-label="Quantity">
