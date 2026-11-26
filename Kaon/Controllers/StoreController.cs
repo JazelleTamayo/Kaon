@@ -63,6 +63,39 @@ public class StoreController : Controller
         return View(store);
     }
 
+    // Module 12: printed QR codes open this address. The scan is counted, then the visitor goes to /c/{slug}.
+    // Not counted: the owner or the Kaon admin testing their own code, and the same phone scanning again within 30 minutes.
+    public const string ScanSessionKey = "qrScanId";
+
+    [HttpGet("/q/{slug}")]
+    public async Task<IActionResult> Scan(string slug, string? s)
+    {
+        slug = (slug ?? "").Trim().ToLowerInvariant();
+        var store = await _db.StoreSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == slug);
+        if (store == null) return NotFound();
+
+        var staff = User.IsInRole("Owner") || User.IsInRole("Admin");
+        var cookie = "kq" + store.Id;
+        if (!staff && !Request.Cookies.ContainsKey(cookie))
+        {
+            var scan = new QrScan { StoreId = store.Id, Source = QrSources.Clean(s) };
+            _db.QrScans.Add(scan);
+            await _db.SaveChangesAsync();
+
+            // Remember the scan, so a sign-up that follows can be counted for the QR code
+            HttpContext.Session.SetInt32(ScanSessionKey, scan.Id);
+            Response.Cookies.Append(cookie, "1", new CookieOptions
+            {
+                MaxAge = TimeSpan.FromMinutes(30),
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                IsEssential = true
+            });
+        }
+
+        return RedirectToAction(nameof(Landing), new { slug = store.Slug });
+    }
+
     // A customer account that belongs to no carinderia yet (older accounts only)
     [Authorize(Roles = "Customer")]
     public IActionResult NoStore() => View();

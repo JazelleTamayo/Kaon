@@ -38,6 +38,30 @@
     </div>
 </div>
 
+<h2 class="section">QR code and printables</h2>
+<div class="card">
+    <div class="scan-nums">
+        <div><strong>@Model.Qr.Today</strong><span>Scans today</span></div>
+        <div><strong>@Model.Qr.Last30Days</strong><span>Last 30 days</span></div>
+        <div><strong>@Model.Qr.Total</strong><span>All time</span></div>
+        <div><strong>@Model.Qr.SignUps</strong><span>Sign-ups after scanning</span></div>
+    </div>
+    @if (Model.Qr.BySource.Any())
+    {
+        <ul class="scan-sources">
+            @foreach (var (source, count) in Model.Qr.BySource) { <li><span>@source</span><strong>@count</strong></li> }
+        </ul>
+    }
+    <div class="share-actions">
+        @foreach (var p in QrSources.Printables)
+        {
+            <a class="btn btn-sm btn-outline" href="@Url.Action("StorePrint", new { id = st.Id, kind = p.Key })" target="_blank" rel="noopener">@p.Name</a>
+        }
+        <a class="btn btn-sm btn-outline" href="@Url.Action("StoreQr", new { id = st.Id, download = true })">Download QR (PNG)</a>
+    </div>
+    <p class="muted" style="margin:10px 0 0;font-size:.85rem">Pilot target: 10 to 15 customers scanning and signing up for each carinderia.</p>
+</div>
+
 <h2 class="section">Plan</h2>
 <div class="card" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
     <div>
