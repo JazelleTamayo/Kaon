@@ -45,6 +45,32 @@ public class OwnerController : Controller
         return Json(new { sig = string.Join(",", rows) });
     }
 
+    // Module 12: printable order slips for the kitchen, the counter, or the rider.
+    // One order (Slip/5), or every order still on the board (Slips).
+    [HttpGet]
+    public async Task<IActionResult> Slip(int id)
+    {
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.AsNoTracking().Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
+        if (order == null) return NotFound();
+        ViewBag.Store = await _stores.StoreAsync();
+        ViewBag.Single = true;
+        return View("Slip", new List<Order> { order });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Slips(OrderType? type)
+    {
+        var sid = await _stores.RequireAsync();
+        var orders = (await _db.Orders.AsNoTracking().Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync())
+            .Where(IsActive)
+            .Where(o => type == null || o.OrderType == type)
+            .OrderBy(o => o.CreatedAt).ToList();
+        ViewBag.Store = await _stores.StoreAsync();
+        ViewBag.Type = type;
+        return View("Slip", orders);
+    }
+
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Advance(int id)
     {

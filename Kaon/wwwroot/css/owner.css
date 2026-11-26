@@ -752,3 +752,15 @@ a.dd-item { text-decoration: none; }
 .tab[aria-selected="true"] .tab-n { background: rgba(255,255,255,.28); }
 .tab-panel[hidden] { display: none; }
 .tab-panel > .offer-card { margin-bottom: 16px; }
+
+/* Module 12: printables and QR scan counts */
+.print-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.print-item { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: #fff; border: 1px solid #f1dcc0; border-radius: 16px; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
+.print-item:hover, .print-item:focus-visible { border-color: var(--orange); transform: translateY(-1px); }
+.print-item span { font-size: .82rem; }
+.scan-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; text-align: center; }
+.scan-nums strong { display: block; font-size: 1.6rem; line-height: 1.1; }
+.scan-nums span { font-size: .75rem; color: #7a6a60; }
+.scan-sources { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid #f1dcc0; }
+.scan-sources li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #f1dcc0; font-size: .9rem; }
+@media (max-width: 560px) { .print-list { grid-template-columns: 1fr; } .scan-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; } }

@@ -350,6 +350,18 @@ public class AccountController : Controller
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
+        // Module 12: this sign-up came from scanning the carinderia's printed QR code
+        if (HttpContext.Session.GetInt32(StoreController.ScanSessionKey) is int scanId)
+        {
+            var scan = await _db.QrScans.FirstOrDefaultAsync(x => x.Id == scanId && x.StoreId == linked.Id && x.SignedUpUserId == null);
+            if (scan != null)
+            {
+                scan.SignedUpUserId = user.Id;
+                await _db.SaveChangesAsync();
+            }
+            HttpContext.Session.Remove(StoreController.ScanSessionKey);
+        }
+
         await SignInUser(user);
         return GoHome(user.Role);
     }

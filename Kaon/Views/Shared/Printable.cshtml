@@ -1,0 +1,184 @@
+@model PrintableVm
+@{
+    Layout = null;
+    var s = Model.Store;
+    var info = QrSources.Printables.First(p => p.Key == Model.Kind);
+    var hours = string.IsNullOrWhiteSpace(s.Hours) ? null : s.Hours;
+    var phone = string.IsNullOrWhiteSpace(s.Phone) ? null : s.Phone;
+    var ways = s.PickupEnabled && s.DeliveryEnabled ? "Pickup or home delivery"
+             : s.DeliveryEnabled ? "Home delivery" : "Pickup";
+    // A4 portrait for everything except the counter sign (A5 landscape)
+    var pageSize = Model.Kind == "counter" ? "A5 landscape" : "A4 portrait";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@s.Name - @info.Name</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root { --orange: #E8501F; --yellow: #F6B42C; --dark: #2A1A12; --cream: #FFF4E3; --muted: #6b5a4e; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Poppins', system-ui, sans-serif; color: var(--dark); background: #efe6da; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .bar { position: sticky; top: 0; z-index: 2; display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; align-items: center; padding: .8rem 16px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+        .bar button, .bar a { font: inherit; font-size: .9rem; font-weight: 600; padding: .55rem 1.1rem; border-radius: 999px; border: 1px solid #e3d6c6; cursor: pointer; text-decoration: none; background: #fff; color: var(--dark); }
+        .bar .primary { background: var(--orange); border-color: var(--orange); color: #fff; }
+        .bar .on { border-color: var(--orange); color: var(--orange); }
+        .tip { text-align: center; color: var(--muted); font-size: .85rem; margin: .8rem 16px 0; }
+
+        /* Every size inside a sheet is in cqw (1% of the sheet's width), so the preview and the print match */
+        .sheet { container-type: inline-size; position: relative; margin: 16px auto 32px; width: min(210mm, calc(100vw - 32px)); background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,.12); overflow: hidden; }
+        .sheet.a4 { aspect-ratio: 210 / 297; }
+        .sheet.a5l { aspect-ratio: 210 / 148; }
+        .qrbox { background: #fff; border-radius: 3cqw; padding: 2cqw; display: inline-block; line-height: 0; }
+        .qrbox img { display: block; width: 100%; height: auto; }
+        .brand { font-weight: 700; color: var(--orange); letter-spacing: -.02em; }
+        .url { word-break: break-all; color: var(--muted); }
+
+        /* Wall poster */
+        .poster { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--cream); border: 2.4cqw solid var(--orange); padding: 6cqw; }
+        .poster .kicker { letter-spacing: .14em; text-transform: uppercase; font-size: 2.6cqw; font-weight: 700; color: var(--orange); }
+        .poster h1 { font-size: 8cqw; line-height: 1.05; margin: 1.5cqw 0 1cqw; }
+        .poster .sub { font-size: 3.4cqw; margin: 0 0 5cqw; }
+        .poster .qrbox { width: 52cqw; box-shadow: 0 1cqw 4cqw rgba(0,0,0,.08); }
+        .poster .scan { font-size: 5.4cqw; font-weight: 700; margin: 5cqw 0 1cqw; }
+        .poster .steps { font-size: 2.8cqw; margin: 0 0 2cqw; }
+        .poster .meta { font-size: 2.6cqw; margin: 0 0 1.5cqw; }
+        .poster .url { font-size: 2.2cqw; }
+        .poster .foot { margin-top: 4cqw; font-size: 2.2cqw; color: var(--muted); }
+
+        /* Table stand: fold along the middle; the top half is upside down so both sides read correctly */
+        .stand { height: 100%; display: grid; grid-template-rows: 1fr 1fr; }
+        .stand .half { display: grid; grid-template-columns: 38cqw 1fr; gap: 5cqw; align-items: center; padding: 6cqw 7cqw; background: var(--cream); }
+        .stand .half.top { transform: rotate(180deg); }
+        .stand .fold { position: absolute; left: 0; right: 0; top: 50%; border-top: .3cqw dashed #b9a796; }
+        .stand .fold span { position: absolute; right: 2cqw; top: -2.6cqw; font-size: 1.8cqw; color: #9b8b7e; background: #fff; padding: 0 1cqw; }
+        .stand .qrbox { width: 100%; border: .5cqw solid var(--orange); }
+        .stand .kicker { font-size: 2.4cqw; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--orange); }
+        .stand h2 { font-size: 6cqw; line-height: 1.05; margin: 1cqw 0 2cqw; }
+        .stand p { margin: 0 0 1.6cqw; font-size: 2.8cqw; }
+        .stand .big { font-size: 4cqw; font-weight: 700; }
+
+        /* Counter sign (A5 landscape) */
+        .counter { height: 100%; display: grid; grid-template-columns: 1fr 40cqw; gap: 5cqw; align-items: center; padding: 6cqw 7cqw; background: var(--orange); color: #fff; }
+        .counter .kicker { font-size: 2.6cqw; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--yellow); }
+        .counter h2 { font-size: 7cqw; line-height: 1.02; margin: 1.5cqw 0 2.5cqw; }
+        .counter p { margin: 0 0 1.8cqw; font-size: 3cqw; }
+        .counter .name { font-size: 3.6cqw; font-weight: 700; }
+        .counter .qrbox { width: 100%; }
+        .counter .scan { display: block; text-align: center; font-weight: 700; font-size: 3.4cqw; margin-top: 2cqw; }
+
+        /* Takeaway flyers: four per page, cut along the dashed lines */
+        .flyers { height: 100%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+        .flyer { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4cqw; border: .25cqw dashed #b9a796; margin: -.125cqw; }
+        .flyer .brand { font-size: 2.6cqw; }
+        .flyer h3 { font-size: 4.2cqw; line-height: 1.1; margin: .8cqw 0 .6cqw; }
+        .flyer .sub { font-size: 2.1cqw; margin: 0 0 2cqw; }
+        .flyer .qrbox { width: 24cqw; padding: 1cqw; border: .4cqw solid var(--orange); border-radius: 2cqw; }
+        .flyer .scan { font-weight: 700; font-size: 2.6cqw; margin: 1.6cqw 0 .8cqw; }
+        .flyer .meta { font-size: 1.8cqw; margin: 0 0 .4cqw; }
+        .flyer .url { font-size: 1.5cqw; }
+
+        @@page { size: @pageSize; margin: 0; }
+        @@media print {
+            body { background: #fff; }
+            .bar, .tip { display: none; }
+            .sheet { margin: 0; width: 100%; box-shadow: none; aspect-ratio: auto; height: 100vh; break-after: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <button type="button" class="primary" onclick="window.print()">Print</button>
+        @foreach (var p in QrSources.Printables)
+        {
+            <a class="@(p.Key == Model.Kind ? "on" : "")" href="?kind=@p.Key">@p.Name</a>
+        }
+        <a href="@Model.BackUrl">@Model.BackText</a>
+    </div>
+    <p class="tip">@info.Use. Prints on @(Model.Kind == "counter" ? "A5 (or A4 set to \"Fit to page\")" : "A4") paper. Turn off headers and footers in the print window.<br /><small>The code opens <span class="url">@Model.ScanUrl</span>, which counts the scan and then shows your page.</small></p>
+
+    @switch (Model.Kind)
+    {
+        case "stand":
+            <div class="sheet a4">
+                <div class="stand">
+                    @for (var i = 0; i < 2; i++)
+                    {
+                        <div class="half @(i == 0 ? "top" : "")">
+                            <div class="qrbox"><img src="@Model.QrUrl" alt="QR code to order from @s.Name" /></div>
+                            <div>
+                                <div class="kicker">Order ahead</div>
+                                <h2>Skip the line at @s.Name</h2>
+                                <p class="big">Scan to see today's menu</p>
+                                <p>@ways. We'll tell you when it's ready.</p>
+                                @if (hours != null) { <p>Open @hours</p> }
+                                <p class="brand">kaon</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="fold"><span>Fold here</span></div>
+            </div>
+            break;
+
+        case "counter":
+            <div class="sheet a5l">
+                <div class="counter">
+                    <div>
+                        <div class="kicker">Next time, skip the line</div>
+                        <h2>Order from your phone</h2>
+                        <p class="name">@s.Name</p>
+                        <p>@ways · see today's menu and know when your order is ready.</p>
+                        @if (phone != null) { <p>Questions? @phone</p> }
+                    </div>
+                    <div>
+                        <div class="qrbox"><img src="@Model.QrUrl" alt="QR code to order from @s.Name" /></div>
+                        <span class="scan">Scan to order</span>
+                    </div>
+                </div>
+            </div>
+            break;
+
+        case "flyer":
+            <div class="sheet a4">
+                <div class="flyers">
+                    @for (var i = 0; i < 4; i++)
+                    {
+                        <div class="flyer">
+                            <span class="brand">kaon</span>
+                            <h3>@s.Name</h3>
+                            <p class="sub">Order ahead. Skip the line.</p>
+                            <div class="qrbox"><img src="@Model.QrUrl" alt="QR code to order from @s.Name" /></div>
+                            <div class="scan">Scan to order</div>
+                            <p class="meta">@ways@(hours != null ? " · " + hours : "")</p>
+                            @if (phone != null) { <p class="meta">@phone</p> }
+                            <div class="url">@Model.Link</div>
+                        </div>
+                    }
+                </div>
+            </div>
+            break;
+
+        default:
+            <div class="sheet a4">
+                <div class="poster">
+                    <div class="kicker">Order ahead</div>
+                    <h1>@s.Name</h1>
+                    <p class="sub">Skip the line. Order from your phone.</p>
+                    <div class="qrbox"><img src="@Model.QrUrl" alt="QR code to order from @s.Name" /></div>
+                    <div class="scan">Scan to order</div>
+                    <p class="steps">Open your phone camera, point it at the code, and tap the link.</p>
+                    <p class="meta">@ways@(hours != null ? " · Open " + hours : "")</p>
+                    <div class="url">@Model.Link</div>
+                    <div class="foot">Powered by <span class="brand">kaon</span></div>
+                </div>
+            </div>
+            break;
+    }
+</body>
+</html>

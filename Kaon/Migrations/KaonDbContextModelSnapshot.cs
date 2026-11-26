@@ -440,6 +440,33 @@ namespace Kaon.Migrations
                     b.ToTable("PlatformSettings");
                 });
 
+            modelBuilder.Entity("Kaon.Models.QrScan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SignedUpUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId", "At");
+
+                    b.ToTable("QrScans");
+                });
+
             modelBuilder.Entity("Kaon.Models.StoreSettings", b =>
                 {
                     b.Property<int>("Id")

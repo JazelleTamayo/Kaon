@@ -26,7 +26,6 @@
         </div>
         <div class="share-actions">
             <a class="btn btn-sm" href="@Url.Action("QrImage", "OwnerSettings", new { download = true })">Download QR (PNG)</a>
-            <a class="btn btn-sm btn-outline" href="@Url.Action("Poster", "OwnerSettings")" target="_blank" rel="noopener">Print a poster</a>
         </div>
     </div>
     <div class="share-qr">
@@ -34,6 +33,48 @@
         <span>Scan to order</span>
     </div>
 </section>
+
+@{ var qr = ViewBag.Qr as QrStats ?? new QrStats(); }
+<div class="grid-2 print-grid">
+    <div>
+        <h2 class="section">Print your QR code</h2>
+        <div class="print-list">
+            @foreach (var p in QrSources.Printables)
+            {
+                <a class="print-item" href="@Url.Action("Print", "OwnerSettings", new { kind = p.Key })" target="_blank" rel="noopener">
+                    <strong>@p.Name</strong>
+                    <span class="muted">@p.Use</span>
+                </a>
+            }
+        </div>
+        <p class="hint">Order slips for the kitchen or the rider are printed from the <a asp-controller="Owner" asp-action="Index">order board</a>.</p>
+    </div>
+    <div>
+        <h2 class="section">How many people scanned it</h2>
+        <div class="card">
+            <div class="scan-nums">
+                <div><strong>@qr.Today</strong><span>Today</span></div>
+                <div><strong>@qr.Last7Days</strong><span>Last 7 days</span></div>
+                <div><strong>@qr.Total</strong><span>All time</span></div>
+                <div><strong>@qr.SignUps</strong><span>Signed up after scanning</span></div>
+            </div>
+            @if (qr.BySource.Any())
+            {
+                <ul class="scan-sources">
+                    @foreach (var (source, count) in qr.BySource)
+                    {
+                        <li><span>@source</span><strong>@count</strong></li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="muted" style="margin:10px 0 0">No scans yet. Print a poster or table stand and put it where customers wait.</p>
+            }
+            <p class="hint" style="margin-bottom:0">Counted when someone scans a printed or downloaded code. Opening your link from Facebook is not counted as a scan. QR codes printed before this was added still work but are not counted. Print them again to count scans.</p>
+        </div>
+    </div>
+</div>
 
 <form asp-action="Index" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>

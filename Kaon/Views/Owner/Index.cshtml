@@ -30,6 +30,7 @@
                 </button>
             </form>
             <a class="alert-toggle" style="text-decoration:none" asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">Your QR code and link</a>
+            <a class="alert-toggle" style="text-decoration:none" asp-action="Slips" target="_blank" rel="noopener">Print order slips</a>
             <button type="button" class="alert-toggle" id="alertBtn">Turn on alerts</button>
         </div>
     </div>
@@ -188,6 +189,7 @@
                                 <button class="btn-ghost">@OrderText.MarkPaidLabel(o)</button>
                             </form>
                         }
+                        <a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a>
                     </div>
                     <details class="cancel-box">
                         <summary class="btn-ghost danger">Cancel</summary>
