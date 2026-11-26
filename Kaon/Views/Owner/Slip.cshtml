@@ -6,13 +6,7 @@
     var type = ViewBag.Type as OrderType?;
     var single = ViewBag.Single == true;
 
-    // What is still to be collected in person when the order is handed over
-    decimal Collect(Order o) => o.PaymentStatus switch
-    {
-        PaymentStatus.Paid => 0,
-        PaymentStatus.DepositPaid => o.Total - (o.DepositAmount ?? 0),
-        _ => o.Total
-    };
+    decimal Collect(Order o) => OrderText.ToCollect(o);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -97,6 +91,7 @@
                     <div class="line"><strong>@(o.OrderType == OrderType.Delivery ? "Deliver" : "Pickup"):</strong> @o.ScheduledFor.Value.ToString(sameDay ? "h:mm tt" : "ddd, MMM d, h:mm tt")</div>
                 }
                 <div class="muted">Ordered @o.CreatedAt.ToString("MMM d, h:mm tt")</div>
+                @if (!string.IsNullOrWhiteSpace(o.RiderName)) { <div class="line"><strong>Rider:</strong> @o.RiderName · @o.RiderPhone</div> }
 
                 <hr />
                 <ul class="items">

@@ -21,6 +21,7 @@ public class KaonDbContext : DbContext
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<SubscriptionPayment> SubscriptionPayments => Set<SubscriptionPayment>();
     public DbSet<QrScan> QrScans => Set<QrScan>();
+    public DbSet<Rider> Riders => Set<Rider>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +41,8 @@ public class KaonDbContext : DbContext
 
         modelBuilder.Entity<Subscription>().HasIndex(x => x.OwnerId).IsUnique();
         modelBuilder.Entity<QrScan>().HasIndex(x => new { x.StoreId, x.At });
+        modelBuilder.Entity<Rider>().HasIndex(x => x.StoreId);
+        modelBuilder.Entity<Order>().HasIndex(x => x.RiderToken).IsUnique();
         modelBuilder.Entity<Subscription>()
             .HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<SubscriptionPayment>()

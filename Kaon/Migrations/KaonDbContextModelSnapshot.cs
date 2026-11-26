@@ -277,6 +277,9 @@ namespace Kaon.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -316,6 +319,21 @@ namespace Kaon.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("RiderAssignedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RiderName")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RiderPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RiderToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ScheduledFor")
                         .HasColumnType("TEXT");
 
@@ -329,6 +347,9 @@ namespace Kaon.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RiderToken")
+                        .IsUnique();
 
                     b.HasIndex("StoreId");
 
@@ -465,6 +486,38 @@ namespace Kaon.Migrations
                     b.HasIndex("StoreId", "At");
 
                     b.ToTable("QrScans");
+                });
+
+            modelBuilder.Entity("Kaon.Models.Rider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("Riders");
                 });
 
             modelBuilder.Entity("Kaon.Models.StoreSettings", b =>

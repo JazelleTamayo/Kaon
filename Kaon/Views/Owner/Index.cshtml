@@ -179,6 +179,10 @@
                         <span class="age @ageClass">@(mins < 1 ? "Just now" : mins < 120 ? mins + " min ago" : o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
                         <strong>₱@o.Total.ToString("N2")</strong>
                     </div>
+                    @if (o.OrderType == OrderType.Delivery)
+                    {
+                        <partial name="_RiderBox" model="(o, Model.Riders)" />
+                    }
                     <div class="order-actions">
                         <form asp-action="Advance" asp-route-id="@o.Id" method="post">
                             <button class="btn btn-sm">@OrderText.NextLabel(o)</button>
