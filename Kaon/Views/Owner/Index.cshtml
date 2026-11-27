@@ -32,14 +32,27 @@
         <h1>@Model.Store.Name</h1>
         <p>@DateTime.Today.ToString("dddd, MMMM d") · @(waiting > 0 ? waiting + " order" + (waiting == 1 ? "" : "s") + " waiting for you" : "You're all caught up")</p>
         <div class="o-hero-actions">
-            <form asp-action="ToggleOpen" method="post">
-                <button class="open-toggle @(Model.Store.IsOpen ? "is-open" : "is-closed")" title="Tap to switch">
-                    <span class="dot"></span> @(Model.Store.IsOpen ? "Open for orders" : "Closed")
-                </button>
+            @* Two real on/off switches. The rest of the shortcuts are in the row below the numbers. *@
+            <form asp-action="ToggleOpen" method="post" class="hero-switch @(Model.Store.IsOpen ? "is-on" : "")">
+                <label class="switch">
+                    <input type="checkbox" @(Model.Store.IsOpen ? "checked" : "") onchange="this.form.submit()" role="switch" aria-label="Open for orders" />
+                    <span class="slider"></span>
+                </label>
+                <span class="hs-text">
+                    <strong>@(Model.Store.IsOpen ? "Open for orders" : "Closed")</strong>
+                    <small>@(Model.Store.IsOpen ? "Customers can order now" : "Customers can't order. Switch on to open.")</small>
+                </span>
             </form>
-            <a class="alert-toggle" style="text-decoration:none" asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">Your QR code and link</a>
-            <a class="alert-toggle" style="text-decoration:none" asp-action="Slips" target="_blank" rel="noopener">Print order slips</a>
-            <button type="button" class="alert-toggle" id="alertBtn">Turn on alerts</button>
+            <div class="hero-switch" id="alertSwitch">
+                <label class="switch">
+                    <input type="checkbox" id="alertBtn" role="switch" aria-label="Sound and pop-up alerts for new orders" />
+                    <span class="slider"></span>
+                </label>
+                <span class="hs-text">
+                    <strong id="alertTitle">Order alerts off</strong>
+                    <small id="alertHint">Switch on for a sound when an order comes in</small>
+                </span>
+            </div>
         </div>
     </div>
 </section>
@@ -103,6 +116,12 @@
     </a>
     <a asp-controller="OwnerSettings" asp-action="Index">
         <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg></span>Store &amp; payments
+    </a>
+    <a asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">
+        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h3v3h-3zM20 14v6h-3"/></svg></span>QR code &amp; link
+    </a>
+    <a asp-action="Slips" target="_blank" rel="noopener">
+        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></span>Print order slips
     </a>
 </nav>
 
@@ -232,12 +251,18 @@ else
         const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let last = null;
 
+        // The alerts switch mirrors what is saved in this browser
         function paintAlertBtn() {
             const on = kaonAlerts.enabled();
-            alertBtn.classList.toggle('on', on);
-            alertBtn.textContent = on ? 'Alerts on' : 'Turn on alerts';
+            const blocked = on && kaonAlerts.permission() === 'denied';
+            alertBtn.checked = on;
+            document.getElementById('alertSwitch').classList.toggle('is-on', on);
+            document.getElementById('alertTitle').textContent = on ? 'Order alerts on' : 'Order alerts off';
+            document.getElementById('alertHint').textContent = blocked
+                ? 'Sound is on. Pop-ups are blocked in this browser.'
+                : on ? 'You will hear a sound when an order comes in' : 'Switch on for a sound when an order comes in';
         }
-        alertBtn.addEventListener('click', () => { kaonAlerts.enabled() ? kaonAlerts.disable() : kaonAlerts.enable(); });
+        alertBtn.addEventListener('change', () => { alertBtn.checked ? kaonAlerts.enable() : kaonAlerts.disable(); });
         kaonAlerts.onChange(paintAlertBtn);
         paintAlertBtn();
 

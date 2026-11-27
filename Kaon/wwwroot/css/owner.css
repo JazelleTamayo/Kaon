@@ -469,6 +469,19 @@ input[type="file"].input { padding: 9px 12px; }
 .o-hero .alert-toggle { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.5); }
 .o-hero .alert-toggle:hover { background: #fff; color: var(--orange); }
 .o-hero .alert-toggle.on { background: #e6f5ec; color: #1f7a45; border-color: var(--green); }
+
+/* On / off switches in the dashboard banner */
+.hero-switch { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 18px 10px 14px; border-radius: 18px;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.35); backdrop-filter: blur(6px); }
+.hero-switch.is-on { background: rgba(46,158,91,.28); border-color: rgba(120,230,160,.7); }
+.hero-switch .switch { width: 54px; height: 30px; flex: 0 0 54px; }
+.hero-switch .slider { background: rgba(255,255,255,.35); }
+.hero-switch .slider::before { width: 24px; height: 24px; }
+.hero-switch .switch input:checked + .slider { background: var(--green); }
+.hero-switch .switch input:checked + .slider::before { transform: translateX(24px); }
+.hs-text { display: grid; line-height: 1.25; }
+.hs-text strong { font-size: .95rem; font-weight: 700; color: #fff; }
+.hs-text small { font-size: .78rem; color: rgba(255,255,255,.85); font-weight: 500; }
 .o-hero .btn-sm { margin-top: 0; }
 .btn-wline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.7); }
 .btn-wline:hover { background: #fff; color: var(--orange); }
