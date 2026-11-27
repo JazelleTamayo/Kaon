@@ -58,8 +58,7 @@ else
                             else { <span class="chip @(st.IsOpen ? "chip-ready" : "chip-soldout")">@(st.IsOpen ? "Open" : "Closed")</span> }
                         </td>
                         <td data-label="Plan">
-                            <span class="chip @stat.PlanClass">@stat.Plan</span>
-                            @if (stat.AccessUntil != null && stat.Plan != "Ended" && stat.Plan != "Paused by Kaon") { <div class="muted">@stat.DaysLeft days left</div> }
+                            <span class="chip @stat.PlanClass">@stat.Plan@(stat.AccessUntil != null && stat.Plan != "Ended" && stat.Plan != "Paused by Kaon" ? " · " + stat.DaysLeft + "d left" : "")</span>
                         </td>
                         <td class="actions"><a class="btn btn-sm btn-outline" style="margin:0" asp-action="Store" asp-route-id="@st.Id">Manage</a></td>
                     </tr>
