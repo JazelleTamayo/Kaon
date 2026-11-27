@@ -1,4 +1,4 @@
-@model BillingVm
+﻿@model BillingVm
 @{
     ViewData["Title"] = "Subscription";
     ViewData["Wide"] = true;
@@ -18,15 +18,15 @@
     };
 }
 
-<section class="o-hero sm">
+<section class="ob-hero no-print">
     <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">Your plan</span>
-        <h1>Kaon subscription</h1>
-        <p>One low, fixed fee every month. No commission on your orders.</p>
-    </div>
+    <header class="ob-bar">
+        <div class="ob-id">
+            <h1>Kaon subscription</h1>
+            <span class="ob-sub">One fixed fee every month. No commission on your orders.</span>
+        </div>
+    </header>
 </section>
-<div style="height:18px"></div>
 
 <div class="grid-2">
     <div>
