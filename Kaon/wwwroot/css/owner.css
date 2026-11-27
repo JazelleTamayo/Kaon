@@ -901,8 +901,8 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .order-card .order-actions > form:first-child { grid-column: 1 / -1; }
 .order-card .order-actions > :nth-child(2):last-child { grid-column: 1 / -1; }
 .order-card .order-actions form { margin: 0; display: flex; }
-.order-card .order-actions .btn { width: 100%; margin: 0; background: var(--brown); color: #fff; border-radius: 12px; padding: 11px 14px; font-weight: 600; font-size: .9rem; }
-.order-card .order-actions .btn:hover { background: var(--orange); }
+.order-card .order-actions .btn { width: 100%; margin: 0; background: var(--orange); color: #fff; border-radius: 12px; padding: 11px 14px; font-weight: 600; font-size: .9rem; }
+.order-card .order-actions .btn:hover { background: #c93f13; }
 .order-card .order-actions .btn-ghost { width: 100%; display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 9px 10px; border: 1.5px solid #e4dacb; border-radius: 12px; background: #fff; font-size: .85rem; font-weight: 600; color: var(--brown); text-decoration: none; }
 .order-card .order-actions .btn-ghost:hover { border-color: var(--brown); color: var(--brown); background: #faf6ef; }
 
@@ -991,3 +991,9 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .tab-panel .scroll-area::-webkit-scrollbar-thumb, .tab-panel .pkg-list::-webkit-scrollbar-thumb { background: #d5c8b6; border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
 .tab-panel .scroll-area::-webkit-scrollbar-thumb:hover, .tab-panel .pkg-list::-webkit-scrollbar-thumb:hover { background: #b9a88f; border: 2px solid transparent; background-clip: padding-box; }
 .tab-panel .scroll-area thead th { position: sticky; top: 0; z-index: 2; }
+
+/* Orange stays the brand's action colour: main buttons, current page, new-order numbers, prices.
+   Dark brown is for structure: top bar, banners, tab switchers, table headers, footer. */
+.app-links a.active { border-bottom-color: var(--orange); }
+.tab[aria-selected="true"] .tab-n, .tab-switch .tab.active .tab-badge { background: var(--orange); color: #fff; }
+.tab-switch .tab.active .tab-badge.is-new { background: #fff; color: var(--orange); }
