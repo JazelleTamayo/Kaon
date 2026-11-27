@@ -102,6 +102,11 @@
     </div>
     <p class="tip">@info.Use. Prints on @(Model.Kind == "counter" ? "A5 (or A4 set to \"Fit to page\")" : "A4") paper. Turn off headers and footers in the print window.<br /><small>The code opens <span class="url">@Model.ScanUrl</span>, which counts the scan and then shows your page.</small></p>
 
+    @if (Model.Kind == "stand")
+    {
+        <p class="tip"><strong>How to use:</strong> print it, then fold along the dashed "Fold here" line so it stands like a tent. The top half is upside down on purpose, so both sides read the right way up.</p>
+    }
+
     @switch (Model.Kind)
     {
         case "stand":

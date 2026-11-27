@@ -62,7 +62,7 @@ public class OwnerSettingsController : Controller
             QrUrl = Url.Action("QrImage", new { s = kind })!,
             Link = await OwnLinkAsync(),
             ScanUrl = Url.Action("Scan", "Store", new { slug = store.Slug, s = kind }, Request.Scheme)!,
-            BackUrl = Url.Action("Index", null, null, null, "share")!,
+            BackUrl = Url.Action("Index")! + "#share",
             BackText = "Back to my store"
         });
     }
