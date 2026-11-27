@@ -18,20 +18,28 @@
         return ctx;
     }
 
-    // A short three-note chime
+    // One bell strike: the note plus two softer overtones, ringing out
+    function bell(c, t, freq, vol) {
+        [[1, 1], [2.01, 0.4], [3.02, 0.15]].forEach(function (p) {
+            var o = c.createOscillator(), g = c.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq * p[0];
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(vol * p[1], t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+            o.connect(g); g.connect(c.destination);
+            o.start(t); o.stop(t + 1.2);
+        });
+    }
+
+    // New-order sound: a clear "ding-dong" bell, played twice so it is heard over a busy kitchen
     function chime() {
         var c = audio();
         if (!c || c.state !== 'running') return;
         var now = c.currentTime;
-        [[880, 0], [1175, 0.18], [1568, 0.36]].forEach(function (n) {
-            var o = c.createOscillator(), g = c.createGain();
-            o.type = 'sine';
-            o.frequency.value = n[0];
-            g.gain.setValueAtTime(0.0001, now + n[1]);
-            g.gain.exponentialRampToValueAtTime(0.25, now + n[1] + 0.02);
-            g.gain.exponentialRampToValueAtTime(0.0001, now + n[1] + 0.35);
-            o.connect(g); g.connect(c.destination);
-            o.start(now + n[1]); o.stop(now + n[1] + 0.4);
+        [0, 1.5].forEach(function (offset) {
+            bell(c, now + offset, 1046.5, 0.5);        // ding
+            bell(c, now + offset + 0.35, 783.99, 0.5); // dong
         });
     }
 
