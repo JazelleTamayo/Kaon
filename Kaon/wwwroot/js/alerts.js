@@ -103,10 +103,36 @@
     };
 })();
 
+// Copy text. The modern clipboard only works on https pages, so fall back to the old way (http, older browsers).
+window.kaonCopy = function (text) {
+    function old() {
+        var t = document.createElement('textarea');
+        t.value = text;
+        t.setAttribute('readonly', '');
+        t.style.position = 'fixed';
+        t.style.top = '0';
+        t.style.opacity = '0';
+        document.body.appendChild(t);
+        t.focus();
+        t.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(t);
+        return ok;
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return old(); });
+    }
+    return Promise.resolve(old());
+};
+
 // Copy buttons (account numbers, links)
 document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-copy]');
-    if (!b) return;
-    if (navigator.clipboard) navigator.clipboard.writeText(b.getAttribute('data-copy'));
-    b.textContent = 'Copied';
+    if (!b || b.dataset.copyHandled) return;
+    var label = b.textContent;
+    window.kaonCopy(b.getAttribute('data-copy')).then(function (ok) {
+        b.textContent = ok ? 'Copied' : 'Press Ctrl+C';
+        setTimeout(function () { b.textContent = label; }, 2000);
+    });
 });

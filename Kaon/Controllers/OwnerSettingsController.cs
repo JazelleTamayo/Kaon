@@ -162,7 +162,6 @@ public class OwnerSettingsController : Controller
         s.PickupEnabled = form.PickupEnabled;
         s.DeliveryEnabled = form.DeliveryEnabled;
         s.IsOpen = form.IsOpen;
-        s.AutoCopyMenu = form.AutoCopyMenu;
         s.AcceptsCash = form.AcceptsCash;
         s.AcceptsCashless = form.AcceptsCashless;
         s.GCashName = form.GCashName?.Trim();

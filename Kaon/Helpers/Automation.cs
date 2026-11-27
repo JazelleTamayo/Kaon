@@ -6,7 +6,6 @@ namespace Kaon.Helpers;
 
 // The routine work Kaon does by itself, so nobody has to remember it:
 //  - plan reminders by email: 7, 3 and 1 day before a plan ends, and once when it has ended
-//  - each morning, the dishes of the last open day are posted again (the owner can switch this off)
 //  - old, unused invitation and reset links are cleaned out
 public static class Automation
 {
@@ -15,9 +14,9 @@ public static class Automation
     public static async Task<Result> RunOnceAsync(KaonDbContext db, IEmailSender email, string baseUrl, DateTime nowUtc, DateTime today)
     {
         var reminders = await RemindersAsync(db, email, baseUrl, nowUtc);
-        var menus = await PostDailyMenusAsync(db, nowUtc, today);
+        // Today's menu is never filled automatically: owners add dishes from My dishes themselves.
         var cleaned = await CleanLinksAsync(db, nowUtc);
-        return new Result(reminders, menus, cleaned);
+        return new Result(reminders, 0, cleaned);
     }
 
     // ---------- reminders ----------

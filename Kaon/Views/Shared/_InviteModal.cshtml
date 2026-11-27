@@ -58,8 +58,7 @@
                 copy.addEventListener('click', function () {
                     var box = document.getElementById('linkBox');
                     box.select();
-                    if (navigator.clipboard) navigator.clipboard.writeText(box.value);
-                    copy.textContent = 'Copied';
+                    window.kaonCopy(box.value).then(function (ok) { copy.textContent = ok ? 'Copied' : 'Press Ctrl+C'; });
                 });
                 document.getElementById('linkBox').focus();
                 document.getElementById('linkBox').select();

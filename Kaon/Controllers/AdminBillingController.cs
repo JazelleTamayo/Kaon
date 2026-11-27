@@ -31,9 +31,9 @@ public class AdminBillingController : Controller
     {
         var baseUrl = _config["Kaon:PublicUrl"] ?? (Request.Scheme + "://" + Request.Host);
         var r = await Automation.RunOnceAsync(_db, _email, baseUrl, DateTime.UtcNow, DateTime.Today);
-        AdminLog.Add(_db, User, "Ran the automatic checks (" + r.Reminders + " reminders sent, " + r.MenusPosted + " menus posted)");
+        AdminLog.Add(_db, User, "Ran the automatic checks (" + r.Reminders + " reminders sent)");
         await _db.SaveChangesAsync();
-        TempData["Saved"] = "Checked. " + r.Reminders + " reminder(s) sent, " + r.MenusPosted + " daily menu(s) posted.";
+        TempData["Saved"] = "Checked. " + r.Reminders + " reminder(s) sent.";
         return RedirectToAction(nameof(Index));
     }
 

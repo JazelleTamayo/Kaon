@@ -6,8 +6,11 @@ public static class ProofStorage
 {
     public const long MaxBytes = 5 * 1024 * 1024;
 
+    // Set at startup from Kaon:DataDir; when empty, App_Data next to the app is used
+    public static string? Root { get; set; }
+
     public static string Folder(IWebHostEnvironment env, string sub = "proofs") =>
-        Path.Combine(env.ContentRootPath, "App_Data", sub);
+        Path.Combine(string.IsNullOrWhiteSpace(Root) ? Path.Combine(env.ContentRootPath, "App_Data") : Root, sub);
 
     public static string PathFor(IWebHostEnvironment env, string fileName, string sub = "proofs") =>
         Path.Combine(Folder(env, sub), Path.GetFileName(fileName));
