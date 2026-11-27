@@ -6,13 +6,14 @@
     var storeId = (int?)ViewBag.StoreId;
 }
 
-<section class="o-hero sm admin">
+<section class="ob-hero admin no-print">
     <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">Activity</span>
-        <h1>What the Kaon team did</h1>
-        <p>Newest first. It never shows passwords or customers' personal details.</p>
-    </div>
+    <header class="ob-bar">
+        <div class="ob-id">
+            <h1>Activity</h1>
+            <span class="ob-sub">What the Kaon team did, newest first. Never shows passwords or customers' details.</span>
+        </div>
+    </header>
 </section>
 
 <form method="get" asp-action="Activity" style="display:flex;gap:10px;align-items:center;margin:12px 0 16px;flex-wrap:wrap">

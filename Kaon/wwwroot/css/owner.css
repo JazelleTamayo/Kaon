@@ -1463,3 +1463,7 @@ main.page:has(.tracker) ~ .app-foot { margin-top: 14px; }
 .adm-auto { font-size: .86rem; margin: 0 0 14px; }
 .adm-auto form { display: inline; }
 .link-btn { background: none; border: 0; padding: 0; color: var(--orange); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+/* Admin banners use the carinderia food-counter photo */
+.ob-hero.admin .o-hero-bg { background: #6b4a2f url("../img/admin-banner.webp") 50% 45% / cover no-repeat; animation: none; }
+.ob-hero.admin::after { background: linear-gradient(90deg, rgba(43,24,16,.92) 0%, rgba(43,24,16,.7) 50%, rgba(43,24,16,.3) 100%); }
