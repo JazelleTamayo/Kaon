@@ -1271,3 +1271,10 @@ main.page:has(.tab-panel, .board-fill) ~ .app-foot { margin-top: 8px; }
 .order-card.compact .oc-meta .age { flex: 1 0 100%; margin: 0 !important; padding: 0; background: none; border-radius: 0; font-size: .78rem; font-weight: 500; color: #7a6a60; }
 .order-card.compact .oc-meta .age.warn { color: #b7791f; font-weight: 600; }
 .order-card.compact .oc-meta .age.late { color: #b3261e; font-weight: 700; }
+
+/* Summary page too: no big empty strip under the tables; the footer sits right under the content,
+   and at the bottom of the screen when the page is short */
+main.page:has(.sum-grid) { padding-bottom: 24px; min-height: calc(100vh - 156px); }
+main.page:has(.sum-grid) ~ .app-foot { margin-top: 8px; }
+
+@media (max-width: 1250px) { .sum-grid { grid-template-columns: 1fr; } }

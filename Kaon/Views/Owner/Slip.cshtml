@@ -78,9 +78,10 @@
         <span class="bar-actions">
             @if (!single)
             {
-                <a class="@(type == null ? "on" : "")" href="@Url.Action("Slips", RouteFor(null))">All</a>
-                <a class="@(type == OrderType.Pickup ? "on" : "")" href="@Url.Action("Slips", RouteFor(OrderType.Pickup))">Pickup</a>
-                <a class="@(type == OrderType.Delivery ? "on" : "")" href="@Url.Action("Slips", RouteFor(OrderType.Delivery))">Delivery</a>
+                @* location.replace: changing the filter does not add to the history, so Back still goes to the page you came from *@
+                <a class="@(type == null ? "on" : "")" href="@Url.Action("Slips", RouteFor(null))" onclick="location.replace(this.href); return false;">All</a>
+                <a class="@(type == OrderType.Pickup ? "on" : "")" href="@Url.Action("Slips", RouteFor(OrderType.Pickup))" onclick="location.replace(this.href); return false;">Pickup</a>
+                <a class="@(type == OrderType.Delivery ? "on" : "")" href="@Url.Action("Slips", RouteFor(OrderType.Delivery))" onclick="location.replace(this.href); return false;">Delivery</a>
             }
             <button type="button" class="primary" onclick="window.print()">Print@(single ? "" : " all")</button>
         </span>
@@ -88,7 +89,9 @@
 
     @if (!Model.Any())
     {
-        <p class="empty">No open orders to print right now.</p>
+        <p class="empty">@(rangeLabel != null
+            ? "No " + (type == OrderType.Delivery ? "delivery " : type == OrderType.Pickup ? "pickup " : "") + "orders to print for " + rangeLabel + "."
+            : "No open orders to print right now.")</p>
     }
 
     <div class="wrap">
