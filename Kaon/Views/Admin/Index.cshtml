@@ -12,9 +12,6 @@
             <h1>Carinderias</h1>
             <span class="ob-sub">Owners sign up on their own and appear here</span>
         </div>
-        <div class="ob-actions">
-            <a class="btn btn-sm btn-yellow" style="margin:0" asp-action="CreateOwner">+ Add a carinderia</a>
-        </div>
     </header>
 </section>
 
@@ -27,7 +24,7 @@
 
 @if (!Model.Stores.Any())
 {
-    <div class="card"><p class="muted" style="margin:0">No carinderias yet. Add the first one.</p></div>
+    <div class="card"><p class="muted" style="margin:0">No carinderias yet. They appear here when an owner signs up.</p></div>
 }
 else
 {
