@@ -91,7 +91,7 @@ select.input { appearance: auto; }
 
 .print-title { display: none; }
 @media print {
-    .topbar, .site-footer, .no-print { display: none !important; }
+    .topbar, .site-footer, .app-foot, .no-print { display: none !important; }
     body { background: #fff; }
     .print-title { display: block; margin-bottom: 12px; }
     .page-wide { max-width: none; }
@@ -911,3 +911,39 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .order-card .cancel-box > summary::-webkit-details-marker { display: none; }
 .order-card .cancel-box > summary:hover { color: #b3261e; border: 0; background: none; }
 .order-card .cancel-box .cancel-form { text-align: left; }
+
+/* ---------- Board columns scroll on their own when there are many orders ---------- */
+.board-col { padding-top: 0; }
+.board-top { position: sticky; top: 0; z-index: 2; background: #f4efe8; padding: 12px 4px 8px; margin: 0 -4px 4px; border-radius: 16px 16px 0 0; }
+.board-top .board-head { margin: 0 0 2px; }
+.board-top .bh-hint { margin: 0; }
+@media (min-width: 900px) {
+    .board { align-items: start; }
+    .board-col {
+        max-height: max(440px, calc(100vh - 150px));
+        overflow-y: auto; overscroll-behavior: contain;
+        scrollbar-width: thin; scrollbar-color: #d5c8b6 transparent;
+    }
+    .board-col::-webkit-scrollbar { width: 8px; }
+    .board-col::-webkit-scrollbar-track { background: transparent; margin: 10px 0; }
+    .board-col::-webkit-scrollbar-thumb { background: #d5c8b6; border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+    .board-col::-webkit-scrollbar-thumb:hover { background: #b9a88f; border: 2px solid transparent; background-clip: padding-box; }
+}
+
+/* Number on the orders tabs */
+.tab-switch .tab { display: inline-flex; align-items: center; gap: 8px; }
+.tab-badge { min-width: 24px; padding: 1px 8px; border-radius: 99px; text-align: center; font-size: .78rem; font-weight: 700; line-height: 1.5; background: #efe7da; color: var(--brown); }
+.tab-badge.is-new { background: var(--orange); color: #fff; }
+.tab-switch .tab.active .tab-badge { background: rgba(255,255,255,.28); color: #fff; }
+.tab-switch .tab.active .tab-badge.is-new { background: #fff; color: var(--orange); }
+
+/* ---------- Footer: dark brand band, like the landing page ---------- */
+.app-foot { background: var(--brown); color: rgba(255,255,255,.85); margin-top: 48px; padding: 26px 0; font-size: .85rem; }
+.app-foot-in { max-width: 1240px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 10px 24px; flex-wrap: wrap; }
+.app-foot-brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 700; font-size: 1.2rem; letter-spacing: -.01em; }
+.app-foot-brand .mark { width: 20px; height: 25px; }
+.app-foot-tag { flex: 1 1 auto; opacity: .85; }
+.app-foot-links a { color: #fff; text-decoration: none; font-weight: 500; }
+.app-foot-links a:hover { text-decoration: underline; }
+.app-foot-copy { opacity: .65; }
+@media (max-width: 700px) { .app-foot-in { flex-direction: column; align-items: flex-start; } }

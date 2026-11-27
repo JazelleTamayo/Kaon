@@ -1,4 +1,4 @@
-@using Kaon.Helpers
+﻿@using Kaon.Helpers
 @using System.Security.Claims
 @using Microsoft.EntityFrameworkCore
 @inject Kaon.Data.KaonDbContext Db
@@ -164,7 +164,14 @@
         @RenderBody()
     </main>
 
-    <footer class="site-footer">Kaon · Order ahead. Skip the line. · <a asp-controller="Home" asp-action="Privacy">Privacy Notice</a></footer>
+    <footer class="app-foot">
+        <div class="app-foot-in">
+            <a class="app-foot-brand" href="/" aria-label="Kaon home"><partial name="_Mark" /><span>kaon</span></a>
+            <span class="app-foot-tag">Order ahead. Skip the line.</span>
+            <nav class="app-foot-links" aria-label="Footer"><a asp-controller="Home" asp-action="Privacy">Privacy Notice</a></nav>
+            <span class="app-foot-copy">Team Kaon · 2026</span>
+        </div>
+    </footer>
 
     <script>
         (function () {

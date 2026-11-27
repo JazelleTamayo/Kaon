@@ -84,9 +84,12 @@
     </section>
 }
 
+@{
+    var packageCount = Model.PackagePending.Count + Model.PackageReserved.Count + Model.PackageKitchen.Count;
+}
 <div class="tab-switch">
-    <a class="tab @(!onPackages ? "active" : "")" asp-action="Index">Today's orders</a>
-    <a class="tab @(onPackages ? "active" : "")" asp-action="Index" asp-route-tab="packages">Food package pre-orders</a>
+    <a class="tab @(!onPackages ? "active" : "")" asp-action="Index">Today's orders <span class="tab-badge @(waiting > 0 ? "is-new" : "")">@Model.Active.Count</span></a>
+    <a class="tab @(onPackages ? "active" : "")" asp-action="Index" asp-route-tab="packages">Food package pre-orders <span class="tab-badge @(Model.PackagePending.Count > 0 ? "is-new" : "")">@packageCount</span></a>
 </div>
 
 @if (!onPackages)
@@ -97,11 +100,13 @@
             var orders = Model.Active.Where(o => o.Status == status).ToList();
             var cls = status.ToString().ToLower();
             <section class="board-col col-@cls" aria-label="@title">
-                <div class="board-head">
+                <div class="board-top">
+                    <div class="board-head">
                     <span class="bh-title"><span class="bh-dot"></span>@title</span>
                     <span class="chip chip-@cls">@orders.Count</span>
                 </div>
-                <div class="bh-hint">@hint</div>
+                    <div class="bh-hint">@hint</div>
+                </div>
 
                 @if (!orders.Any())
                 {
@@ -126,11 +131,13 @@ else
 {
     <div class="board">
         <section class="board-col col-pending" aria-label="Pending">
-            <div class="board-head">
+            <div class="board-top">
+                <div class="board-head">
                 <span class="bh-title"><span class="bh-dot"></span>Pending</span>
                 <span class="chip chip-pending">@Model.PackagePending.Count</span>
             </div>
-            <div class="bh-hint">Waiting for you to confirm</div>
+                <div class="bh-hint">Waiting for you to confirm</div>
+            </div>
             @if (!Model.PackagePending.Any())
             {
                 <div class="board-empty">
@@ -148,11 +155,13 @@ else
         </section>
 
         <section class="board-col col-reserved" aria-label="Reserved">
-            <div class="board-head">
+            <div class="board-top">
+                <div class="board-head">
                 <span class="bh-title"><span class="bh-dot"></span>Reserved, by pickup date</span>
                 <span class="chip chip-reserved">@Model.PackageReserved.Count</span>
             </div>
-            <div class="bh-hint">Confirmed, waiting for their date</div>
+                <div class="bh-hint">Confirmed, waiting for their date</div>
+            </div>
             @if (!Model.PackageReserved.Any())
             {
                 <div class="board-empty">
@@ -177,11 +186,13 @@ else
             var orders = Model.PackageKitchen.Where(o => o.Status == status).ToList();
             var cls = status.ToString().ToLower();
             <section class="board-col col-@cls" aria-label="@title">
-                <div class="board-head">
+                <div class="board-top">
+                    <div class="board-head">
                     <span class="bh-title"><span class="bh-dot"></span>@title</span>
                     <span class="chip chip-@cls">@orders.Count</span>
                 </div>
-                <div class="bh-hint">@hint</div>
+                    <div class="bh-hint">@hint</div>
+                </div>
 
                 @if (!orders.Any())
                 {
@@ -244,11 +255,15 @@ else
         async function refresh() {
             const html = await (await fetch(location.href, { cache: 'no-store', credentials: 'same-origin' })).text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            ['.ob-stats', '.board'].forEach(sel => {
+            // Remember how far each column was scrolled, so a refresh does not jump back to the top
+            const scrolls = [...document.querySelectorAll('.board-col')].map(c => c.scrollTop);
+            ['.ob-stats', '.tab-switch', '.board'].forEach(sel => {
                 const fresh = doc.querySelector(sel), old = document.querySelector(sel);
                 if (fresh && old) old.replaceWith(fresh);
             });
-            countUp(document.querySelector('.stats'));
+            document.querySelectorAll('.board-col').forEach((c, i) => { if (scrolls[i]) c.scrollTop = scrolls[i]; });
+            const stats = document.querySelector('.ob-stats');
+            if (stats) countUp(stats);
         }
 
         const ids = sig => sig.split(',').filter(Boolean).map(x => x.split(':')[0]);
