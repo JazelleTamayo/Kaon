@@ -2,10 +2,21 @@
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "My orders";
+    var storeNames = (Dictionary<int, string>)ViewBag.StoreNames;
+    var rated = (HashSet<int>)ViewBag.Rated;
+
+    bool Done(Order o) => o.Status == OrderStatus.Completed || o.Status == OrderStatus.Cancelled;
+    var inProgress = Model.Where(o => !Done(o)).ToList();
+    var past = Model.Where(Done).ToList();
+
+    string ItemsText(Order o)
+    {
+        var first = string.Join(", ", o.Items.Take(2).Select(i => i.Quantity + " × " + i.ItemName));
+        return o.Items.Count > 2 ? first + " +" + (o.Items.Count - 2) + " more" : first;
+    }
 }
 
-<h1>My orders</h1>
-<p class="muted">Tap an order to see its status.</p>
+<h1 style="margin-bottom:4px">My orders</h1>
 
 @if (!Model.Any())
 {
@@ -14,20 +25,83 @@
 }
 else
 {
-    foreach (var o in Model)
-    {
-        <a class="card order-link" asp-action="Status" asp-route-id="@o.Id">
-            <div class="row">
-                <strong>Order #@o.Id@(((Dictionary<int, string>)ViewBag.StoreNames).TryGetValue(o.StoreId, out var sn) ? " · " + sn : "")</strong>
-                <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
-            </div>
-            <div class="muted">
-                @(o.OrderType == OrderType.Pickup ? "Pickup" : "Home delivery") · @o.CreatedAt.ToString("MMM d, h:mm tt")
-            </div>
-            <div class="row" style="margin-top:6px">
-                <span class="muted">@o.Items.Sum(i => i.Quantity) item(s)@if (o.Status == OrderStatus.Completed && !((HashSet<int>)ViewBag.Rated).Contains(o.Id)) { <span class="chip chip-pending chip-sm">Rate this order</span> }</span>
-                <strong>₱@o.Total.ToString("N2")</strong>
-            </div>
-        </a>
-    }
+    <div class="tabs" role="tablist" aria-label="Orders" data-tabs>
+        <button type="button" role="tab" class="tab" data-tab="active" aria-selected="@(inProgress.Any() ? "true" : "false")">In progress <span class="tab-n">@inProgress.Count</span></button>
+        <button type="button" role="tab" class="tab" data-tab="past" aria-selected="@(inProgress.Any() ? "false" : "true")">Past orders <span class="tab-n">@past.Count</span></button>
+    </div>
+
+    @* ================= In progress ================= *@
+    <section class="tab-panel" data-panel="active" role="tabpanel" @(inProgress.Any() ? "" : "hidden")>
+        @if (!inProgress.Any())
+        {
+            <div class="card"><p class="muted" style="margin:0">Nothing in progress right now.</p></div>
+            <a class="btn" asp-controller="Menu" asp-action="Index">Order something</a>
+        }
+        @foreach (var o in inProgress)
+        {
+            <a class="my-order st-@o.Status.ToString().ToLower()" asp-action="Status" asp-route-id="@o.Id">
+                <div class="mo-top">
+                    <div class="mo-title">
+                        <strong>Order #@o.Id</strong>
+                        @if (storeNames.TryGetValue(o.StoreId, out var sn)) { <span class="mo-store">@sn</span> }
+                    </div>
+                    <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
+                </div>
+                <div class="mo-items">@ItemsText(o)</div>
+                <div class="mo-foot">
+                    <span class="muted">@(o.OrderType == OrderType.Pickup ? "Pickup" : "Home delivery") · @o.CreatedAt.ToString("MMM d, h:mm tt")</span>
+                    <strong>₱@o.Total.ToString("N2")</strong>
+                </div>
+                <div class="mo-track">Track this order &rarr;</div>
+            </a>
+        }
+    </section>
+
+    @* ================= Past orders ================= *@
+    <section class="tab-panel" data-panel="past" role="tabpanel" @(inProgress.Any() ? "hidden" : "")>
+        @if (!past.Any())
+        {
+            <div class="card"><p class="muted" style="margin:0">No past orders yet. Completed and cancelled orders show here.</p></div>
+        }
+        @foreach (var o in past)
+        {
+            <a class="my-order past st-@o.Status.ToString().ToLower()" asp-action="Status" asp-route-id="@o.Id">
+                <div class="mo-top">
+                    <div class="mo-title">
+                        <strong>Order #@o.Id</strong>
+                        @if (storeNames.TryGetValue(o.StoreId, out var sn2)) { <span class="mo-store">@sn2</span> }
+                    </div>
+                    <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
+                </div>
+                <div class="mo-items">@ItemsText(o)</div>
+                <div class="mo-foot">
+                    <span class="muted">@(o.OrderType == OrderType.Pickup ? "Pickup" : "Home delivery") · @o.CreatedAt.ToString("MMM d, h:mm tt")</span>
+                    <strong>@(o.Status == OrderStatus.Cancelled ? "" : "₱" + o.Total.ToString("N2"))</strong>
+                </div>
+                @if (o.Status == OrderStatus.Completed && !rated.Contains(o.Id))
+                {
+                    <div class="mo-rate">★ Rate this order</div>
+                }
+                else if (o.Status == OrderStatus.Cancelled && !string.IsNullOrWhiteSpace(o.CancelReason))
+                {
+                    <div class="mo-reason">Cancelled: @o.CancelReason</div>
+                }
+            </a>
+        }
+    </section>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var tabs = document.querySelectorAll('[data-tabs] .tab');
+            var panels = document.querySelectorAll('[data-panel]');
+            if (!tabs.length) return;
+            function show(name) {
+                tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'); });
+                panels.forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+            }
+            tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+        })();
+    </script>
 }

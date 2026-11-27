@@ -1,4 +1,4 @@
-// Customer order tracker: a bar at the bottom of every page, like a delivery app.
+﻿// Customer order tracker: a bar at the bottom of every page, like a delivery app.
 // It follows the customer around, updates live, and alerts them when the food is Ready.
 (function () {
     var el = document.getElementById('tracker');
@@ -38,6 +38,7 @@
         if (!orders.length || hideBar) {
             el.hidden = true;
             document.body.classList.remove('has-track');
+            setH();
             return;
         }
         var o = orders[0], more = orders.length - 1;
@@ -60,7 +61,14 @@
             alertButton();
         el.hidden = false;
         document.body.classList.add('has-track');
+        setH();
     }
+
+    // Tell the page how tall the tracker is, so the cart bar and the footer sit above it and never overlap
+    function setH() {
+        document.documentElement.style.setProperty('--track-h', (el.hidden ? 0 : el.offsetHeight) + 'px');
+    }
+    window.addEventListener('resize', setH);
 
     function load() { try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { return null; } }
     function save(map) { try { localStorage.setItem(STORE, JSON.stringify(map)); } catch (e) { } }

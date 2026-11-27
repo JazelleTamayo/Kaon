@@ -1366,3 +1366,37 @@ main.page { flex: 1 0 auto; width: 100%; }
 .kind-opt input:checked + span { border-color: var(--orange); background: #fff4e8; box-shadow: 0 0 0 3px rgba(232,80,31,.14); }
 .kind-opt input:focus-visible + span { box-shadow: 0 0 0 3px rgba(255,183,3,.5); }
 @media (max-width: 520px) { .kind-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Customer: My orders. In progress and past orders are kept apart, each status has its own colour ---------- */
+.my-order { display: block; position: relative; margin: 0 0 12px; padding: 14px 18px 14px 22px; background: #fff; border-radius: 16px; border: 1px solid #ece4d8; text-decoration: none; color: inherit; overflow: hidden; transition: transform .15s, box-shadow .15s; }
+.my-order::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--bar, #d5c8b6); }
+.my-order:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(43,24,16,.12); }
+.my-order.st-pending { --bar: #F0B43C; }
+.my-order.st-confirmed { --bar: #b89b78; }
+.my-order.st-preparing { --bar: var(--orange); }
+.my-order.st-ready { --bar: var(--green); }
+.my-order.st-outfordelivery { --bar: var(--teal); }
+.my-order.st-completed { --bar: #cfc3b3; }
+.my-order.st-cancelled { --bar: #d9534f; }
+.my-order.past { background: #faf6ef; }
+.mo-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.mo-title { display: grid; line-height: 1.25; }
+.mo-title strong { font-size: 1.05rem; }
+.mo-store { font-size: .82rem; color: #7a6a60; }
+.mo-items { margin: 8px 0 6px; font-size: .92rem; }
+.mo-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .85rem; }
+.mo-foot strong { font-size: 1rem; }
+.mo-track { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #eadfce; font-size: .85rem; font-weight: 600; color: var(--orange); }
+.mo-rate { margin-top: 8px; font-size: .85rem; font-weight: 600; color: #b7791f; }
+.mo-reason { margin-top: 8px; font-size: .82rem; color: #b3261e; }
+
+/* ---------- Cart bar: orange so it stands out from the dark footer, and it sits above the order tracker ---------- */
+.cartbar { background: var(--orange); bottom: calc(var(--track-h, 0px) + 16px); z-index: 45; align-items: center; padding: 14px 22px; box-shadow: 0 10px 28px rgba(232,80,31,.4); transition: bottom .25s ease, background .15s, transform .15s; }
+.cartbar:hover { background: #c93f13; transform: translateY(-2px); }
+.cartbar span:last-child::after { content: " \2192"; }
+.has-track .cartbar { bottom: calc(var(--track-h, 104px) + 28px); }
+/* leave room under the content so the bars never cover the footer text */
+body:has(.cartbar) .app-foot { padding-bottom: 96px; }
+.has-track .app-foot { padding-bottom: calc(var(--track-h, 120px) + 36px); }
+.has-track:has(.cartbar) .app-foot { padding-bottom: calc(var(--track-h, 120px) + 100px); }
+.has-track .page { padding-bottom: calc(var(--track-h, 120px) + 24px); }
