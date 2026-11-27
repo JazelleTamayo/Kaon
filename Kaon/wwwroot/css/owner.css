@@ -947,3 +947,28 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .app-foot-links a:hover { text-decoration: underline; }
 .app-foot-copy { opacity: .65; }
 @media (max-width: 700px) { .app-foot-in { flex-direction: column; align-items: flex-start; } }
+
+/* ---------- Dark brand touches: top bar and tab switchers ---------- */
+.app-nav { background: var(--brown); border-bottom: 1px solid rgba(255,255,255,.08); }
+.app-brand { color: #fff; }
+.app-links a { color: rgba(255,255,255,.78); }
+.app-links a:hover { color: #fff; }
+.app-links a.active { color: #fff; border-bottom-color: var(--orange); }
+.app-burger svg, .cart-btn svg { stroke: #fff; }
+.app-burger:hover, .cart-btn:hover { background: rgba(255,255,255,.12); }
+.cart-btn.active svg, .cart-btn:hover svg { stroke: var(--yellow); }
+@media (max-width: 860px) {
+    .app-links { background: #3a251b; border-bottom: 1px solid rgba(255,255,255,.08); box-shadow: 0 14px 24px rgba(0,0,0,.3); }
+    .app-links a.active { background: rgba(255,255,255,.08); }
+}
+
+/* Active tab is dark brown (orange stays for the main buttons and new-order numbers) */
+.tab[aria-selected="true"] { background: var(--brown); color: #fff; }
+.tab-switch .tab.active { background: var(--brown); color: #fff; }
+.tab-switch .tab.active .tab-badge { background: rgba(255,255,255,.22); color: #fff; }
+.tab-switch .tab.active .tab-badge.is-new { background: var(--orange); color: #fff; }
+
+/* Table header rows: dark brand bar */
+.card .table thead th { background: var(--brown); color: rgba(255,255,255,.9); border: 0; font-weight: 600; letter-spacing: .04em; }
+.card .table thead th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+.card .table thead th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
