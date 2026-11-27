@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Kaon.Helpers;
 
@@ -8,6 +8,9 @@ public class CartLine
     public string Name { get; set; } = "";
     public decimal Price { get; set; }
     public int Quantity { get; set; } = 1;
+
+    // The dish's photo, so the cart can show it
+    public string? ImageUrl { get; set; }
 
     // Food packages: which size or portion was chosen
     public int? OptionId { get; set; }

@@ -1,4 +1,4 @@
-using Kaon.Data;
+﻿using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -121,6 +121,7 @@ public class MenuController : Controller
             {
                 MenuItemId = item.Id,
                 Name = item.Name,
+                ImageUrl = item.ImageUrl,
                 Price = option?.Price ?? item.Price,
                 Quantity = qty,
                 OptionId = option?.Id,

@@ -1,0 +1,28 @@
+@model Kaon.Helpers.CartLine
+<div class="cart-line">
+    <span class="cl-img" aria-hidden="true">
+        @if (!string.IsNullOrEmpty(Model.ImageUrl)) { <img src="@Model.ImageUrl" alt="" loading="lazy" /> }
+        else { <svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg> }
+    </span>
+    <div class="cl-info">
+        <div class="cl-name">@Model.Name</div>
+        @if (!string.IsNullOrEmpty(Model.OptionLabel)) { <div class="cl-opt">@Model.OptionLabel</div> }
+        <div class="cl-unit">₱@Model.Price.ToString("N2") each</div>
+    </div>
+    <div class="qty">
+        <form asp-action="Change" method="post">
+            <input type="hidden" name="id" value="@Model.MenuItemId" />
+            <input type="hidden" name="optionId" value="@Model.OptionId" />
+            <input type="hidden" name="delta" value="-1" />
+            <button aria-label="One less of @Model.Name">−</button>
+        </form>
+        <strong>@Model.Quantity</strong>
+        <form asp-action="Change" method="post">
+            <input type="hidden" name="id" value="@Model.MenuItemId" />
+            <input type="hidden" name="optionId" value="@Model.OptionId" />
+            <input type="hidden" name="delta" value="1" />
+            <button aria-label="One more of @Model.Name">+</button>
+        </form>
+    </div>
+    <div class="cl-total">₱@((Model.Price * Model.Quantity).ToString("N2"))</div>
+</div>
