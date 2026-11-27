@@ -1,4 +1,4 @@
-@model Order
+﻿@model Order
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Order #" + Model.Id;
@@ -118,11 +118,15 @@
                 @item.Quantity × @item.ItemName
                 @if (item.TracksReadiness)
                 {
-                    <span class="chip chip-sm @(item.IsReadyToServe ? "chip-ready" : "chip-preparing")">@(item.IsReadyToServe ? "Ready" : "Preparing")</span>
+                    <span class="chip chip-sm @(item.IsReadyToServe ? "chip-ready" : "chip-preparing")">@(item.IsReadyToServe ? "Ready to serve" : "Still cooking")</span>
                 }
             </span>
             <span>₱@((item.UnitPrice * item.Quantity).ToString("N2"))</span>
         </div>
+    }
+    @if (Model.Items.Any(i => i.TracksReadiness))
+    {
+        <p class="muted" style="margin:8px 0 0;font-size:.8rem">The green or orange tag is about that dish only: <strong>Ready to serve</strong> means it is already cooked, <strong>Still cooking</strong> means the kitchen is still making it. Your order's own progress is shown above.</p>
     }
     <hr class="divider" />
     @if (Model.DeliveryFee > 0)
