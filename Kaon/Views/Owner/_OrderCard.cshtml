@@ -1,4 +1,4 @@
-@model (Order Order, List<Rider> Riders)
+﻿@model (Order Order, List<Rider> Riders)
 @using Kaon.Helpers
 @{
     var o = Model.Order;
@@ -70,30 +70,28 @@
         <form asp-action="Advance" asp-route-id="@o.Id" method="post">
             <button class="btn btn-sm">@OrderText.NextLabel(o)</button>
         </form>
-        <details class="more-menu">
-            <summary class="btn-ghost" aria-label="More actions for order @o.Id">More</summary>
-            <div class="more-panel">
-                @if (o.PaymentStatus != PaymentStatus.Paid)
+        <button type="button" class="btn-ghost more-toggle" aria-expanded="false" aria-label="More actions for order @o.Id">More</button>
+    </div>
+    <div class="more-panel" hidden>
+        @if (o.PaymentStatus != PaymentStatus.Paid)
+        {
+            <form asp-action="MarkPaid" asp-route-id="@o.Id" method="post">
+                <button class="btn-ghost">@OrderText.MarkPaidLabel(o)</button>
+            </form>
+        }
+        <a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a>
+        <details class="cancel-box">
+            <summary>Cancel order</summary>
+            <form asp-action="Cancel" asp-route-id="@o.Id" method="post" class="cancel-form">
+                <span class="label">Why are you cancelling? The customer will see this.</span>
+                @foreach (var r in OrderText.CancelReasons)
                 {
-                    <form asp-action="MarkPaid" asp-route-id="@o.Id" method="post">
-                        <button class="btn-ghost">@OrderText.MarkPaidLabel(o)</button>
-                    </form>
+                    <label class="cancel-opt"><input type="radio" name="reason" value="@r" required /> @r</label>
                 }
-                <a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a>
-                <details class="cancel-box">
-                    <summary>Cancel order</summary>
-                    <form asp-action="Cancel" asp-route-id="@o.Id" method="post" class="cancel-form">
-                        <span class="label">Why are you cancelling? The customer will see this.</span>
-                        @foreach (var r in OrderText.CancelReasons)
-                        {
-                            <label class="cancel-opt"><input type="radio" name="reason" value="@r" required /> @r</label>
-                        }
-                        <label class="cancel-opt"><input type="radio" name="reason" value="Other" /> Other</label>
-                        <input class="input" name="otherReason" maxlength="200" placeholder="Type the reason (for Other)" />
-                        <button class="btn btn-sm btn-danger">Cancel order #@o.Id</button>
-                    </form>
-                </details>
-            </div>
+                <label class="cancel-opt"><input type="radio" name="reason" value="Other" /> Other</label>
+                <input class="input" name="otherReason" maxlength="200" placeholder="Type the reason (for Other)" />
+                <button class="btn btn-sm btn-danger">Cancel order #@o.Id</button>
+            </form>
         </details>
     </div>
 </article>

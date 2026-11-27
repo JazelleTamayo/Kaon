@@ -1193,3 +1193,17 @@ main.page:has(.tab-panel, .board-fill) ~ .app-foot { margin-top: 8px; }
 .add-row:hover { background: #fff4e8; border-color: var(--orange); }
 .df-sizes .size-row { margin-bottom: 8px; }
 .order-card.compact .order-lines li:not(:last-child)::after { margin-left: -.3em; }
+
+/* "More" on an order card: a small toggle beside the main button; the extra actions open below as a tidy pair */
+.more-toggle { flex: 0 0 auto; padding: 9px 14px; font-size: .85rem; white-space: nowrap; }
+.more-toggle::after { content: "\25BE"; margin-left: 6px; font-size: .75rem; }
+.more-toggle[aria-expanded="true"]::after { content: "\25B4"; }
+.more-toggle[aria-expanded="true"] { background: #faf6ef; border-color: var(--brown); }
+.order-card .more-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.order-card .more-panel[hidden] { display: none; }
+.order-card .more-panel > a.btn-ghost:first-child { grid-column: 1 / -1; }
+.order-card .more-panel form { margin: 0; display: block; }
+.order-card .more-panel .btn-ghost { width: 100%; display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 9px 10px; font-size: .85rem; }
+.order-card .more-panel .cancel-box { grid-column: 1 / -1; margin: 2px 0 0; text-align: center; }
+.order-card .more-panel .cancel-box > summary { display: inline-block; padding: 4px 8px; font-size: .8rem; color: #b3261e; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; list-style: none; }
+.order-card .more-panel .cancel-box .cancel-form { text-align: left; }
