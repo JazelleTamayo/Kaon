@@ -94,7 +94,7 @@
 
 @if (!onPackages)
 {
-    <div class="board">
+    <div class="board board-fill">
         @foreach (var (status, title, hint) in columns)
         {
             var orders = Model.Active.Where(o => o.Status == status).ToList();
@@ -252,6 +252,18 @@ else
         countUp(document);
 
         // Replace the stats and the board without reloading the page
+        // The Today's orders board fills the screen below it; each column scrolls inside
+        function fitBoard() {
+            const b = document.querySelector('.board-fill');
+            if (!b) return;
+            if (innerWidth < 900) { b.style.height = ''; return; }
+            b.style.height = '';
+            b.style.height = Math.max(400, Math.round(innerHeight - b.getBoundingClientRect().top - 24)) + 'px';
+        }
+        window.addEventListener('resize', fitBoard);
+        window.addEventListener('load', fitBoard);
+        fitBoard();
+
         async function refresh() {
             const html = await (await fetch(location.href, { cache: 'no-store', credentials: 'same-origin' })).text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -261,6 +273,7 @@ else
                 const fresh = doc.querySelector(sel), old = document.querySelector(sel);
                 if (fresh && old) old.replaceWith(fresh);
             });
+            fitBoard();
             document.querySelectorAll('.board-col').forEach((c, i) => { if (scrolls[i]) c.scrollTop = scrolls[i]; });
             const stats = document.querySelector('.ob-stats');
             if (stats) countUp(stats);
