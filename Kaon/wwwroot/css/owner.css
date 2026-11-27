@@ -972,3 +972,22 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .card .table thead th { background: var(--brown); color: rgba(255,255,255,.9); border: 0; font-weight: 600; letter-spacing: .04em; }
 .card .table thead th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
 .card .table thead th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+/* ---------- Owner Menu page: slim banner, and long lists scroll inside their own area ---------- */
+.o-hero.o-side.slim { min-height: 0; padding: 16px 26px; border-radius: 20px; }
+.o-hero.slim .o-kicker { display: none; }
+.o-hero.slim h1 { font-size: 1.55rem; margin: 0 0 4px; }
+.o-hero.slim p { margin: 0 0 8px; font-size: .86rem; }
+.o-hero.slim .o-hero-in { max-width: 560px; }
+.o-hero.slim .cook-meter { margin: 6px 0 4px; }
+
+.tab-panel .scroll-area, .tab-panel .pkg-list {
+    max-height: max(300px, calc(100vh - 430px));
+    overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: #d5c8b6 transparent;
+}
+.tab-panel .pkg-list { padding: 2px 6px 2px 2px; }
+.tab-panel .scroll-area::-webkit-scrollbar, .tab-panel .pkg-list::-webkit-scrollbar { width: 8px; }
+.tab-panel .scroll-area::-webkit-scrollbar-thumb, .tab-panel .pkg-list::-webkit-scrollbar-thumb { background: #d5c8b6; border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+.tab-panel .scroll-area::-webkit-scrollbar-thumb:hover, .tab-panel .pkg-list::-webkit-scrollbar-thumb:hover { background: #b9a88f; border: 2px solid transparent; background-clip: padding-box; }
+.tab-panel .scroll-area thead th { position: sticky; top: 0; z-index: 2; }
