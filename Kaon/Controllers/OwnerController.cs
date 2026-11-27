@@ -160,8 +160,8 @@ public class OwnerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // Module 7: give a delivery order to a rider. Pick a saved rider, or type a new one (saved for next time).
-    // The rider gets a private link with the address, the items and the amount to collect.
+    // Give a delivery order to one of the carinderia's own riders. Pick a saved rider, or type a new one (saved for next time).
+    // Only the rider's name and number are kept on the order. There is no rider link or rider app.
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AssignRider(int id, int? riderId, string? name, string? phone)
     {
@@ -192,19 +192,17 @@ public class OwnerController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // A different rider gets a new link, so the old rider's link stops working
-        if (order.RiderToken == null || order.RiderPhone != rider.Phone)
-            order.RiderToken = OrderText.NewRiderToken();
+        order.RiderToken = null;   // older orders may still carry a link token; it is no longer used
         order.RiderName = rider.Name;
         order.RiderPhone = rider.Phone;
         order.RiderAssignedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
-        TempData["Saved"] = "Order #" + order.Id + " is with " + rider.Name + ". Send them the rider link.";
+        TempData["Saved"] = "Order #" + order.Id + " is with " + rider.Name + ".";
         return RedirectToAction(nameof(Index));
     }
 
-    // Take the rider off an order. Their link stops working right away.
+    // Take the rider off an order.
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveRider(int id)
     {

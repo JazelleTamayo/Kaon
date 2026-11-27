@@ -1,24 +1,17 @@
-@model (Order Order, List<Rider> Riders)
+﻿@model (Order Order, List<Rider> Riders)
 @{
     var o = Model.Order;
     var riders = Model.Riders;
 }
-@* Module 7: who is delivering this order, and the rider's private link *@
+@* Who is delivering this order (the carinderia's own rider): just a name and a number *@
 <div class="rider-box">
-    @if (o.RiderToken != null)
+    @if (!string.IsNullOrWhiteSpace(o.RiderName))
     {
-        var link = Url.Action("Index", "Rider", new { token = o.RiderToken }, Context.Request.Scheme)!;
-        var text = "Kaon delivery #" + o.Id + ": " + link;
         <div class="rider-who">
             <span class="rider-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17h4l3-6h4l1 6M13 11l-2-4H8"/></svg></span>
-            <span><strong>@o.RiderName</strong> · <a href="tel:@o.RiderPhone">@o.RiderPhone</a></span>
-        </div>
-        <div class="rider-actions">
-            <a class="btn-ghost" href="sms:@o.RiderPhone?body=@Uri.EscapeDataString(text)">Text the link</a>
-            <button type="button" class="btn-ghost" data-copy="@link">Copy link</button>
-            <a class="btn-ghost" href="@link" target="_blank" rel="noopener noreferrer">Open</a>
+            <span class="rider-name"><strong>@o.RiderName</strong> · <a href="tel:@o.RiderPhone">@o.RiderPhone</a></span>
             <form asp-action="RemoveRider" asp-route-id="@o.Id" method="post">
-                <button class="btn-ghost danger" title="The rider's link stops working">Remove rider</button>
+                <button class="btn-ghost danger">Remove</button>
             </form>
         </div>
     }
@@ -31,7 +24,7 @@
                 <select class="input" name="riderId" aria-label="Rider for order #@o.Id" required>
                     @foreach (var r in riders) { <option value="@r.Id">@r.Name · @r.Phone</option> }
                 </select>
-                <button class="btn btn-sm">Give to rider</button>
+                <button class="btn btn-sm">Assign</button>
             </form>
         }
         <details class="rider-new" @(riders.Any() ? "" : "open")>
@@ -39,7 +32,7 @@
             <form asp-action="AssignRider" asp-route-id="@o.Id" method="post" class="rider-pick">
                 <input class="input" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
                 <input class="input" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
-                <button class="btn btn-sm">Give to rider</button>
+                <button class="btn btn-sm">Assign</button>
             </form>
         </details>
     }

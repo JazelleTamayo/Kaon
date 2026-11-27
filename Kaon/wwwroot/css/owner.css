@@ -1337,3 +1337,17 @@ main.page:has(.sum-grid) ~ .app-foot { margin-top: 8px; }
 /* ---------- Footer at the bottom of the screen on short pages ---------- */
 body { min-height: 100vh; display: flex; flex-direction: column; }
 main.page { flex: 1 0 auto; width: 100%; }
+
+/* ---------- Delivery card: clear spacing between options, details and riders ---------- */
+.card .check-row { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-bottom: 4px; }
+.card .check-row .check { margin-top: 0; }
+#deliveryFields { margin-top: 18px; padding-top: 16px; border-top: 1px solid #f0e8db; }
+#deliveryFields .two-col { margin-top: 0; }
+#deliveryFields .two-col .label { margin-top: 0; }
+#deliveryFields > .hint { display: block; margin-top: 8px; }
+.rider-opt { margin-top: 20px; padding: 14px 16px; background: #faf6ef; border: 1px solid #ece4d8; border-radius: 14px; }
+.rider-opt .check { margin-top: 0; }
+.rider-opt > .hint { display: block; margin: 4px 0 0 32px; }
+#riderBlock { margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e3d8c8; }
+.rider-box .rider-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rider-box .rider-who form { margin: 0 0 0 auto; }
