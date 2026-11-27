@@ -1,4 +1,4 @@
-@model List<Order>
+﻿@model List<Order>
 @using Kaon.Helpers
 @{
     Layout = null;
@@ -17,51 +17,73 @@
     <link rel="icon" type="image/svg+xml" href="~/img/logo-icon.svg" />
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; color: #111; background: #efe6da; font-size: 14px; }
-        .bar { position: sticky; top: 0; display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; padding: .8rem 16px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-        .bar button, .bar a { font: inherit; font-weight: 600; padding: .5rem 1rem; border-radius: 999px; border: 1px solid #e3d6c6; background: #fff; color: #2A1A12; text-decoration: none; cursor: pointer; }
-        .bar .primary { background: #E8501F; border-color: #E8501F; color: #fff; }
-        .bar .on { border-color: #E8501F; color: #E8501F; }
-        .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 16px; }
+        body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; color: #111; background: #f4eee5; font-size: 14px; }
+        .bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; justify-content: space-between; padding: .7rem 20px; background: #2B1810; color: #fff; border-bottom: 3px solid #E8501F; }
+        .bar a, .bar button { font: inherit; font-weight: 600; padding: .5rem 1rem; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.35); background: transparent; color: #fff; text-decoration: none; cursor: pointer; }
+        .bar a:hover { background: rgba(255,255,255,.12); }
+        .bar .primary { background: #E8501F; border-color: #E8501F; color: #fff; padding: .5rem 1.4rem; }
+        .bar .primary:hover { background: #c93f13; }
+        .bar .on { background: #fff; color: #2B1810; border-color: #fff; }
+        .bar-title { display: grid; font-weight: 700; font-size: 1.05rem; line-height: 1.2; text-align: center; }
+        .bar-title small { font-weight: 400; opacity: .75; font-size: .8rem; }
+        .bar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .wrap { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 24px 16px 40px; }
         .empty { text-align: center; color: #6b5a4e; padding: 40px 16px; }
 
         /* About 80 mm wide: fits a receipt printer, and several fit on one A4 page */
-        .slip { width: min(80mm, 100%); background: #fff; padding: 12px 14px; border: 1px dashed #999; break-inside: avoid; page-break-inside: avoid; }
-        .slip .store { text-align: center; font-weight: 700; font-size: 15px; }
-        .slip .num { text-align: center; font-size: 30px; font-weight: 800; line-height: 1.1; margin: 4px 0; }
-        .slip .type { text-align: center; font-weight: 800; letter-spacing: .12em; font-size: 16px; padding: 4px 0; margin: 4px 0 8px; border: 2px solid #111; }
-        .slip .type.delivery { background: #111; color: #fff; }
+        .slip { width: min(84mm, 100%); background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 28px rgba(43,24,16,.14); break-inside: avoid; page-break-inside: avoid; }
+        .slip-head { text-align: center; padding: 14px 14px 12px; background: #2B1810; color: #fff; }
+        .slip .store { font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
+        .slip .num { font-size: 36px; font-weight: 800; line-height: 1.1; margin: 2px 0 8px; color: #FFB703; }
+        .slip .type { display: inline-block; font-weight: 800; letter-spacing: .14em; font-size: 13px; padding: 3px 16px; border-radius: 999px; border: 2px solid #fff; color: #fff; }
+        .slip .type.delivery { background: #E8501F; border-color: #E8501F; }
+        .slip-body { padding: 12px 16px 16px; }
         .slip .row { display: flex; justify-content: space-between; gap: 8px; }
         .slip .line { margin: 2px 0; }
-        .slip .muted { color: #555; font-size: 12px; }
-        .slip hr { border: 0; border-top: 1px dashed #777; margin: 8px 0; }
+        .slip .muted { color: #6b5a4e; font-size: 12px; }
+        .slip hr { border: 0; border-top: 1px dashed #b9a88f; margin: 10px 0; }
         .slip .items { list-style: none; margin: 0; padding: 0; }
-        .slip .items li { display: flex; justify-content: space-between; gap: 8px; margin: 3px 0; }
+        .slip .items li { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0; }
         .slip .items .q { font-weight: 700; min-width: 2.2em; }
-        .slip .note { border: 1px solid #111; padding: 6px; margin-top: 8px; font-weight: 600; }
-        .slip .total { font-weight: 800; font-size: 16px; }
-        .slip .collect { margin-top: 8px; text-align: center; font-weight: 800; font-size: 18px; border: 2px dashed #111; padding: 6px; }
-        .slip .collect.paid { font-size: 14px; }
+        .slip .note { border: 1px solid #111; border-radius: 8px; padding: 6px 8px; margin-top: 8px; font-weight: 600; }
+        .slip .total { font-weight: 800; font-size: 16px; margin-top: 2px; }
+        .slip .collect { margin-top: 10px; text-align: center; font-weight: 800; font-size: 18px; border: 2px dashed #E8501F; color: #c93f13; border-radius: 10px; padding: 8px; background: #fff4e8; }
+        .slip .collect.paid { font-size: 14px; border-color: #2E9E5B; color: #1f7a45; background: #eefaf2; }
 
         @@page { margin: 8mm; }
         @@media print {
             body { background: #fff; }
             .bar { display: none; }
             .wrap { padding: 0; gap: 6mm; justify-content: flex-start; }
-            .slip { border-color: #777; }
+            .slip { border: 1px dashed #777; border-radius: 0; box-shadow: none; }
+            .slip-head { background: #fff; color: #111; border-bottom: 2px solid #111; }
+            .slip .num { color: #111; }
+            .slip .type, .slip .type.delivery { background: #fff; color: #111; border: 2px solid #111; border-radius: 0; }
+            .slip .collect, .slip .collect.paid { background: #fff; color: #111; border-color: #111; }
         }
     </style>
 </head>
 <body>
+    @{
+        object RouteFor(OrderType? t) => new { type = t, period = (string?)ViewBag.Period, from = (ViewBag.From as DateTime?)?.ToString("yyyy-MM-dd"), to = (ViewBag.To as DateTime?)?.ToString("yyyy-MM-dd") };
+        var rangeLabel = ViewBag.RangeLabel as string;
+    }
     <div class="bar">
-        <button type="button" class="primary" onclick="window.print()">Print</button>
-        @if (!single)
-        {
-            <a class="@(type == null ? "on" : "")" href="@Url.Action("Slips")">All open orders</a>
-            <a class="@(type == OrderType.Pickup ? "on" : "")" href="@Url.Action("Slips", new { type = OrderType.Pickup })">Pickup only</a>
-            <a class="@(type == OrderType.Delivery ? "on" : "")" href="@Url.Action("Slips", new { type = OrderType.Delivery })">Delivery only</a>
-        }
-        <a href="@Url.Action("Index")">Back to orders</a>
+        <a class="back" href="@Url.Action("Index")" onclick="if (history.length > 1) { history.back(); return false; }">&larr; Back</a>
+        <span class="bar-title">
+            @if (single) { <text>Order slip</text> }
+            else { <text>@(rangeLabel != null ? "All slips · " + rangeLabel : "Open orders")</text> }
+            <small>@Model.Count slip@(Model.Count == 1 ? "" : "s")</small>
+        </span>
+        <span class="bar-actions">
+            @if (!single)
+            {
+                <a class="@(type == null ? "on" : "")" href="@Url.Action("Slips", RouteFor(null))">All</a>
+                <a class="@(type == OrderType.Pickup ? "on" : "")" href="@Url.Action("Slips", RouteFor(OrderType.Pickup))">Pickup</a>
+                <a class="@(type == OrderType.Delivery ? "on" : "")" href="@Url.Action("Slips", RouteFor(OrderType.Delivery))">Delivery</a>
+            }
+            <button type="button" class="primary" onclick="window.print()">Print@(single ? "" : " all")</button>
+        </span>
     </div>
 
     @if (!Model.Any())
@@ -75,9 +97,12 @@
             var subtotal = o.Items.Sum(i => i.UnitPrice * i.Quantity);
             var collect = Collect(o);
             <article class="slip">
-                <div class="store">@store.Name</div>
-                <div class="num">#@o.Id</div>
-                <div class="type @(o.OrderType == OrderType.Delivery ? "delivery" : "")">@(o.OrderType == OrderType.Delivery ? "DELIVERY" : "PICKUP")</div>
+                <div class="slip-head">
+                    <div class="store">@store.Name</div>
+                    <div class="num">#@o.Id</div>
+                    <div class="type @(o.OrderType == OrderType.Delivery ? "delivery" : "")">@(o.OrderType == OrderType.Delivery ? "DELIVERY" : "PICKUP")</div>
+                </div>
+                <div class="slip-body">
 
                 <div class="line"><strong>@o.CustomerName</strong></div>
                 @if (!string.IsNullOrWhiteSpace(o.Phone)) { <div class="line">@o.Phone</div> }
@@ -121,6 +146,7 @@
                 {
                     <div class="collect paid">PAID · nothing to collect</div>
                 }
+                </div>
             </article>
         }
     </div>

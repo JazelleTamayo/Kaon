@@ -111,7 +111,13 @@
     </div>
 
     <div class="card sum-card">
-        <h2 class="section" style="margin-top:0">All orders <span class="muted" style="font-weight:400">(@Model.Orders.Count)</span></h2>
+        <div class="card-head">
+            <h2 class="section" style="margin:0">All orders <span class="muted" style="font-weight:400">(@Model.Orders.Count)</span></h2>
+            @if (Model.Orders.Any(o => o.Status != OrderStatus.Cancelled))
+            {
+                <a class="btn btn-sm btn-outline no-print" style="margin:0" asp-action="Slips" asp-route-period="@Model.Period" asp-route-from="@Model.Start.ToString("yyyy-MM-dd")" asp-route-to="@Model.End.AddDays(-1).ToString("yyyy-MM-dd")">Print all slips</a>
+            }
+        </div>
         @if (!Model.Orders.Any())
         {
             <p class="muted">No orders in this period.</p>
@@ -137,7 +143,7 @@
                                 </td>
                                 <td>@(o.PaymentMethod == PaymentMethod.Cash ? "Cash" : "GCash")<br /><span class="muted" style="font-size:.78rem">@OrderText.PayStatusLabel(o)</span></td>
                                 <td>₱@o.Total.ToString("N2")</td>
-                                <td class="actions no-print"><a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a></td>
+                                <td class="actions no-print"><a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id">Print slip</a></td>
                             </tr>
                         }
                     </tbody>

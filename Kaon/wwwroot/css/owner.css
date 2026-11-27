@@ -1252,3 +1252,22 @@ main.page:has(.tab-panel, .board-fill) ~ .app-foot { margin-top: 8px; }
 .order-card .order-actions form { display: flex; margin: 0; }
 .order-card .order-actions .btn { width: 100%; white-space: nowrap; padding: 10px 14px; font-size: .9rem; }
 .order-card .cancel-box > summary.btn-ghost.danger { border: 0; background: none; padding: 4px 8px; font-size: .8rem; font-weight: 500; color: #b3261e; text-decoration: underline; text-underline-offset: 3px; }
+
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+
+/* ---------- Order card, top part: every piece on its own clear line ---------- */
+.order-card.compact .order-who { display: grid; gap: 0; margin-top: 8px; white-space: normal; overflow: visible; font-size: .95rem; }
+.order-card.compact .order-who strong { font-weight: 600; }
+.order-card.compact .ow-phone { font-size: .78rem; color: #7a6a60; }
+
+/* Items: one per line, aligned, instead of a run-on sentence */
+.order-card.compact .order-lines { display: grid; gap: 3px; margin: 10px 0 8px; padding: 9px 0 0; border-top: 1px solid #f0e8db; font-size: .9rem; line-height: 1.35; }
+.order-card.compact .order-lines li { display: block; }
+.order-card.compact .order-lines li:not(:last-child)::after { content: none; }
+
+/* Payment line, then the time on its own line as plain text (not a wrapping red pill) */
+.order-card.compact .oc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding-top: 8px; border-top: 1px solid #f0e8db; }
+.order-card.compact .oc-meta .pay-method { font-weight: 600; color: var(--brown); font-size: .8rem; }
+.order-card.compact .oc-meta .age { flex: 1 0 100%; margin: 0 !important; padding: 0; background: none; border-radius: 0; font-size: .78rem; font-weight: 500; color: #7a6a60; }
+.order-card.compact .oc-meta .age.warn { color: #b7791f; font-weight: 600; }
+.order-card.compact .oc-meta .age.late { color: #b3261e; font-weight: 700; }

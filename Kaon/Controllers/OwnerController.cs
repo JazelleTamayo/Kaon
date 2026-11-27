@@ -76,13 +76,33 @@ public class OwnerController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Slips(OrderType? type)
+    public async Task<IActionResult> Slips(OrderType? type, string? period, DateTime? from, DateTime? to)
     {
         var sid = await _stores.RequireAsync();
-        var orders = (await _db.Orders.AsNoTracking().Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync())
-            .Where(IsActive)
-            .Where(o => type == null || o.OrderType == type)
-            .OrderBy(o => o.CreatedAt).ToList();
+        var all = await _db.Orders.AsNoTracking().Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync();
+        List<Order> orders;
+
+        if (!string.IsNullOrEmpty(period))
+        {
+            // Every order of the period chosen on the Summary page
+            var (start, end, chosen) = PeriodRange(period, from, to, null);
+            orders = all.Where(o => o.CreatedAt >= start && o.CreatedAt < end && o.Status != OrderStatus.Cancelled)
+                .Where(o => type == null || o.OrderType == type)
+                .OrderBy(o => o.CreatedAt).ToList();
+            ViewBag.Period = chosen;
+            ViewBag.From = start;
+            ViewBag.To = end.AddDays(-1);
+            ViewBag.RangeLabel = (end - start).TotalDays > 1
+                ? start.ToString("MMM d") + " - " + end.AddDays(-1).ToString("MMM d, yyyy")
+                : start.ToString("dddd, MMMM d, yyyy");
+        }
+        else
+        {
+            orders = all.Where(IsActive)
+                .Where(o => type == null || o.OrderType == type)
+                .OrderBy(o => o.CreatedAt).ToList();
+        }
+
         ViewBag.Store = await _stores.StoreAsync();
         ViewBag.Type = type;
         return View("Slip", orders);
@@ -222,33 +242,39 @@ public class OwnerController : Controller
     }
 
     // Module 8: Order history and end-of-day summary
-    public async Task<IActionResult> Summary(string? period, DateTime? from, DateTime? to, DateTime? date)
+    // The period chosen on the Summary page: start is the first day, end is the day AFTER the last day
+    private static (DateTime Start, DateTime End, string Period) PeriodRange(string? period, DateTime? from, DateTime? to, DateTime? date)
     {
         var today = DateTime.Today;
-        DateTime start, end;
         period = (period ?? "").ToLowerInvariant();
 
         if (date != null && period == "")            // an older link with one day
+            return (date.Value.Date, date.Value.Date.AddDays(1), "custom");
+        if (period == "yesterday") return (today.AddDays(-1), today, "yesterday");
+        if (period == "week")
         {
-            start = date.Value.Date; end = start.AddDays(1); period = "custom"; from = start; to = start;
+            var monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+            return (monday, monday.AddDays(7), "week");
         }
-        else if (period == "yesterday") { start = today.AddDays(-1); end = today; }
-        else if (period == "week")
+        if (period == "month")
         {
-            start = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));   // Monday
-            end = start.AddDays(7);
+            var first = new DateTime(today.Year, today.Month, 1);
+            return (first, first.AddMonths(1), "month");
         }
-        else if (period == "month") { start = new DateTime(today.Year, today.Month, 1); end = start.AddMonths(1); }
-        else if (period == "custom" && from != null)
+        if (period == "custom" && from != null)
         {
-            start = from.Value.Date;
+            var start = from.Value.Date;
             var last = (to ?? from).Value.Date;
             if (last < start) last = start;
             if ((last - start).TotalDays > 365) last = start.AddDays(365);
-            end = last.AddDays(1);
+            return (start, last.AddDays(1), "custom");
         }
-        else { period = "today"; start = today; end = today.AddDays(1); }
+        return (today, today.AddDays(1), "today");
+    }
 
+    public async Task<IActionResult> Summary(string? period, DateTime? from, DateTime? to, DateTime? date)
+    {
+        var (start, end, chosen) = PeriodRange(period, from, to, date);
         var sid = await _stores.RequireAsync();
         var orders = (await _db.Orders.Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync())
             .Where(o => o.CreatedAt >= start && o.CreatedAt < end)
@@ -259,7 +285,7 @@ public class OwnerController : Controller
             Date = start,
             Start = start,
             End = end,
-            Period = period,
+            Period = chosen,
             Orders = orders,
             Store = await _stores.StoreAsync()
         });

@@ -19,7 +19,7 @@
     {
         <div class="prep-soon"><span class="prep-soon-dot" aria-hidden="true"></span>Prepare soon</div>
     }
-    <div class="order-who" title="@o.CustomerName · @o.Phone">@o.CustomerName · @o.Phone</div>
+    <div class="order-who"><strong>@o.CustomerName</strong><span class="ow-phone">@o.Phone</span></div>
     @if (o.ScheduledFor != null)
     {
         var sameDay = o.ScheduledFor.Value.Date == o.CreatedAt.Date;
@@ -60,7 +60,7 @@
         {
             <span class="muted">Ref: @o.PaymentRef</span>
         }
-        <span class="age @ageClass" style="margin-left:auto">@(mins < 1 ? "Just now" : mins < 120 ? mins + " min ago" : o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
+        <span class="age @ageClass" style="margin-left:auto">@(mins < 1 ? "Ordered just now" : mins < 120 ? "Ordered " + mins + " min ago" : "Ordered " + o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
     </div>
     @if (o.OrderType == OrderType.Delivery)
     {
@@ -76,7 +76,7 @@
                 <button class="btn-ghost">@OrderText.MarkPaidLabel(o)</button>
             </form>
         }
-        <a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a>
+        <a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id">Print slip</a>
     </div>
     <details class="cancel-box">
         <summary class="btn-ghost danger">Cancel</summary>
