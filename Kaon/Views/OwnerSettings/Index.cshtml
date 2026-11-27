@@ -3,244 +3,296 @@
     ViewData["Title"] = "Store setup";
     ViewData["Wide"] = true;
     var myLink = Url.Action("Landing", "Store", new { slug = Model.Slug }, Context.Request.Scheme);
+    var qr = ViewBag.Qr as QrStats ?? new QrStats();
+    var riders = ViewBag.Riders as List<Rider> ?? new List<Rider>();
+    var hasBank = !string.IsNullOrWhiteSpace(Model.BankName) || !string.IsNullOrWhiteSpace(Model.BankAccountNumber) || !string.IsNullOrWhiteSpace(Model.BankAccountName);
 }
 
-<section class="o-hero sm">
+<section class="ob-hero no-print">
     <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">Your store</span>
-        <h1>Store setup</h1>
-        <p>This is what customers see on your page, and how they can pay you.</p>
-    </div>
-</section>
-<div style="height:18px"></div>
-
-<section class="share-card" id="share">
-    <div class="share-info">
-        <span class="share-kicker">Share your carinderia</span>
-        <h2>Your own link and QR code</h2>
-        <p class="muted">Customers reach your carinderia only through this link. Post it on Facebook or Messenger, and print the QR code for your counter.</p>
-        <div class="link-pill">
-            <span class="link-text">@myLink</span>
-            <button type="button" class="copy-btn" data-copy="@myLink">Copy</button>
+    <header class="ob-bar">
+        <div class="ob-id">
+            <h1>Store setup</h1>
+            <span class="ob-sub">What customers see on your page, and how they pay you</span>
         </div>
-        <div class="share-actions">
-            <a class="btn btn-sm" href="@Url.Action("QrImage", "OwnerSettings", new { download = true })">Download QR (PNG)</a>
-        </div>
-    </div>
-    <div class="share-qr">
-        <img src="@Url.Action("QrImage", "OwnerSettings")" alt="QR code that opens your carinderia's page" width="200" height="200" />
-        <span>Scan to order</span>
-    </div>
+    </header>
 </section>
 
-@{ var qr = ViewBag.Qr as QrStats ?? new QrStats(); }
-<div class="grid-2 print-grid">
-    <div>
-        <h2 class="section">Print your QR code</h2>
-        <div class="print-list">
-            @foreach (var p in QrSources.Printables)
-            {
-                <a class="print-item" href="@Url.Action("Print", "OwnerSettings", new { kind = p.Key })" target="_blank" rel="noopener">
-                    <strong>@p.Name</strong>
-                    <span class="muted">@p.Use</span>
-                </a>
-            }
-        </div>
-        <p class="hint">Order slips for the kitchen or the rider are printed from the <a asp-controller="Owner" asp-action="Index">order board</a>.</p>
-    </div>
-    <div>
-        <h2 class="section">How many people scanned it</h2>
-        <div class="card">
-            <div class="scan-nums">
-                <div><strong>@qr.Today</strong><span>Today</span></div>
-                <div><strong>@qr.Last7Days</strong><span>Last 7 days</span></div>
-                <div><strong>@qr.Total</strong><span>All time</span></div>
-                <div><strong>@qr.SignUps</strong><span>Signed up after scanning</span></div>
-            </div>
-            @if (qr.BySource.Any())
-            {
-                <ul class="scan-sources">
-                    @foreach (var (source, count) in qr.BySource)
-                    {
-                        <li><span>@source</span><strong>@count</strong></li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <p class="muted" style="margin:10px 0 0">No scans yet. Print a poster or table stand and put it where customers wait.</p>
-            }
-            <p class="hint" style="margin-bottom:0">Counted when someone scans a printed or downloaded code. Opening your link from Facebook is not counted as a scan. QR codes printed before this was added still work but are not counted. Print them again to count scans.</p>
-        </div>
-    </div>
+<div class="tabs" role="tablist" aria-label="Store sections" data-tabs>
+    <button type="button" role="tab" class="tab" data-tab="share" aria-selected="true">Share &amp; QR</button>
+    <button type="button" role="tab" class="tab" data-tab="store" aria-selected="false">Store &amp; delivery</button>
+    <button type="button" role="tab" class="tab" data-tab="payments" aria-selected="false">Payments</button>
+    <button type="button" role="tab" class="tab" data-tab="riders" aria-selected="false">Riders <span class="tab-n">@(Model.UsesRiders ? "On" : "Off")</span></button>
 </div>
 
-@{ var riders = ViewBag.Riders as List<Rider> ?? new List<Rider>(); }
-<h2 class="section" id="riders">Delivery riders <span class="muted" style="font-weight:400">(optional)</span></h2>
-<form asp-action="ToggleRiders" method="post" class="card offer-card @(Model.UsesRiders ? "" : "is-off")">
-    <div>
-        <strong>We have our own riders</strong>
-        <p class="muted">@(Model.UsesRiders
-            ? "On. You can give each delivery order to a rider, who gets a private link with the address, the items and how much to collect. No Kaon account needed."
-            : "Off. You deliver orders yourself or hand them to whoever is free. Turn this on if you have riders you want to send a link to.")</p>
+@* ================= Share & QR ================= *@
+<section class="tab-panel" data-panel="share" id="share" role="tabpanel">
+    <div class="share-card">
+        <div class="share-info">
+            <span class="share-kicker">Share your carinderia</span>
+            <h2>Your own link and QR code</h2>
+            <p class="muted">Customers reach your carinderia only through this link. Post it on Facebook or Messenger, and print the QR code for your counter.</p>
+            <div class="link-pill">
+                <span class="link-text">@myLink</span>
+                <button type="button" class="copy-btn" data-copy="@myLink">Copy</button>
+            </div>
+            <div class="share-actions">
+                <a class="btn btn-sm" href="@Url.Action("QrImage", "OwnerSettings", new { download = true })">Download QR (PNG)</a>
+            </div>
+        </div>
+        <div class="share-qr">
+            <img src="@Url.Action("QrImage", "OwnerSettings")" alt="QR code that opens your carinderia's page" width="200" height="200" />
+            <span>Scan to order</span>
+        </div>
     </div>
-    <label class="switch">
-        <input type="checkbox" @(Model.UsesRiders ? "checked" : "") onchange="this.form.submit()" aria-label="We have our own riders" />
-        <span class="slider"></span>
-    </label>
-</form>
-@if (Model.UsesRiders)
-{
-    <div class="card">
-        @if (riders.Any())
-        {
-            <ul class="rider-list">
-                @foreach (var r in riders)
-                {
-                    <li>
-                        <span><strong>@r.Name</strong> · <a href="tel:@r.Phone">@r.Phone</a></span>
-                        <form asp-action="RemoveRider" asp-route-id="@r.Id" method="post"><button class="btn-ghost danger">Remove</button></form>
-                    </li>
-                }
-            </ul>
-        }
-        <form asp-action="AddRider" method="post" class="rider-pick">
-            <input class="input" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
-            <input class="input" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
-            <button class="btn btn-sm">Add rider</button>
-        </form>
-    </div>
-}
 
-<form asp-action="Index" method="post" enctype="multipart/form-data">
+    <div class="grid-2 print-grid">
+        <div>
+            <h2 class="section">Print your QR code</h2>
+            <div class="print-list">
+                @foreach (var p in QrSources.Printables)
+                {
+                    <div class="print-item">
+                        <div class="pi-text">
+                            <strong>@p.Name</strong>
+                            <span class="muted">@p.Use</span>
+                        </div>
+                        <a class="btn btn-sm btn-outline pi-btn" href="@Url.Action("Print", "OwnerSettings", new { kind = p.Key })" target="_blank" rel="noopener" aria-label="Print @p.Name">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg>
+                            Print
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+        <div>
+            <h2 class="section">How many people scanned it</h2>
+            <div class="card">
+                <div class="scan-nums">
+                    <div><strong>@qr.Today</strong><span>Today</span></div>
+                    <div><strong>@qr.Last7Days</strong><span>Last 7 days</span></div>
+                    <div><strong>@qr.Total</strong><span>All time</span></div>
+                    <div><strong>@qr.SignUps</strong><span>Signed up after scanning</span></div>
+                </div>
+                @if (qr.BySource.Any())
+                {
+                    <ul class="scan-sources">
+                        @foreach (var (source, count) in qr.BySource)
+                        {
+                            <li><span>@source</span><strong>@count</strong></li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="muted" style="margin:10px 0 0">No scans yet. Print a poster or table stand and put it where customers wait.</p>
+                }
+                <p class="hint" style="margin-bottom:0">Only printed or downloaded codes are counted. Opening your link from Facebook is not a scan.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<form asp-action="Index" method="post" enctype="multipart/form-data" id="storeForm">
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 
-    <div class="grid-2">
-        <div>
-            <h2 class="section">Your store</h2>
-            <div class="card">
-                <label class="label" asp-for="Name">Carinderia name</label>
-                <input class="input" asp-for="Name" />
-                <span class="error" asp-validation-for="Name"></span>
+    @* ================= Store & delivery ================= *@
+    <section class="tab-panel" data-panel="store" role="tabpanel" hidden>
+        <div class="grid-2">
+            <div>
+                <h2 class="section">Your store</h2>
+                <div class="card">
+                    <label class="label" asp-for="Name">Carinderia name</label>
+                    <input class="input" asp-for="Name" />
+                    <span class="error" asp-validation-for="Name"></span>
 
-                <div class="two-col">
-                    <div>
-                        <label class="label" asp-for="Hours">Opening hours</label>
-                        <input class="input" asp-for="Hours" placeholder="7:00 AM - 7:00 PM" />
+                    <div class="two-col">
+                        <div>
+                            <label class="label" asp-for="Hours">Opening hours</label>
+                            <input class="input" asp-for="Hours" placeholder="7:00 AM - 7:00 PM" />
+                        </div>
+                        <div>
+                            <label class="label" asp-for="Phone">Contact number</label>
+                            <input class="input" asp-for="Phone" type="tel" inputmode="tel" />
+                        </div>
                     </div>
-                    <div>
-                        <label class="label" asp-for="Phone">Contact number</label>
-                        <input class="input" asp-for="Phone" type="tel" inputmode="tel" />
-                    </div>
+
+                    <label class="check">
+                        <input type="checkbox" asp-for="IsOpen" />
+                        <span>Open for orders today</span>
+                    </label>
                 </div>
-
-                <label class="check">
-                    <input type="checkbox" asp-for="IsOpen" />
-                    <span>Open for orders today</span>
-                </label>
             </div>
 
-            <h2 class="section">How customers get their order</h2>
-            <div class="card">
-                <div class="check-row">
-                    <label class="check">
-                        <input type="checkbox" asp-for="PickupEnabled" />
-                        <span>Pickup</span>
-                    </label>
-                    <label class="check">
-                        <input type="checkbox" asp-for="DeliveryEnabled" />
-                        <span>Home delivery</span>
-                    </label>
-                </div>
+            <div>
+                <h2 class="section">How customers get their order</h2>
+                <div class="card">
+                    <div class="check-row">
+                        <label class="check">
+                            <input type="checkbox" asp-for="PickupEnabled" />
+                            <span>Pickup</span>
+                        </label>
+                        <label class="check">
+                            <input type="checkbox" asp-for="DeliveryEnabled" />
+                            <span>Home delivery</span>
+                        </label>
+                    </div>
 
-                <div class="two-col">
-                    <div>
-                        <label class="label" asp-for="DeliveryFee">Delivery fee (₱, fixed)</label>
-                        <input class="input" asp-for="DeliveryFee" type="number" step="0.01" min="0" inputmode="decimal" />
-                        <span class="error" asp-validation-for="DeliveryFee"></span>
+                    <div class="two-col">
+                        <div>
+                            <label class="label" asp-for="DeliveryFee">Delivery fee (₱, fixed)</label>
+                            <input class="input" asp-for="DeliveryFee" type="number" step="0.01" min="0" inputmode="decimal" />
+                            <span class="error" asp-validation-for="DeliveryFee"></span>
+                        </div>
+                        <div>
+                            <label class="label" asp-for="DeliveryArea">Delivery area</label>
+                            <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
+                        </div>
                     </div>
-                    <div>
-                        <label class="label" asp-for="DeliveryArea">Delivery area</label>
-                        <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
-                    </div>
+                    <span class="hint">The customer pays the delivery fee. It is separate from your monthly subscription.</span>
                 </div>
-                <span class="hint">The delivery fee is paid by the customer. It is separate from your monthly subscription.</span>
             </div>
         </div>
+    </section>
 
-        <div>
-            <h2 class="section">How customers can pay</h2>
-            <div class="card">
-                <div class="check-row">
-                    <label class="check">
-                        <input type="checkbox" asp-for="AcceptsCash" />
-                        <span>Cash on pickup or delivery</span>
-                    </label>
-                    <label class="check">
-                        <input type="checkbox" asp-for="AcceptsCashless" />
-                        <span>Pay in advance (GCash or bank)</span>
-                    </label>
-                </div>
-
-                <div class="two-col">
-                    <div>
-                        <label class="label" asp-for="GCashName">GCash account name</label>
-                        <input class="input" asp-for="GCashName" />
+    @* ================= Payments ================= *@
+    <section class="tab-panel" data-panel="payments" role="tabpanel" hidden>
+        <p class="muted" style="margin:0 0 4px">Customers see these details at checkout and on their order page when they pay in advance.</p>
+        <div class="grid-2">
+            <div>
+                <h2 class="section">How customers can pay</h2>
+                <div class="card">
+                    <div class="check-row">
+                        <label class="check">
+                            <input type="checkbox" asp-for="AcceptsCash" />
+                            <span>Cash on pickup or delivery</span>
+                        </label>
+                        <label class="check">
+                            <input type="checkbox" asp-for="AcceptsCashless" />
+                            <span>Pay in advance (GCash or bank)</span>
+                        </label>
                     </div>
-                    <div>
-                        <label class="label" asp-for="GCashNumber">GCash number</label>
-                        <input class="input" asp-for="GCashNumber" type="tel" inputmode="tel" />
-                        <span class="error" asp-validation-for="GCashNumber"></span>
-                    </div>
-                </div>
 
-                <label class="label" asp-for="PaymentNote">Note for customers (optional)</label>
-                <input class="input" asp-for="PaymentNote" placeholder="For example: Send the exact amount, then upload your screenshot." />
-                <span class="hint">Customers see these details at checkout when they choose to pay in advance.</span>
+                    <div class="two-col">
+                        <div>
+                            <label class="label" asp-for="GCashName">GCash account name</label>
+                            <input class="input" asp-for="GCashName" />
+                        </div>
+                        <div>
+                            <label class="label" asp-for="GCashNumber">GCash number</label>
+                            <input class="input" asp-for="GCashNumber" type="tel" inputmode="tel" />
+                            <span class="error" asp-validation-for="GCashNumber"></span>
+                        </div>
+                    </div>
+
+                    <label class="label" asp-for="PaymentNote">Note for customers <span class="muted" style="font-weight:400">(optional)</span></label>
+                    <input class="input" asp-for="PaymentNote" placeholder="For example: Send the exact amount, then upload your screenshot." />
+
+                    <details class="bank-more" @(hasBank ? "open" : "")>
+                        <summary>Add a bank or other e-wallet account <span class="muted">(optional)</span></summary>
+                        <div class="two-col">
+                            <div>
+                                <label class="label" asp-for="BankName">Bank or e-wallet</label>
+                                <input class="input" asp-for="BankName" placeholder="BDO, BPI, Maya..." />
+                                <span class="error" asp-validation-for="BankName"></span>
+                            </div>
+                            <div>
+                                <label class="label" asp-for="BankAccountName">Account name</label>
+                                <input class="input" asp-for="BankAccountName" />
+                            </div>
+                        </div>
+                        <label class="label" asp-for="BankAccountNumber">Account number</label>
+                        <input class="input" asp-for="BankAccountNumber" inputmode="numeric" />
+                    </details>
+                </div>
             </div>
 
-            <h2 class="section">Other bank or e-wallet <span class="muted" style="font-weight:500">(optional)</span></h2>
-            <div class="card">
-                <div class="two-col">
-                    <div>
-                        <label class="label" asp-for="BankName">Bank or e-wallet</label>
-                        <input class="input" asp-for="BankName" placeholder="BDO, BPI, Maya..." />
-                        <span class="error" asp-validation-for="BankName"></span>
-                    </div>
-                    <div>
-                        <label class="label" asp-for="BankAccountName">Account name</label>
-                        <input class="input" asp-for="BankAccountName" />
-                    </div>
+            <div>
+                <h2 class="section">Payment QR code</h2>
+                <div class="card">
+                    <p class="muted" style="margin:0 0 8px">Upload a screenshot of your GCash, Maya or bank QR code. Customers can scan it at checkout.</p>
+                    @if (!string.IsNullOrEmpty(Model.PaymentQr))
+                    {
+                        <div class="qr-current">
+                            <img class="qr-preview" src="@Url.Action("Qr", "Payment")?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="Your payment QR code" />
+                            <label class="check"><input type="checkbox" name="removeQr" value="true" /><span>Remove this QR code</span></label>
+                        </div>
+                    }
+                    <label class="label" for="qrFile">@(string.IsNullOrEmpty(Model.PaymentQr) ? "Upload QR code" : "Replace QR code")</label>
+                    <input class="input" id="qrFile" name="qrFile" type="file" accept="image/jpeg,image/png,image/webp" />
+                    <span class="hint">JPG, PNG or WebP, up to 5 MB.</span>
+                    @Html.ValidationMessage("qrFile", new { @class = "error" })
                 </div>
-                <label class="label" asp-for="BankAccountNumber">Account number</label>
-                <input class="input" asp-for="BankAccountNumber" inputmode="numeric" />
-            </div>
-
-            <h2 class="section">Payment QR code</h2>
-            <div class="card">
-                <p class="muted" style="margin:0 0 8px">Upload a screenshot of your GCash, Maya or bank QR code. Customers see it at checkout.</p>
-                @if (!string.IsNullOrEmpty(Model.PaymentQr))
-                {
-                    <div class="qr-current">
-                        <img class="qr-preview" src="@Url.Action("Qr", "Payment")?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="Your payment QR code" />
-                        <label class="check"><input type="checkbox" name="removeQr" value="true" /><span>Remove this QR code</span></label>
-                    </div>
-                }
-                <label class="label" for="qrFile">@(string.IsNullOrEmpty(Model.PaymentQr) ? "Upload QR code" : "Replace QR code")</label>
-                <input class="input" id="qrFile" name="qrFile" type="file" accept="image/jpeg,image/png,image/webp" />
-                <span class="hint">JPG, PNG or WebP, up to 5 MB.</span>
-                @Html.ValidationMessage("qrFile", new { @class = "error" })
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="save-bar">
+    <div class="save-bar" data-save hidden>
         <span class="muted">Changes apply to your customers as soon as you save.</span>
         <button class="btn">Save settings</button>
     </div>
 </form>
 
+@* ================= Riders ================= *@
+<section class="tab-panel" data-panel="riders" id="riders" role="tabpanel" hidden>
+    <form asp-action="ToggleRiders" method="post" class="card offer-card @(Model.UsesRiders ? "" : "is-off")">
+        <div>
+            <strong>We have our own riders</strong>
+            <p class="muted">@(Model.UsesRiders
+                ? "On. You can give each delivery order to a rider, who gets a private link with the address, the items and how much to collect. No Kaon account needed."
+                : "Off. You deliver orders yourself or hand them to whoever is free. Turn this on if you have riders you want to send a link to.")</p>
+        </div>
+        <label class="switch">
+            <input type="checkbox" @(Model.UsesRiders ? "checked" : "") onchange="this.form.submit()" aria-label="We have our own riders" />
+            <span class="slider"></span>
+        </label>
+    </form>
+    @if (Model.UsesRiders)
+    {
+        <div class="card">
+            @if (riders.Any())
+            {
+                <ul class="rider-list">
+                    @foreach (var r in riders)
+                    {
+                        <li>
+                            <span><strong>@r.Name</strong> · <a href="tel:@r.Phone">@r.Phone</a></span>
+                            <form asp-action="RemoveRider" asp-route-id="@r.Id" method="post"><button class="btn-ghost danger">Remove</button></form>
+                        </li>
+                    }
+                </ul>
+            }
+            <form asp-action="AddRider" method="post" class="rider-pick">
+                <input class="input" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
+                <input class="input" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
+                <button class="btn btn-sm">Add rider</button>
+            </form>
+        </div>
+    }
+</section>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Tabs: one section at a time; the Save bar only shows where there is something to save
+        (function () {
+            var tabs = document.querySelectorAll('[data-tabs] .tab');
+            var panels = document.querySelectorAll('[data-panel]');
+            var save = document.querySelector('[data-save]');
+            function show(name) {
+                tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'); });
+                panels.forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+                if (save) save.hidden = name !== 'store' && name !== 'payments';
+                try { sessionStorage.setItem('storeTab', name); } catch (e) { }
+            }
+            var start = (location.hash || '').replace('#', '');
+            try { start = start || sessionStorage.getItem('storeTab') || ''; } catch (e) { }
+            if (!document.querySelector('[data-panel="' + start + '"]')) start = 'share';
+            // A message to fix? Open the tab that has it.
+            var bad = document.querySelector('[data-panel] .field-validation-error, [data-panel] .error:not(:empty)');
+            if (bad) start = bad.closest('[data-panel]').dataset.panel;
+            tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+            show(start);
+        })();
+    </script>
 }

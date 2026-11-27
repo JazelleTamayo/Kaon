@@ -261,7 +261,7 @@ else
             // Never shorter than one complete order card (with its header), so a single order never needs scrolling
             let tallest = 0;
             b.querySelectorAll('.order-card').forEach(c => { tallest = Math.max(tallest, c.offsetHeight); });
-            const oneCard = tallest ? tallest + 130 : 0;   // at least one whole order card; otherwise the board ends inside the screen
+            const oneCard = tallest ? Math.min(3 * tallest + 130, 1100) : 0;   // room for about three order cards before a column scrolls
             b.style.height = Math.max(400, oneCard, Math.round(innerHeight - b.getBoundingClientRect().top - 24)) + 'px';
         }
         window.addEventListener('resize', fitBoard);
