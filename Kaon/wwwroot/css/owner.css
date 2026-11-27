@@ -997,3 +997,26 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .app-links a.active { border-bottom-color: var(--orange); }
 .tab[aria-selected="true"] .tab-n, .tab-switch .tab.active .tab-badge { background: var(--orange); color: #fff; }
 .tab-switch .tab.active .tab-badge.is-new { background: #fff; color: var(--orange); }
+
+/* ---------- Clearer buttons and a lighter table header ---------- */
+/* Table header: soft band with small muted capitals (replaces the heavy dark bar) */
+.card .table thead th { background: #f6f0e6; color: #6f5d51; border: 0; border-bottom: 1px solid #e6dccd; border-radius: 0; font-weight: 600; font-size: .72rem; letter-spacing: .07em; }
+.card .table thead th:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 0; }
+.card .table thead th:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 0; }
+
+/* Secondary buttons: a visible border and dark text */
+.btn-ghost { border: 1.5px solid #c9b9a3; background: #fff; color: var(--brown); font-weight: 600; }
+.btn-ghost:hover { border-color: var(--brown); color: var(--brown); background: #faf6ef; }
+.btn-ghost.danger { color: #b3261e; border-color: #e0b0ab; }
+.btn-ghost.danger:hover { background: #fdeceb; border-color: #b3261e; color: #b3261e; }
+.order-card .order-actions .btn-ghost { border-color: #c9b9a3; }
+
+/* The main action in a dish row: solid orange */
+.add-today .btn-ghost { background: var(--orange); border-color: var(--orange); color: #fff; }
+.add-today .btn-ghost:hover { background: #c93f13; border-color: #c93f13; color: #fff; }
+.add-today .input, .stock-form .input { border: 1.5px solid #c9b9a3; background: #fff; }
+
+/* Edit and Delete sit side by side */
+.table td.actions { display: table-cell; white-space: nowrap; }
+.table td.actions > * { display: inline-block; vertical-align: middle; margin: 0 0 0 6px; }
+.table td.actions form { display: inline-block; }
