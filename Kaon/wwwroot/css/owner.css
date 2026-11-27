@@ -1133,3 +1133,7 @@ body.dlg-open { overflow: hidden; }
 .stock-form .input.stock-in::-webkit-outer-spin-button, .stock-form .input.stock-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .add-today .input { width: 116px; }
 .add-today .input::placeholder { color: #9a8a7e; opacity: 1; }
+
+/* Menu and Orders pages: no big empty strip under the list before the footer */
+main.page:has(.tab-panel, .board-fill) { padding-bottom: 24px; }
+main.page:has(.tab-panel, .board-fill) ~ .app-foot { margin-top: 8px; }
