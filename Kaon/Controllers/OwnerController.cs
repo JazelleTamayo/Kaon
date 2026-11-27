@@ -34,7 +34,9 @@ public class OwnerController : Controller
             OrdersToday = todays.Count(o => o.Status != OrderStatus.Cancelled),
             SalesToday = todays.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.Total),
             Store = await _stores.StoreAsync(),
-            Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync(),
+            Riders = (await _stores.StoreAsync()).UsesRiders
+                ? await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync()
+                : null,
             PackagePending = active.Where(o => o.IsPackage && o.Status == OrderStatus.Pending).ToList(),
             PackageReserved = active.Where(o => o.IsPackage && o.Status == OrderStatus.Confirmed)
                 .OrderBy(o => o.ScheduledFor).ToList(),

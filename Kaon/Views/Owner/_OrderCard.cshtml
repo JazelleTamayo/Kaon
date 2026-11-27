@@ -62,7 +62,7 @@
         }
         <span class="age @ageClass" style="margin-left:auto">@(mins < 1 ? "Ordered just now" : mins < 120 ? "Ordered " + mins + " min ago" : "Ordered " + o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
     </div>
-    @if (o.OrderType == OrderType.Delivery)
+    @if (o.OrderType == OrderType.Delivery && Model.Riders != null)
     {
         <partial name="_RiderBox" model="(o, Model.Riders)" />
     }

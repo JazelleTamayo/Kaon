@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Kaon.Models;
@@ -76,6 +76,9 @@ public class StoreSettings
 
     // Every morning the dishes of the last open day are posted again, so the owner does not have to
     public bool AutoCopyMenu { get; set; } = true;
+
+    // The carinderia has its own riders and wants to give them orders with a private link (off = deliver yourself)
+    public bool UsesRiders { get; set; }
     public DateTime? LastAutoMenuOn { get; set; }
 
     // Does the carinderia have at least one way to be paid in advance?

@@ -1,4 +1,4 @@
-using Kaon.Data;
+﻿using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -73,6 +73,16 @@ public class OwnerSettingsController : Controller
         var sid = await _stores.RequireAsync();
         ViewBag.Qr = await QrCodes.StatsAsync(_db, sid);
         ViewBag.Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync();
+    }
+
+    // Riders are optional: some carinderias have their own riders, some deliver themselves
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleRiders()
+    {
+        var store = await _stores.StoreAsync(track: true);
+        store.UsesRiders = !store.UsesRiders;
+        await _db.SaveChangesAsync();
+        return Redirect(Url.Action(nameof(Index))! + "#riders");
     }
 
     // ---------- Module 7: the carinderia's delivery riders ----------

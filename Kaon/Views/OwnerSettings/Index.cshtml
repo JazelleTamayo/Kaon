@@ -1,4 +1,4 @@
-@model StoreSettings
+﻿@model StoreSettings
 @{
     ViewData["Title"] = "Store setup";
     ViewData["Wide"] = true;
@@ -77,27 +77,41 @@
 </div>
 
 @{ var riders = ViewBag.Riders as List<Rider> ?? new List<Rider>(); }
-<h2 class="section" id="riders">Delivery riders</h2>
-<div class="card">
-    <p class="muted" style="margin-top:0">Riders don't need a Kaon account. When you give them an order, they get a private link with the address, the items and how much to collect.</p>
-    @if (riders.Any())
-    {
-        <ul class="rider-list">
-            @foreach (var r in riders)
-            {
-                <li>
-                    <span><strong>@r.Name</strong> · <a href="tel:@r.Phone">@r.Phone</a></span>
-                    <form asp-action="RemoveRider" asp-route-id="@r.Id" method="post"><button class="btn-ghost danger">Remove</button></form>
-                </li>
-            }
-        </ul>
-    }
-    <form asp-action="AddRider" method="post" class="rider-pick">
-        <input class="input" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
-        <input class="input" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
-        <button class="btn btn-sm">Add rider</button>
-    </form>
-</div>
+<h2 class="section" id="riders">Delivery riders <span class="muted" style="font-weight:400">(optional)</span></h2>
+<form asp-action="ToggleRiders" method="post" class="card offer-card @(Model.UsesRiders ? "" : "is-off")">
+    <div>
+        <strong>We have our own riders</strong>
+        <p class="muted">@(Model.UsesRiders
+            ? "On. You can give each delivery order to a rider, who gets a private link with the address, the items and how much to collect. No Kaon account needed."
+            : "Off. You deliver orders yourself or hand them to whoever is free. Turn this on if you have riders you want to send a link to.")</p>
+    </div>
+    <label class="switch">
+        <input type="checkbox" @(Model.UsesRiders ? "checked" : "") onchange="this.form.submit()" aria-label="We have our own riders" />
+        <span class="slider"></span>
+    </label>
+</form>
+@if (Model.UsesRiders)
+{
+    <div class="card">
+        @if (riders.Any())
+        {
+            <ul class="rider-list">
+                @foreach (var r in riders)
+                {
+                    <li>
+                        <span><strong>@r.Name</strong> · <a href="tel:@r.Phone">@r.Phone</a></span>
+                        <form asp-action="RemoveRider" asp-route-id="@r.Id" method="post"><button class="btn-ghost danger">Remove</button></form>
+                    </li>
+                }
+            </ul>
+        }
+        <form asp-action="AddRider" method="post" class="rider-pick">
+            <input class="input" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
+            <input class="input" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
+            <button class="btn btn-sm">Add rider</button>
+        </form>
+    </div>
+}
 
 <form asp-action="Index" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>

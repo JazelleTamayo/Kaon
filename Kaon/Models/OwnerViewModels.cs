@@ -10,7 +10,8 @@ public class BoardVm
     public StoreSettings Store { get; set; } = new();
 
     // Module 7: saved riders to choose from on delivery orders
-    public List<Rider> Riders { get; set; } = new();
+    // null when the carinderia does not use riders (no rider box on delivery orders)
+    public List<Rider>? Riders { get; set; } = new();
 
     // Food-package pre-orders get their own lane on the board, separate from same-day meals
     public List<Order> PackagePending { get; set; } = new();

@@ -714,6 +714,9 @@ namespace Kaon.Migrations
                     b.Property<bool>("SuspendedByAdmin")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("UsesRiders")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
