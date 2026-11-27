@@ -1278,3 +1278,32 @@ main.page:has(.sum-grid) { padding-bottom: 24px; min-height: calc(100vh - 156px)
 main.page:has(.sum-grid) ~ .app-foot { margin-top: 8px; }
 
 @media (max-width: 1250px) { .sum-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Notification bell (owner) ---------- */
+.bell { position: relative; }
+.bell-btn { position: relative; width: 42px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; transition: background .15s; }
+.bell-btn:hover, .bell-btn[aria-expanded="true"] { background: rgba(255,255,255,.14); }
+.bell-btn svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.bell-btn.has-new svg { animation: bellRing 1.6s ease-in-out 2; transform-origin: 50% 8px; }
+.bell-badge { position: absolute; top: -1px; right: -1px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; background: var(--orange); color: #fff; font: 700 .7rem/20px 'Poppins', Arial, sans-serif; text-align: center; border: 2px solid var(--brown); box-sizing: content-box; }
+.bell-badge[hidden] { display: none; }
+@keyframes bellRing { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } }
+
+.bell-panel { position: absolute; right: 0; top: 52px; z-index: 70; width: 360px; max-width: calc(100vw - 24px); background: #fff; color: var(--brown); border-radius: 18px; box-shadow: 0 18px 48px rgba(0,0,0,.3); overflow: hidden; animation: dlgPop .18s ease-out both; }
+.bell-panel[hidden] { display: none; }
+.bell-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #faf6ef; border-bottom: 1px solid #ece4d8; }
+.bell-head a { font-size: .82rem; font-weight: 600; color: var(--orange); text-decoration: none; }
+.bell-head a:hover { text-decoration: underline; }
+.bell-list { list-style: none; margin: 0; padding: 6px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #d5c8b6 transparent; }
+.bell-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; text-decoration: none; color: inherit; transition: background .15s; }
+.bell-item:hover { background: #fff4e8; }
+.bell-item.unseen { background: #fff8ee; box-shadow: inset 3px 0 0 var(--orange); }
+.bell-dot { flex: 0 0 10px; height: 10px; border-radius: 50%; background: var(--orange); }
+.bell-item.proof .bell-dot { background: var(--teal); }
+.bell-text { flex: 1; min-width: 0; display: grid; line-height: 1.3; }
+.bell-text strong { font-size: .9rem; font-weight: 600; }
+.bell-text small { font-size: .78rem; color: #7a6a60; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bell-when { flex: 0 0 auto; font-size: .75rem; color: #8a786c; }
+.bell-empty, .bell-more { padding: 18px; text-align: center; color: #7a6a60; font-size: .88rem; }
+.bell-more { padding: 8px 18px 12px; font-size: .8rem; }
+@media (max-width: 640px) { .bell-panel { position: fixed; left: 8px; right: 8px; top: 64px; width: auto; max-width: none; } }

@@ -64,6 +64,41 @@ public class OwnerController : Controller
         return Json(new { sig = string.Join(",", rows) });
     }
 
+    // The notification bell: orders waiting to be accepted, and payment proofs waiting to be confirmed
+    [HttpGet]
+    public async Task<IActionResult> Notifications()
+    {
+        var sid = await _stores.RequireAsync();
+        var rows = (await _db.Orders.AsNoTracking().Include(o => o.Items)
+                .Where(o => o.StoreId == sid && o.Status != OrderStatus.Cancelled && o.Status != OrderStatus.Completed
+                    && (o.Status == OrderStatus.Pending || o.PaymentStatus == PaymentStatus.ProofSent))
+                .ToListAsync())
+            .OrderByDescending(o => o.CreatedAt).ToList();
+        var now = DateTime.Now;
+
+        var items = rows.Take(10).Select(o =>
+        {
+            var isNew = o.Status == OrderStatus.Pending;   // a new order comes first; its payment proof is listed later
+            return new
+            {
+                key = (isNew ? "o" : "p") + o.Id,
+                kind = isNew ? "order" : "proof",
+                title = isNew ? (o.IsPackage ? "New pre-order #" : "New order #") + o.Id : "Payment proof sent for #" + o.Id,
+                detail = o.CustomerName + " · ₱" + o.Total.ToString("N2") + " · " + (o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup"),
+                mins = Math.Max(0, (int)(now - o.CreatedAt).TotalMinutes),
+                url = Url.Action("Index", "Owner") + (o.IsPackage ? "?tab=packages" : "") + "#order-" + o.Id
+            };
+        }).ToList();
+
+        return Json(new
+        {
+            total = rows.Count,
+            orders = rows.Count(o => o.Status == OrderStatus.Pending),
+            proofs = rows.Count(o => o.Status != OrderStatus.Pending),
+            items
+        });
+    }
+
     // Module 12: printable order slips for the kitchen, the counter, or the rider.
     // One order (Slip/5), or every order still on the board (Slips).
     [HttpGet]

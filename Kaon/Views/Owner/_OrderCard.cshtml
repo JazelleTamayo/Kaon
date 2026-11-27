@@ -7,7 +7,7 @@
     var ageClass = slow && mins >= 15 ? "late" : slow && mins >= 8 ? "warn" : "";
     var prepSoon = o.IsPackage && o.Status == OrderStatus.Confirmed && PackageLeadTime.IsPrepareSoon(o);
 }
-<article class="order-card compact @(mins < 2 ? "fresh" : "")">
+<article class="order-card compact @(mins < 2 ? "fresh" : "")" id="order-@o.Id">
     <div class="oc-top">
         <strong class="oc-id">#@o.Id @if (mins < 2) { <span class="new-badge">New</span> }</strong>
         <span class="tag @(o.OrderType == OrderType.Delivery ? "tag-delivery" : "tag-pickup")">
