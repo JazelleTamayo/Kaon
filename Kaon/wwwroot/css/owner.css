@@ -438,7 +438,6 @@ input[type="file"].input { padding: 9px 12px; }
 .t-ready .trk-go { background: var(--green); }
 @keyframes readyGlow { 0%, 100% { box-shadow: 0 -4px 30px rgba(43,24,16,.22), 0 0 0 0 rgba(46,158,91,.5); } 50% { box-shadow: 0 -4px 30px rgba(43,24,16,.22), 0 0 0 10px rgba(46,158,91,0); } }
 .has-track .cartbar { bottom: 104px; }
-.has-track .page { padding-bottom: 210px; }
 
 .toasts { position: fixed; right: 16px; top: 78px; z-index: 60; display: grid; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
 .toast { pointer-events: auto; display: flex; gap: 12px; align-items: center; background: var(--brown); color: #fff; border-radius: 16px; padding: 14px 16px; font-weight: 600; font-size: .9rem; box-shadow: 0 14px 34px rgba(0,0,0,.3); cursor: pointer; animation: toastIn .4s cubic-bezier(.2,.8,.2,1) both; transition: opacity .3s, transform .3s; }
@@ -1395,11 +1394,6 @@ main.page { flex: 1 0 auto; width: 100%; }
 .cartbar:hover { background: #c93f13; transform: translateY(-2px); }
 .cartbar span:last-child::after { content: " \2192"; }
 .has-track .cartbar { bottom: calc(var(--track-h, 104px) + 28px); }
-/* leave room under the content so the bars never cover the footer text */
-body:has(.cartbar) .app-foot { padding-bottom: 96px; }
-.has-track .app-foot { padding-bottom: calc(var(--track-h, 120px) + 36px); }
-.has-track:has(.cartbar) .app-foot { padding-bottom: calc(var(--track-h, 120px) + 100px); }
-.has-track .page { padding-bottom: calc(var(--track-h, 120px) + 24px); }
 
 /* ---------- Customer cart: items on the left, a summary with the checkout button on the right ---------- */
 .cart-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
@@ -1432,3 +1426,12 @@ body:has(.cartbar) .app-foot { padding-bottom: 96px; }
     .cl-img { width: 56px; height: 56px; }
     .cl-total { grid-column: 2 / -1; text-align: left; }
 }
+
+/* Order tracker and cart bar: pinned to the bottom of the screen while you scroll, but they rest in their own
+   space at the end of the page instead of floating over the footer. The footer stays small. */
+.tracker { position: sticky; left: auto; right: auto; bottom: 12px; width: calc(100% - 24px); max-width: 640px; margin: 0 auto 12px; }
+.cartbar { position: sticky; left: auto; right: auto; bottom: 16px; width: calc(100% - 24px); max-width: 616px; margin: 0 auto; }
+.has-track .cartbar { bottom: calc(var(--track-h, 104px) + 28px); }
+
+/* The cart bar and order tracker now stick in the page flow, so the page needs only a small gap above the footer */
+main.page { padding-bottom: 24px; }

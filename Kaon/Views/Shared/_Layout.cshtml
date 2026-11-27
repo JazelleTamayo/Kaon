@@ -179,6 +179,16 @@
             <div class="banner" role="status">@billingNote <a asp-controller="Billing" asp-action="Index">Renew your subscription</a></div>
         }
         @RenderBody()
+        @if (isCustomer)
+        {
+            <div id="tracker" class="tracker" hidden
+                 data-initial="@trackInitial"
+                 data-active-url="@Url.Action("Active", "Order")"
+                 data-status-url="@Url.Action("Status", "Order")"
+                 data-json-url="@Url.Action("StatusJson", "Order")"
+                 data-orders-url="@Url.Action("Index", "Order")"
+                 data-hide="@(onOrderPage ? "1" : "0")"></div>
+        }
     </main>
 
     <footer class="app-foot">
@@ -227,13 +237,6 @@
     }
     @if (isCustomer)
     {
-        <div id="tracker" class="tracker" hidden
-             data-initial="@trackInitial"
-             data-active-url="@Url.Action("Active", "Order")"
-             data-status-url="@Url.Action("Status", "Order")"
-             data-json-url="@Url.Action("StatusJson", "Order")"
-             data-orders-url="@Url.Action("Index", "Order")"
-             data-hide="@(onOrderPage ? "1" : "0")"></div>
         <script src="~/js/tracker.js" asp-append-version="true"></script>
     }
     @if (isAdmin) { <partial name="_InviteModal" /> }
