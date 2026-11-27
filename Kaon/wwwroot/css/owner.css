@@ -1126,3 +1126,10 @@ body.dlg-open { overflow: hidden; }
     .dlg { border-radius: 22px 22px 0 0; max-height: 94vh; }
 }
 .dish-form .df-actions .btn { width: auto; flex: 0 0 auto; padding: 11px 30px; }
+
+/* Servings boxes: no up/down arrows eating the space, and wide enough to read the whole word */
+.add-today .input, .stock-form .input.stock-in { -moz-appearance: textfield; appearance: textfield; }
+.add-today .input::-webkit-outer-spin-button, .add-today .input::-webkit-inner-spin-button,
+.stock-form .input.stock-in::-webkit-outer-spin-button, .stock-form .input.stock-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.add-today .input { width: 116px; }
+.add-today .input::placeholder { color: #9a8a7e; opacity: 1; }
