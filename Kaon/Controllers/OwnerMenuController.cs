@@ -1,4 +1,4 @@
-using Kaon.Data;
+﻿using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -278,14 +278,21 @@ public class OwnerMenuController : Controller
     {
         var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
+
+        // How many servings are available today must be given, so "sold out" works by itself
+        if (stock is null or < 1)
+        {
+            TempData["Warn"] = "Enter how many servings you have today before adding the dish to the daily menu.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var already = await _db.DailyMenuEntries.AnyAsync(e => e.MenuItemId == menuItemId && e.Date == today);
         if (!already)
         {
             var m = await _db.MenuItems.FirstOrDefaultAsync(x => x.Id == menuItemId && x.StoreId == sid);
             if (m != null && !m.IsPackage)
             {
-                // How many servings are available today (empty = no limit)
-                int? servings = stock is > 0 ? Math.Min(stock.Value, 9999) : null;
+                int? servings = Math.Min(stock.Value, 9999);
                 _db.DailyMenuEntries.Add(new DailyMenuEntry { MenuItemId = menuItemId, Date = today, Stock = servings });
                 await _db.SaveChangesAsync();
                 TempData["Saved"] = m.Name + " added to today's menu" + (servings != null ? " with " + servings + " servings." : " with no limit on servings.");

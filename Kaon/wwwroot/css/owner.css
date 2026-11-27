@@ -1041,3 +1041,7 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
     .board-fill { align-items: stretch; grid-auto-rows: minmax(0, 1fr); }
     .board-fill .board-col { max-height: none; height: 100%; min-height: 0; }
 }
+
+/* Status label + a real button next to it (instead of a label that secretly is a button) */
+.ready-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; }
+.ready-form .btn-ghost { padding: 7px 14px; font-size: .82rem; }
