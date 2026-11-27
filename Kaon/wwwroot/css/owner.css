@@ -895,3 +895,19 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .ob-stat { box-shadow: none; border: 1px solid #ebe3d6; }
 .ob-hero { box-shadow: none; }
 .tab-switch .tab:not(.active) { border: 1px solid #e4dacb; background: #fff; }
+
+/* ---------- Order card buttons: one clear main action, two side by side, quiet cancel ---------- */
+.order-card .order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; align-items: stretch; }
+.order-card .order-actions > form:first-child { grid-column: 1 / -1; }
+.order-card .order-actions > :nth-child(2):last-child { grid-column: 1 / -1; }
+.order-card .order-actions form { margin: 0; display: flex; }
+.order-card .order-actions .btn { width: 100%; margin: 0; background: var(--brown); color: #fff; border-radius: 12px; padding: 11px 14px; font-weight: 600; font-size: .9rem; }
+.order-card .order-actions .btn:hover { background: var(--orange); }
+.order-card .order-actions .btn-ghost { width: 100%; display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 9px 10px; border: 1.5px solid #e4dacb; border-radius: 12px; background: #fff; font-size: .85rem; font-weight: 600; color: var(--brown); text-decoration: none; }
+.order-card .order-actions .btn-ghost:hover { border-color: var(--brown); color: var(--brown); background: #faf6ef; }
+
+.order-card .cancel-box { margin-top: 8px; text-align: center; }
+.order-card .cancel-box > summary { display: inline-block; list-style: none; cursor: pointer; border: 0; background: none; padding: 4px 8px; font-size: .8rem; font-weight: 500; color: #8a786c; text-decoration: underline; text-underline-offset: 3px; }
+.order-card .cancel-box > summary::-webkit-details-marker { display: none; }
+.order-card .cancel-box > summary:hover { color: #b3261e; border: 0; background: none; }
+.order-card .cancel-box .cancel-form { text-align: left; }
