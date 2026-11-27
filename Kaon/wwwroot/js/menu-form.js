@@ -13,6 +13,9 @@
         var pkgAvail = form.querySelector('#pkgAvailField');
         var rows = form.querySelector('#sizeRows');
 
+        // Styled dropdowns instead of the browser's plain grey list
+        if (window.kaonSelect) [].forEach.call(form.querySelectorAll('select.input'), window.kaonSelect);
+
         function addRow() {
             var d = document.createElement('div');
             d.className = 'size-row';

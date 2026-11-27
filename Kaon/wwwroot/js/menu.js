@@ -136,6 +136,7 @@
     }
 
     document.querySelectorAll('select.size-select').forEach(enhanceSelect);
+    window.kaonSelect = enhanceSelect;   // also used by the owner's Add / Edit pop-up
 
     // ----- Food package cards -----
     function peso(n) {

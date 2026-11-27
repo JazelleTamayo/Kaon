@@ -1137,3 +1137,59 @@ body.dlg-open { overflow: hidden; }
 /* Menu and Orders pages: no big empty strip under the list before the footer */
 main.page:has(.tab-panel, .board-fill) { padding-bottom: 24px; }
 main.page:has(.tab-panel, .board-fill) ~ .app-foot { margin-top: 8px; }
+
+/* ---------- Delete and Remove must be easy to see: red text with a red outline ---------- */
+.tab-panel[data-panel="dishes"] td.actions .btn-ghost.danger,
+.tab-panel[data-panel="today"] .table td.actions .btn-ghost.danger,
+.tab-panel[data-panel="packages"] .btn-ghost.danger { background: #fff; color: #b3261e; border: 1.5px solid #e0a8a2; }
+.tab-panel[data-panel="dishes"] td.actions .btn-ghost.danger:hover,
+.tab-panel[data-panel="today"] .table td.actions .btn-ghost.danger:hover,
+.tab-panel[data-panel="packages"] .btn-ghost.danger:hover { background: #b3261e; color: #fff; border-color: #b3261e; }
+
+/* ---------- Styled dropdowns inside the Add / Edit pop-up ---------- */
+.dd-list { z-index: 140; }
+.dish-form .dd-btn { padding: 13px 16px; border-radius: 14px; font-weight: 500; font-size: 1rem; border-color: #eadfce; }
+.dish-form .dd-btn .dd-label { font-weight: 500; }
+
+/* ---------- Compact order card: about three fit in a column before it scrolls ---------- */
+.order-card.compact { padding: 12px 14px; }
+.oc-top { display: flex; align-items: center; gap: 8px; }
+.oc-id { font-size: 1.05rem; }
+.oc-total { margin-left: auto; font-size: 1rem; }
+.order-card.compact .order-who { font-size: .86rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.order-card.compact .order-lines { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 8px 0 6px; padding: 8px 0 0; border-top: 1px solid #f0e8db; list-style: none; font-size: .9rem; }
+.order-card.compact .order-lines li { margin: 0; padding: 0; }
+.order-card.compact .order-when, .order-card.compact .order-addr, .order-card.compact .order-note { font-size: .8rem; margin-top: 4px; }
+.oc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: .78rem; color: #6f5d51; }
+.oc-meta .chip { font-size: .72rem; padding: 2px 9px; }
+.order-card .order-actions.oc-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-top: 10px; }
+.order-card .order-actions.oc-actions > form { flex: 1 1 0; min-width: 0; }
+.order-card .order-actions.oc-actions > form .btn { padding: 10px 14px; }
+.more-menu { flex: 0 0 auto; }
+.more-menu > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border-radius: 12px; font-size: .85rem; font-weight: 600; }
+.more-menu > summary::-webkit-details-marker { display: none; }
+.more-menu > summary::after { content: "\25BE"; margin-left: 6px; font-size: .75rem; }
+.more-menu[open] { flex: 1 1 100%; }
+.more-menu[open] > summary { width: 100%; background: #faf6ef; }
+.more-panel { display: grid; gap: 8px; margin-top: 8px; }
+.more-panel form { margin: 0; display: block; }
+.more-panel .btn-ghost { width: 100%; justify-content: center; text-align: center; display: inline-flex; }
+.more-panel .cancel-box { margin: 0; text-align: left; }
+.more-panel .cancel-box > summary { display: block; text-align: center; padding: 6px; font-size: .82rem; color: #b3261e; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; list-style: none; }
+
+/* Tighter compact card: items run together as one sentence, one-line main button */
+.order-card.compact .order-lines { display: block; margin: 6px 0 4px; padding: 6px 0 0; font-size: .86rem; line-height: 1.45; }
+.order-card.compact .order-lines li { display: inline; }
+.order-card.compact .order-lines li:not(:last-child)::after { content: ", "; }
+.order-card.compact .order-lines .chip { display: none; }
+.oc-meta { gap: 2px 6px; font-size: .74rem; }
+.oc-meta .chip { font-size: .68rem; padding: 1px 8px; }
+.order-card .order-actions.oc-actions { margin-top: 8px; }
+.order-card .order-actions.oc-actions > form .btn { white-space: nowrap; font-size: .85rem; padding: 9px 8px; }
+.more-menu > summary { padding: 8px 12px; }
+
+/* "Add another size": a dashed row under the sizes, clearly different from the Save button */
+.add-row { display: block; width: 100%; margin-top: 10px; padding: 11px 14px; border: 2px dashed #e2b79a; border-radius: 12px; background: #fff; color: var(--orange); font: 600 .9rem 'Poppins', Arial, sans-serif; cursor: pointer; transition: background .15s, border-color .15s; }
+.add-row:hover { background: #fff4e8; border-color: var(--orange); }
+.df-sizes .size-row { margin-bottom: 8px; }
+.order-card.compact .order-lines li:not(:last-child)::after { margin-left: -.3em; }

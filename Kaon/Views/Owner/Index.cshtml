@@ -261,7 +261,7 @@ else
             // Never shorter than one complete order card (with its header), so a single order never needs scrolling
             let tallest = 0;
             b.querySelectorAll('.order-card').forEach(c => { tallest = Math.max(tallest, c.offsetHeight); });
-            const oneCard = tallest ? tallest + 130 : 0;
+            const oneCard = tallest ? Math.min(3 * tallest + 130, 900) : 0;   // room for three orders before it scrolls
             b.style.height = Math.max(400, oneCard, Math.round(innerHeight - b.getBoundingClientRect().top - 24)) + 'px';
         }
         window.addEventListener('resize', fitBoard);
@@ -294,7 +294,7 @@ else
                 if (!r.ok) return;
                 const d = await r.json();
                 // Don't redraw the board while the owner is choosing a cancel reason; check again next time
-                if (document.querySelector('.cancel-box[open]')) return;
+                if (document.querySelector('.cancel-box[open], .more-menu[open]')) return;
                 if (last !== null && d.sig !== last) {
                     const before = new Set(ids(last));
                     const fresh = ids(d.sig).filter(id => !before.has(id));

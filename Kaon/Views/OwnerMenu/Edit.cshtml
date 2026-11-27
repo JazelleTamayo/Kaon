@@ -94,7 +94,7 @@
                     </div>
                 }
             </div>
-            <button type="button" class="btn-ghost" id="addSize">+ Add a size</button>
+            <button type="button" class="add-row" id="addSize">+ Add another size</button>
         </div>
     </div>
 
@@ -107,13 +107,14 @@
         {
             <a class="btn-ghost" asp-action="Index" style="text-decoration:none">Cancel</a>
         }
-        <button class="btn" type="submit">@(isNew ? "Add" : "Save changes")</button>
+        <button class="btn" type="submit">@(isNew ? "Save" : "Save changes")</button>
     </div>
 </form>
 
 @if (!modal)
 {
     @section Scripts {
+        <script src="~/js/menu.js" asp-append-version="true"></script>
         <script src="~/js/menu-form.js" asp-append-version="true"></script>
         <script>kaonMenuForm.init(document, '@MenuItem.PackageCategory');</script>
     }
