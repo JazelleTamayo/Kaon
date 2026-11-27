@@ -37,9 +37,9 @@
     <div class="ob-stat"><span class="n">₱@Model.ConfirmedTotal.ToString("N0")</span><span class="l">Confirmed payments</span></div>
 </div>
 
-<p class="muted adm-auto">Owners get reminder emails 7, 3 and 1 day before their plan ends, and when it ends. Nothing to do here.
-    <form asp-action="RunAutomation" method="post" style="display:inline"><button class="link-btn">Run checks now</button></form>
-</p>
+<div class="muted adm-auto">Owners get reminder emails 7, 3 and 1 day before their plan ends, and when it ends. Nothing to do here.
+    <form asp-action="RunAutomation" method="post" class="adm-inline"><button class="link-btn">Run checks now</button></form>
+</div>
 
 <h2 class="section">Payments to confirm</h2>
 @if (!Model.PendingPayments.Any())
@@ -89,7 +89,7 @@ else
                 {
                     var sub = r.Subscription;
                     <tr>
-                        <td><strong>@Store(Model, r.Owner)</strong><div class="muted">@r.Owner.FullName · @r.Owner.Email</div></td>
+                        <td><strong>@Store(Model, r.Owner)</strong><div class="muted">@r.Owner.FullName</div><div class="muted">@r.Owner.Email</div></td>
                         <td data-label="Plan">
                             @if (sub == null) { <span class="chip chip-soldout">No plan yet</span> }
                             else
@@ -104,29 +104,38 @@ else
                             {
                                 @sub.AccessUntil.ToLocalTime().ToString("MMM d, yyyy")
                                 <div class="muted" style="font-size:.75rem">
-                                    @(sub.HasAccess(now) ? sub.DaysLeft(now) + " day(s) left" : "ended")@(sub.IsDueSoon(now) || !sub.HasAccess(now) ? " · renewal due" : "")
+                                    @(sub.HasAccess(now) ? sub.DaysLeft(now) + " days left" : "ended")@(sub.IsDueSoon(now) || !sub.HasAccess(now) ? " · renewal due" : "")
                                 </div>
                             }
                         </td>
-                        <td class="bill-actions">
-                            <form asp-action="RecordPayment" method="post">
-                                <input type="hidden" name="ownerId" value="@r.Owner.Id" />
-                                <select class="input" name="months" aria-label="Months paid in person">
-                                    @foreach (var m in new[] { 1, 2, 3, 6, 12 }) { <option value="@m">@m mo</option> }
-                                </select>
-                                <button class="btn-ghost">Record payment</button>
-                            </form>
-                            <form asp-action="ExtendTrial" method="post">
-                                <input type="hidden" name="ownerId" value="@r.Owner.Id" />
-                                <select class="input" name="days" aria-label="Free days to add">
-                                    @foreach (var d in new[] { 7, 14, 30 }) { <option value="@d">+@d days</option> }
-                                </select>
-                                <button class="btn-ghost">Add free days</button>
-                            </form>
-                            <form asp-action="Remind" method="post">
-                                <input type="hidden" name="ownerId" value="@r.Owner.Id" />
-                                <button class="btn-ghost" title="Reminders are sent automatically. Use this to send one right now.">Remind now</button>
-                            </form>
+                        <td class="actions">
+                            <details class="plan-menu">
+                                <summary class="btn btn-sm btn-outline">Manage plan</summary>
+                                <div class="plan-pop">
+                                    <form asp-action="RecordPayment" method="post">
+                                        <input type="hidden" name="ownerId" value="@r.Owner.Id" />
+                                        <span class="pm-label">Paid in person</span>
+                                        <select class="input" name="months" aria-label="Months paid in person">
+                                            @foreach (var m in new[] { 1, 2, 3, 6, 12 }) { <option value="@m">@m month@(m == 1 ? "" : "s")</option> }
+                                        </select>
+                                        <button class="btn btn-sm">Record</button>
+                                    </form>
+                                    <form asp-action="ExtendTrial" method="post">
+                                        <input type="hidden" name="ownerId" value="@r.Owner.Id" />
+                                        <span class="pm-label">Add free days</span>
+                                        <select class="input" name="days" aria-label="Free days to add">
+                                            @foreach (var d in new[] { 7, 14, 30 }) { <option value="@d">+@d days</option> }
+                                        </select>
+                                        <button class="btn btn-sm">Add</button>
+                                    </form>
+                                    <form asp-action="Remind" method="post">
+                                        <input type="hidden" name="ownerId" value="@r.Owner.Id" />
+                                        <span class="pm-label">Send a reminder now</span>
+                                        <span></span>
+                                        <button class="btn btn-sm btn-outline">Remind</button>
+                                    </form>
+                                </div>
+                            </details>
                         </td>
                     </tr>
                 }
