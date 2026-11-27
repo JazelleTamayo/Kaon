@@ -22,7 +22,6 @@
     <button type="button" role="tab" class="tab" data-tab="share" aria-selected="true">Share &amp; QR</button>
     <button type="button" role="tab" class="tab" data-tab="store" aria-selected="false">Store &amp; delivery</button>
     <button type="button" role="tab" class="tab" data-tab="payments" aria-selected="false">Payments</button>
-    <button type="button" role="tab" class="tab" data-tab="riders" aria-selected="false">Riders <span class="tab-n">@(Model.UsesRiders ? "On" : "Off")</span></button>
 </div>
 
 @* ================= Share & QR ================= *@
@@ -133,25 +132,54 @@
                             <span>Pickup</span>
                         </label>
                         <label class="check">
-                            <input type="checkbox" asp-for="DeliveryEnabled" />
+                            <input type="checkbox" asp-for="DeliveryEnabled" id="deliveryOn" />
                             <span>Home delivery</span>
                         </label>
                     </div>
 
-                    <div class="two-col">
-                        <div>
-                            <label class="label" asp-for="DeliveryFee">Delivery fee (₱, fixed)</label>
-                            <input class="input" asp-for="DeliveryFee" type="number" step="0.01" min="0" inputmode="decimal" />
-                            <span class="error" asp-validation-for="DeliveryFee"></span>
+                    <div id="deliveryFields">
+                        <div class="two-col">
+                            <div>
+                                <label class="label" asp-for="DeliveryFee">Delivery fee (₱, fixed)</label>
+                                <input class="input" asp-for="DeliveryFee" type="number" step="0.01" min="0" inputmode="decimal" />
+                                <span class="error" asp-validation-for="DeliveryFee"></span>
+                            </div>
+                            <div>
+                                <label class="label" asp-for="DeliveryArea">Delivery area</label>
+                                <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
+                            </div>
                         </div>
-                        <div>
-                            <label class="label" asp-for="DeliveryArea">Delivery area</label>
-                            <input class="input" asp-for="DeliveryArea" placeholder="For example: Barangay 12 and nearby" />
+                        <span class="hint">The customer pays the delivery fee. It is separate from your monthly subscription.</span>
+
+                        <div class="rider-opt">
+                            <label class="check">
+                                <input type="checkbox" asp-for="UsesRiders" id="ridersOn" />
+                                <span>I have my own riders</span>
+                            </label>
+                            <span class="hint">Give each delivery order to a rider, who gets a private link with the address, the items and how much to collect. Leave this off if you deliver yourself.</span>
+
+                            <div id="riderBlock">
+                                @if (riders.Any())
+                                {
+                                    <ul class="rider-list">
+                                        @foreach (var r in riders)
+                                        {
+                                            <li>
+                                                <span><strong>@r.Name</strong> · <a href="tel:@r.Phone">@r.Phone</a></span>
+                                                <button type="submit" form="removeRider@(r.Id)" class="btn-ghost danger">Remove</button>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                <div class="rider-pick">
+                                    <input class="input" form="addRiderForm" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
+                                    <input class="input" form="addRiderForm" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
+                                    <button type="submit" form="addRiderForm" class="btn btn-sm">Add rider</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <span class="hint">The customer pays the delivery fee. It is separate from your monthly subscription.</span>
                 </div>
-            </div>
         </div>
     </section>
 
@@ -233,43 +261,12 @@
     </div>
 </form>
 
-@* ================= Riders ================= *@
-<section class="tab-panel" data-panel="riders" id="riders" role="tabpanel" hidden>
-    <form asp-action="ToggleRiders" method="post" class="card offer-card @(Model.UsesRiders ? "" : "is-off")">
-        <div>
-            <strong>We have our own riders</strong>
-            <p class="muted">@(Model.UsesRiders
-                ? "On. You can give each delivery order to a rider, who gets a private link with the address, the items and how much to collect. No Kaon account needed."
-                : "Off. You deliver orders yourself or hand them to whoever is free. Turn this on if you have riders you want to send a link to.")</p>
-        </div>
-        <label class="switch">
-            <input type="checkbox" @(Model.UsesRiders ? "checked" : "") onchange="this.form.submit()" aria-label="We have our own riders" />
-            <span class="slider"></span>
-        </label>
-    </form>
-    @if (Model.UsesRiders)
-    {
-        <div class="card">
-            @if (riders.Any())
-            {
-                <ul class="rider-list">
-                    @foreach (var r in riders)
-                    {
-                        <li>
-                            <span><strong>@r.Name</strong> · <a href="tel:@r.Phone">@r.Phone</a></span>
-                            <form asp-action="RemoveRider" asp-route-id="@r.Id" method="post"><button class="btn-ghost danger">Remove</button></form>
-                        </li>
-                    }
-                </ul>
-            }
-            <form asp-action="AddRider" method="post" class="rider-pick">
-                <input class="input" name="name" maxlength="60" placeholder="Rider's name" aria-label="Rider's name" required />
-                <input class="input" name="phone" maxlength="20" type="tel" inputmode="tel" placeholder="Mobile number" aria-label="Rider's mobile number" required />
-                <button class="btn btn-sm">Add rider</button>
-            </form>
-        </div>
-    }
-</section>
+@* The rider fields live inside the delivery card above; their buttons submit these separate forms *@
+<form id="addRiderForm" asp-action="AddRider" method="post"></form>
+@foreach (var r in riders)
+{
+    <form id="removeRider@(r.Id)" asp-action="RemoveRider" asp-route-id="@r.Id" method="post"></form>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -287,12 +284,24 @@
             }
             var start = (location.hash || '').replace('#', '');
             try { start = start || sessionStorage.getItem('storeTab') || ''; } catch (e) { }
+            if (start === 'riders') start = 'store';
             if (!document.querySelector('[data-panel="' + start + '"]')) start = 'share';
             // A message to fix? Open the tab that has it.
             var bad = document.querySelector('[data-panel] .field-validation-error, [data-panel] .error:not(:empty)');
             if (bad) start = bad.closest('[data-panel]').dataset.panel;
             tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
             show(start);
+
+            // Delivery details only matter when Home delivery is on; the rider list only when riders are on
+            var del = document.getElementById('deliveryOn'), fields = document.getElementById('deliveryFields');
+            var rid = document.getElementById('ridersOn'), block = document.getElementById('riderBlock');
+            function sync() {
+                if (fields && del) fields.hidden = !del.checked;
+                if (block && rid) block.hidden = !rid.checked;
+            }
+            if (del) del.addEventListener('change', sync);
+            if (rid) rid.addEventListener('change', sync);
+            sync();
         })();
     </script>
 }

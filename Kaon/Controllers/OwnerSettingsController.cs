@@ -82,7 +82,7 @@ public class OwnerSettingsController : Controller
         var store = await _stores.StoreAsync(track: true);
         store.UsesRiders = !store.UsesRiders;
         await _db.SaveChangesAsync();
-        return Redirect(Url.Action(nameof(Index))! + "#riders");
+        return Redirect(Url.Action(nameof(Index))! + "#store");
     }
 
     // ---------- Module 7: the carinderia's delivery riders ----------
@@ -102,10 +102,11 @@ public class OwnerSettingsController : Controller
         else
         {
             _db.Riders.Add(new Rider { StoreId = sid, Name = name, Phone = phone });
+            (await _stores.StoreAsync(track: true)).UsesRiders = true;   // adding a rider means you use riders
             await _db.SaveChangesAsync();
             TempData["Saved"] = name + " is on your rider list.";
         }
-        return Redirect(Url.Action(nameof(Index))! + "#riders");
+        return Redirect(Url.Action(nameof(Index))! + "#store");
     }
 
     // Orders already given to this rider keep their name, number and link
@@ -120,7 +121,7 @@ public class OwnerSettingsController : Controller
             await _db.SaveChangesAsync();
             TempData["Saved"] = rider.Name + " was removed from your rider list.";
         }
-        return Redirect(Url.Action(nameof(Index))! + "#riders");
+        return Redirect(Url.Action(nameof(Index))! + "#store");
     }
 
     // The old poster address still works
@@ -141,6 +142,8 @@ public class OwnerSettingsController : Controller
             ModelState.AddModelError("", "To accept payment in advance, add a GCash number, a bank account, or a QR code.");
         if (!string.IsNullOrWhiteSpace(form.BankAccountNumber) && string.IsNullOrWhiteSpace(form.BankName))
             ModelState.AddModelError(nameof(form.BankName), "Enter the bank or e-wallet name.");
+        if (!form.PickupEnabled && !form.DeliveryEnabled)
+            ModelState.AddModelError("", "Keep Pickup or Home delivery on, so customers can order.");
 
         string? newQr = null;
         if (ModelState.IsValid && qrFile is { Length: > 0 })
@@ -171,6 +174,7 @@ public class OwnerSettingsController : Controller
         s.DeliveryFee = form.DeliveryFee;
         s.PickupEnabled = form.PickupEnabled;
         s.DeliveryEnabled = form.DeliveryEnabled;
+        s.UsesRiders = form.UsesRiders;
         s.IsOpen = form.IsOpen;
         s.AcceptsCash = form.AcceptsCash;
         s.AcceptsCashless = form.AcceptsCashless;

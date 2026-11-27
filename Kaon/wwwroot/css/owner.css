@@ -1327,3 +1327,13 @@ main.page:has(.sum-grid) ~ .app-foot { margin-top: 8px; }
 .pi-btn { align-self: flex-start; margin: 0; display: inline-flex; align-items: center; gap: 8px; }
 .pi-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 560px) { .print-list { grid-template-columns: 1fr; } }
+
+/* ---------- Riders inside the delivery card ---------- */
+.rider-opt { margin-top: 16px; padding-top: 14px; border-top: 1px dashed #e3d8c8; }
+#deliveryFields[hidden], #riderBlock[hidden] { display: none; }
+#riderBlock { margin-top: 12px; }
+#riderBlock .rider-list { margin: 0 0 10px; }
+
+/* ---------- Footer at the bottom of the screen on short pages ---------- */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+main.page { flex: 1 0 auto; width: 100%; }
