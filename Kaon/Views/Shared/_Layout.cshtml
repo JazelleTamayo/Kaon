@@ -116,15 +116,18 @@
                     </a>
                 }
 
-                @if (isOwner)
+                @if (isOwner || isCustomer)
                 {
-                    <div class="bell" data-bell>
+                    <div class="bell" data-bell data-bell-url="@(isOwner ? Url.Action("Notifications", "Owner") : Url.Action("Notifications", "Order"))" data-bell-role="@(isOwner ? "owner" : "customer")">
                         <button type="button" class="bell-btn" aria-label="Notifications" aria-expanded="false" aria-haspopup="true" data-bell-btn>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7.5 2 7.5H4S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
                             <span class="bell-badge" data-bell-badge hidden>0</span>
                         </button>
                         <div class="bell-panel" data-bell-panel hidden role="dialog" aria-label="Notifications">
-                            <div class="bell-head"><strong>Notifications</strong><a asp-controller="Owner" asp-action="Index">Open orders</a></div>
+                            <div class="bell-head"><strong>Notifications</strong>
+                                @if (isOwner) { <a asp-controller="Owner" asp-action="Index">Open orders</a> }
+                                else { <a asp-controller="Order" asp-action="Index">My orders</a> }
+                            </div>
                             <ul class="bell-list" data-bell-list><li class="bell-empty">Checking...</li></ul>
                         </div>
                     </div>
@@ -217,7 +220,7 @@
     {
         <div id="toasts" class="toasts" aria-live="polite"></div>
         <script src="~/js/alerts.js" asp-append-version="true"></script>
-        @if (isOwner)
+        @if (isOwner || isCustomer)
         {
             <script src="~/js/bell.js" asp-append-version="true"></script>
         }

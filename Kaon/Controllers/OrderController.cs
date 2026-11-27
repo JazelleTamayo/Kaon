@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
@@ -376,6 +376,50 @@ public class OrderController : Controller
             .ToListAsync();
         Response.Headers["Cache-Control"] = "no-store";
         return Json(new { orders = list.Select(OrderText.Snap) });
+    }
+
+    // The customer's notification bell: their recent orders and what is happening with each
+    [HttpGet]
+    public async Task<IActionResult> Notifications()
+    {
+        var uid = CurrentUserId;
+        var since = DateTime.Now.AddDays(-3);
+        var rows = (await _db.Orders.AsNoTracking()
+                .Where(o => o.UserId == uid)
+                .ToListAsync())
+            .Where(o => o.CreatedAt >= since || (o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled))
+            .OrderByDescending(o => o.CreatedAt).Take(8).ToList();
+
+        var items = rows.Select(o =>
+        {
+            var what = o.IsPackage ? "Pre-order #" : "Order #";
+            var title = o.Status switch
+            {
+                OrderStatus.Pending => what + o.Id + " was sent",
+                OrderStatus.Confirmed => what + o.Id + " is confirmed",
+                OrderStatus.Preparing => what + o.Id + " is being prepared",
+                OrderStatus.Ready => what + o.Id + " is ready",
+                OrderStatus.OutForDelivery => what + o.Id + " is on its way",
+                OrderStatus.Completed => what + o.Id + " is completed",
+                _ => what + o.Id + " was cancelled"
+            };
+            var good = o.Status is OrderStatus.Ready or OrderStatus.OutForDelivery or OrderStatus.Completed;
+            return new
+            {
+                key = "c" + o.Id + "-" + (int)o.Status,   // a new status is a new notification
+                kind = good ? "order" : "update",
+                title,
+                detail = OrderText.Message(o),
+                mins = -1,
+                url = Url.Action("Status", "Order", new { id = o.Id })
+            };
+        }).ToList();
+
+        return Json(new
+        {
+            total = rows.Count(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled),
+            items
+        });
     }
 
     public async Task<IActionResult> StatusJson(int id)

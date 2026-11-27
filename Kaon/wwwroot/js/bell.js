@@ -1,4 +1,4 @@
-// The owner's notification bell: shows what needs attention, on every page.
+﻿// The owner's notification bell: shows what needs attention, on every page.
 (function () {
     var root = document.querySelector('[data-bell]');
     if (!root) return;
@@ -8,10 +8,12 @@
     var badge = root.querySelector('[data-bell-badge]');
     var list = root.querySelector('[data-bell-list]');
 
-    // The Orders page already rings and pops up for new orders by itself
-    var onOrders = /^\/owner\/?$/i.test(location.pathname);
-    var KNOWN = 'kaon.bell.known';   // what we have already told the owner about
-    var SEEN = 'kaon.bell.seen';     // what the owner has already looked at in the list
+    var url = root.getAttribute('data-bell-url') || '/Owner/Notifications';
+    var isOwner = root.getAttribute('data-bell-role') !== 'customer';
+    // The owner's Orders page and the customer's order pages already ring and pop up by themselves
+    var onOrders = isOwner ? /^\/owner\/?$/i.test(location.pathname) : /^\/order(\/|$)/i.test(location.pathname);
+    var KNOWN = 'kaon.bell.known.' + (isOwner ? 'owner' : 'customer');   // what we have already told the owner about
+    var SEEN = 'kaon.bell.seen.' + (isOwner ? 'owner' : 'customer');     // what the owner has already looked at in the list
 
     function load(key) {
         try { var v = localStorage.getItem(key); return v === null ? null : JSON.parse(v); } catch (e) { return null; }
@@ -59,15 +61,15 @@
             var t = document.createElement('strong'); t.textContent = i.title;
             var s = document.createElement('small'); s.textContent = i.detail;
             text.appendChild(t); text.appendChild(s);
-            var w = document.createElement('span'); w.className = 'bell-when'; w.textContent = ago(i.mins);
-            a.appendChild(dot); a.appendChild(text); a.appendChild(w);
+            a.appendChild(dot); a.appendChild(text);
+            if (i.mins >= 0) { var w = document.createElement('span'); w.className = 'bell-when'; w.textContent = ago(i.mins); a.appendChild(w); }
             li.appendChild(a);
             list.appendChild(li);
         });
         if (d.total > items.length) {
             var more = document.createElement('li');
             more.className = 'bell-more';
-            more.textContent = 'and ' + (d.total - items.length) + ' more on the Orders page';
+            more.textContent = 'and ' + (d.total - items.length) + ' more';
             list.appendChild(more);
         }
 
@@ -83,7 +85,7 @@
     }
 
     function poll() {
-        fetch('/Owner/Notifications', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+        fetch(url, { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
             .then(function (r) {
                 if (!r.ok || (r.headers.get('content-type') || '').indexOf('json') === -1) throw new Error('not json');
                 return r.json();
