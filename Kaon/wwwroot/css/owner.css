@@ -1440,3 +1440,8 @@ main.page { padding-bottom: 24px; }
 main.page { padding-bottom: 8px; }
 .tracker { bottom: 6px; margin-bottom: 0; }
 .has-track .cartbar { bottom: calc(var(--track-h, 104px) + 14px); }
+
+/* Tracker lower still: flush with the bottom of the screen */
+.tracker { bottom: 0; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }
+.has-track .cartbar { bottom: calc(var(--track-h, 104px) + 8px); }
+main.page { padding-bottom: 0; }
