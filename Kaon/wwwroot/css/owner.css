@@ -1435,3 +1435,8 @@ main.page { flex: 1 0 auto; width: 100%; }
 
 /* The cart bar and order tracker now stick in the page flow, so the page needs only a small gap above the footer */
 main.page { padding-bottom: 24px; }
+
+/* Order tracker sits lower: closer to the screen edge, and right above the footer at the end of the page */
+main.page { padding-bottom: 8px; }
+.tracker { bottom: 6px; margin-bottom: 0; }
+.has-track .cartbar { bottom: calc(var(--track-h, 104px) + 14px); }
