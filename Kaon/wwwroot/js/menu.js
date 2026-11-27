@@ -142,16 +142,14 @@
         return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 0 });
     }
 
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function toLocalInput(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
     document.querySelectorAll('[data-pkg]').forEach(function (form) {
         var qty = form.querySelector('input[name="qty"]');
         var total = form.querySelector('[data-total]');
-        var when = form.querySelector('input[name="scheduledFor"]');
-        var leadHint = form.querySelector('[data-lead-hint]');
-
-        function pad(n) { return String(n).padStart(2, '0'); }
-        function toLocalInput(d) {
-            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-        }
 
         function update() {
             var sel = form.querySelector('select[name="optionId"]');
@@ -159,16 +157,6 @@
             var price = opt ? parseFloat(opt.getAttribute('data-price')) : 0;
             var q = Math.max(1, Math.min(100, parseInt(qty.value, 10) || 1));
             total.textContent = peso(price * q);
-
-            if (when && opt) {
-                var lead = parseInt(opt.getAttribute('data-lead'), 10) || 0;
-                var earliest = new Date();
-                earliest.setDate(earliest.getDate() + lead);
-                var minStr = toLocalInput(earliest);
-                when.min = minStr;
-                if (!when.value || when.value < minStr) when.value = minStr;
-                if (leadHint) leadHint.textContent = 'Needs at least ' + lead + ' days’ notice.';
-            }
         }
 
         form.addEventListener('change', update);
@@ -181,6 +169,82 @@
         });
         update();
     });
+
+    // ----- "When do you need it?" popup, shown before a package is added to the cart -----
+    var scheduleModal = document.getElementById('scheduleModal');
+    if (scheduleModal) {
+        var scheduleTitle = document.getElementById('scheduleTitle');
+        var scheduleQuickPicks = document.getElementById('scheduleQuickPicks');
+        var scheduleInputLabel = document.getElementById('scheduleInputLabel');
+        var scheduleInput = document.getElementById('scheduleInput');
+        var scheduleHint = document.getElementById('scheduleHint');
+        var scheduleError = document.getElementById('scheduleError');
+        var pendingPkgForm = null, pendingMin = null;
+
+        var existingSchedulesEl = document.getElementById('existingSchedules');
+        var existingSchedules = [];
+        if (existingSchedulesEl) {
+            try { existingSchedules = JSON.parse(existingSchedulesEl.textContent) || []; } catch (e) { }
+        }
+
+        function closeSchedule() { scheduleModal.hidden = true; pendingPkgForm = null; scheduleError.hidden = true; }
+
+        function submitWithDate(dateStr) {
+            if (!pendingPkgForm) return;
+            pendingPkgForm.querySelector('[data-schedule-value]').value = dateStr;
+            pendingPkgForm.dataset.confirmed = '1';
+            pendingPkgForm.submit();
+            closeSchedule();
+        }
+
+        document.querySelectorAll('[data-pkg]').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.confirmed) return;
+                e.preventDefault();
+                pendingPkgForm = form;
+
+                var sel = form.querySelector('select[name="optionId"]');
+                var opt = sel ? sel.options[sel.selectedIndex] : null;
+                var lead = opt ? (parseInt(opt.getAttribute('data-lead'), 10) || 0) : 0;
+                var earliest = new Date();
+                earliest.setDate(earliest.getDate() + lead);
+                pendingMin = toLocalInput(earliest);
+
+                scheduleTitle.textContent = 'When do you need ' + (form.dataset.name || 'this') + '?';
+                scheduleHint.textContent = 'Needs at least ' + lead + ' days’ notice.';
+                scheduleInput.min = pendingMin;
+                scheduleInput.value = pendingMin;
+                scheduleError.hidden = true;
+
+                scheduleQuickPicks.innerHTML = '';
+                existingSchedules.forEach(function (s) {
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'btn-ghost schedule-quick';
+                    b.textContent = 'Same as before: ' + s.label;
+                    b.addEventListener('click', function () { submitWithDate(s.value); });
+                    scheduleQuickPicks.appendChild(b);
+                });
+                scheduleInputLabel.textContent = existingSchedules.length
+                    ? 'Or choose a new date and time'
+                    : 'When do you need it?';
+
+                scheduleModal.hidden = false;
+            });
+        });
+
+        document.querySelector('[data-schedule-confirm]').addEventListener('click', function () {
+            if (!scheduleInput.value || scheduleInput.value < pendingMin) {
+                scheduleError.textContent = 'Please choose a date that meets the notice above.';
+                scheduleError.hidden = false;
+                return;
+            }
+            submitWithDate(scheduleInput.value);
+        });
+        document.querySelector('[data-schedule-cancel]').addEventListener('click', closeSchedule);
+        scheduleModal.addEventListener('click', function (e) { if (e.target === scheduleModal) closeSchedule(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !scheduleModal.hidden) closeSchedule(); });
+    }
 
     // ----- Confirm before adding a dish that's still being prepared -----
     var modal = document.getElementById('confirmModal');

@@ -171,6 +171,8 @@ select.input { appearance: auto; }
 .confirm-box p { margin: 0 0 16px; font-weight: 600; color: var(--brown); }
 .confirm-actions { display: flex; gap: 10px; }
 .confirm-actions .btn, .confirm-actions .btn-ghost { flex: 1; margin: 0; width: auto; }
+#scheduleQuickPicks:not(:empty) { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; }
+.schedule-quick { width: 100%; text-align: left; margin: 0; }
 .dish-card.is-out .dish-img img { filter: grayscale(.85); opacity: .7; }
 .dish-body { padding: 14px 16px 16px; display: flex; flex-direction: column; flex: 1; }
 .dish-name { font-size: 1.05rem; font-weight: 700; margin: 0; }

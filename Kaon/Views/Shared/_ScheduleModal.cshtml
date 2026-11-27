@@ -1,0 +1,15 @@
+@* "When do you need this?" popup shown before a food package is added to the cart. *@
+<div class="confirm-overlay" id="scheduleModal" hidden>
+    <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle">
+        <p id="scheduleTitle"></p>
+        <div id="scheduleQuickPicks"></div>
+        <label class="label" for="scheduleInput" id="scheduleInputLabel">When do you need it?</label>
+        <input class="input" id="scheduleInput" type="datetime-local" />
+        <span class="hint" id="scheduleHint"></span>
+        <span class="error" id="scheduleError" hidden></span>
+        <div class="confirm-actions">
+            <button type="button" class="btn-ghost" data-schedule-cancel>Cancel</button>
+            <button type="button" class="btn btn-sm" data-schedule-confirm>Confirm</button>
+        </div>
+    </div>
+</div>

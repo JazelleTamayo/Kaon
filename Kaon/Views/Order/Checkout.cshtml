@@ -2,14 +2,15 @@
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Checkout";
-    var cart = (List<CartLine>)ViewBag.Cart;
+    var lines = (List<CartLine>)ViewBag.Lines;
     var fee = (decimal)ViewBag.DeliveryFee;
     var store = (StoreSettings)ViewBag.Store;
-    var subtotal = cart.Sum(c => c.Price * c.Quantity);
-    var hasPackage = (bool)ViewBag.HasPackage;
-    var leadDays = hasPackage ? cart.Max(c => PackageLeadTime.DaysFor(c.Price)) : 0;
-    var depositAmount = hasPackage ? Math.Round(subtotal * 0.5m, 2) : 0m;
+    var subtotal = lines.Sum(c => c.Price * c.Quantity);
+    var isPackage = (bool)ViewBag.IsPackage;
+    var leadDays = isPackage ? lines.Max(c => PackageLeadTime.DaysFor(c.Price)) : 0;
+    var depositAmount = isPackage ? Math.Round(subtotal * 0.5m, 2) : 0m;
     var inv = System.Globalization.CultureInfo.InvariantCulture;
+    var groupKeyStr = ((DateTime?)ViewBag.GroupKey)?.ToString("yyyy-MM-ddTHH:mm");
 }
 
 <h1>Checkout</h1>
@@ -23,6 +24,11 @@
 }
 
 <form asp-action="Checkout" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="group" value="@ViewBag.Group" />
+    @if (isPackage)
+    {
+        <input type="hidden" name="groupKey" value="@groupKeyStr" />
+    }
     <div asp-validation-summary="ModelOnly" class="error"></div>
 
     <div class="card">
@@ -55,7 +61,7 @@
         <span class="error" asp-validation-for="Phone"></span>
     </div>
 
-    @if (hasPackage)
+    @if (isPackage)
     {
         <div class="card">
             <label class="label" asp-for="ScheduledFor">When do you need your food package?</label>
@@ -68,7 +74,7 @@
         <div class="card">
             <strong>Pre-order deposit</strong>
             <p class="muted" style="margin:6px 0 0">
-                A 50% deposit (₱@depositAmount.ToString("N2")) confirms your order. The remaining
+                A 50% deposit (₱@depositAmount.ToString("N2")) confirms your food package. The remaining
                 ₱@((subtotal - depositAmount).ToString("N2")) is due in cash or GCash when you pick it up or it's delivered.
             </p>
         </div>
@@ -111,7 +117,7 @@
                     <input type="radio" asp-for="PaymentMethod" value="Cash" />
                     <span class="pay-tile">
                         <strong>Pay with cash</strong>
-                        <small id="cashHint">@(hasPackage ? "50% deposit arranged with the carinderia; balance in cash at pickup/delivery." : "Pay in person when you pick up your order.")</small>
+                        <small id="cashHint">@(isPackage ? "50% deposit arranged with the carinderia; balance in cash at pickup/delivery." : "Pay in person when you pick up your order.")</small>
                     </span>
                 </label>
             }
@@ -121,7 +127,7 @@
                     <input type="radio" asp-for="PaymentMethod" value="Cashless" />
                     <span class="pay-tile">
                         <strong>Pay in advance</strong>
-                        <small>GCash, bank or QR code. You send a screenshot as proof@(hasPackage ? " of your 50% deposit" : "").</small>
+                        <small>GCash, bank or QR code. You send a screenshot as proof@(isPackage ? " of your 50% deposit" : "").</small>
                     </span>
                 </label>
             }
@@ -145,7 +151,7 @@
     </div>
 
     <div class="card">
-        @foreach (var line in cart)
+        @foreach (var line in lines)
         {
             <div class="row">
                 <span>@line.Quantity × @line.Name@(string.IsNullOrEmpty(line.OptionLabel) ? "" : " (" + line.OptionLabel + ")")</span>
@@ -156,7 +162,7 @@
         <div class="row"><span>Subtotal</span><span>₱@subtotal.ToString("N2")</span></div>
         <div class="row" id="feeRow"><span>Delivery fee</span><span>₱@fee.ToString("N2")</span></div>
         <div class="row total-row"><strong>Total</strong><strong id="totalText"></strong></div>
-        @if (hasPackage)
+        @if (isPackage)
         {
             <div class="row"><span>Deposit due now (50%)</span><strong id="depositText"></strong></div>
             <div class="row muted"><span>Balance at pickup/delivery</span><span id="balanceText"></span></div>
@@ -171,7 +177,7 @@
     <script>
         const fee = @fee.ToString(inv);
         const subtotal = @subtotal.ToString(inv);
-        const hasPackage = @(hasPackage ? "true" : "false");
+        const isPackage = @(isPackage ? "true" : "false");
         const depositAmount = @depositAmount.ToString(inv);
         const radios = document.querySelectorAll('input[name="OrderType"]');
         const addressBox = document.getElementById('addressBox');
@@ -195,7 +201,7 @@
             feeRow.style.display = delivery ? '' : 'none';
             const total = subtotal + (delivery ? fee : 0);
             totalText.textContent = money(total);
-            if (hasPackage) {
+            if (isPackage) {
                 if (depositText) depositText.textContent = money(depositAmount);
                 if (balanceText) balanceText.textContent = money(total - depositAmount);
                 if (sendAmount) sendAmount.textContent = money(depositAmount);

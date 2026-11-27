@@ -58,16 +58,6 @@ public class MenuController : Controller
 
         var cart = CartHelper.Get(HttpContext.Session);
 
-        // A cart is either all daily-menu items or all food packages, never both:
-        // they have different checkout flows (today vs. a pre-order with a deposit).
-        if (cart.Any() && cart[0].IsPackage != item.IsPackage)
-        {
-            TempData["Warn"] = item.IsPackage
-                ? "Your cart has daily menu items. Please checkout or clear your cart before ordering a food package."
-                : "Your cart has a food package. Please checkout or clear your cart before adding daily menu items.";
-            return RedirectToAction(back);
-        }
-
         // Daily meals: only orderable if the owner picked them for today's menu.
         // Food packages keep using their own on/off switch.
         DailyMenuEntry? entry = null;
@@ -102,13 +92,12 @@ public class MenuController : Controller
         }
 
         // Food packages are a pre-order: the customer must say when they need it, far enough
-        // ahead for the owner to source ingredients. The whole cart shares one date.
+        // ahead for the owner to source ingredients. Each date the customer picks is its own box;
+        // picking the same date as an existing package just joins that box.
         if (item.IsPackage)
         {
             var price = option?.Price ?? item.Price;
             var leadDays = PackageLeadTime.DaysFor(price);
-            foreach (var existing in cart)
-                leadDays = Math.Max(leadDays, PackageLeadTime.DaysFor(existing.Price));
             var earliest = DateTime.Today.AddDays(leadDays);
 
             if (scheduledFor == null)
@@ -121,11 +110,11 @@ public class MenuController : Controller
                 TempData["Warn"] = item.Name + " needs at least " + leadDays + " days' notice. Please choose a later date.";
                 return RedirectToAction(back);
             }
-
-            foreach (var existing in cart) existing.ScheduledFor = scheduledFor;
         }
 
-        var line = cart.FirstOrDefault(c => c.MenuItemId == id && c.OptionId == option?.Id);
+        // Matched on the chosen date too, so quantities only merge within the same box
+        // (daily-menu lines always have a null ScheduledFor, so this is a no-op for them).
+        var line = cart.FirstOrDefault(c => c.MenuItemId == id && c.OptionId == option?.Id && c.ScheduledFor == scheduledFor);
         if (line == null)
         {
             cart.Add(new CartLine

@@ -61,7 +61,7 @@ else
 
                     @if (canBuy)
                     {
-                        <form asp-action="Add" method="post" class="pkg-form" data-pkg>
+                        <form asp-action="Add" method="post" class="pkg-form" data-pkg data-name="@item.Name">
                             <input type="hidden" name="id" value="@item.Id" />
                             <input type="hidden" name="returnTo" value="Packages" />
 
@@ -73,9 +73,7 @@ else
                                 }
                             </select>
 
-                            <label class="size-label" for="when-@item.Id">When do you need it?</label>
-                            <input class="input" id="when-@item.Id" name="scheduledFor" type="datetime-local" required />
-                            <span class="hint" data-lead-hint></span>
+                            <input type="hidden" name="scheduledFor" data-schedule-value />
 
                             <div class="pkg-buy">
                                 <div class="stepper" aria-label="Quantity">
@@ -101,6 +99,17 @@ else
         <span>View cart · ₱@cartTotal.ToString("N2")</span>
     </a>
 }
+
+@{
+    // Every distinct date already picked for a package in the cart, so the "when do you need
+    // it?" popup can offer "Same as before" instead of asking the customer to retype it.
+    var existingSchedules = cart.Where(c => c.IsPackage && c.ScheduledFor != null)
+        .Select(c => c.ScheduledFor!.Value).Distinct().OrderBy(d => d)
+        .Select(d => new { value = d.ToString("yyyy-MM-ddTHH:mm"), label = d.ToString("MMM d, h:mm tt") });
+}
+<script type="application/json" id="existingSchedules">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(existingSchedules))</script>
+
+<partial name="_ScheduleModal" />
 
 @section Scripts {
     <script src="~/js/menu.js" asp-append-version="true"></script>
