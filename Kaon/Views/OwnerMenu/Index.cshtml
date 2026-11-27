@@ -245,7 +245,18 @@
                 tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'); });
                 panels.forEach(function (p) { p.hidden = p.dataset.panel !== name; });
                 try { sessionStorage.setItem('menuTab', name); } catch (e) { }
+                fit();
             }
+            // Let the visible list use the rest of the screen below it (it scrolls inside, so the page does not grow)
+            function fit() {
+                document.querySelectorAll('.tab-panel:not([hidden]) .scroll-area, .tab-panel:not([hidden]) .pkg-list').forEach(function (el) {
+                    el.style.maxHeight = '';
+                    var room = window.innerHeight - el.getBoundingClientRect().top - 28;
+                    el.style.maxHeight = Math.max(300, Math.round(room)) + 'px';
+                });
+            }
+            window.addEventListener('resize', fit);
+            window.addEventListener('load', fit);
             var start = (location.hash || '').replace('#', '');
             try { start = start || sessionStorage.getItem('menuTab') || ''; } catch (e) { }
             if (!document.querySelector('[data-panel="' + start + '"]')) start = 'today';
