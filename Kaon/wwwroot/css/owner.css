@@ -1467,3 +1467,12 @@ main.page:has(.tracker) ~ .app-foot { margin-top: 14px; }
 /* Admin banners use the carinderia food-counter photo */
 .ob-hero.admin .o-hero-bg { background: #6b4a2f url("../img/admin-banner.webp") 50% 45% / cover no-repeat; animation: none; }
 .ob-hero.admin::after { background: linear-gradient(90deg, rgba(43,24,16,.92) 0%, rgba(43,24,16,.7) 50%, rgba(43,24,16,.3) 100%); }
+
+/* Add-a-carinderia page */
+.ob-hero.admin.add .o-hero-bg { background-image: url("../img/admin-add.webp"); background-position: 50% 55%; }
+.adm-form { max-width: 640px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; padding: 18px 20px; }
+.adm-form > * { grid-column: 1 / -1; }
+.adm-form .label { margin-top: 10px; font-size: .85rem; }
+.adm-form .input { padding: 10px 14px; font-size: .95rem; }
+.adm-form-actions { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+form:has(.adm-form) { max-width: 640px; }

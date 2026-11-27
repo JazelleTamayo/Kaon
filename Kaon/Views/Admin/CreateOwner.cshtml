@@ -4,20 +4,20 @@
 }
 
 <a class="back-link" asp-action="Index">&larr; All carinderias</a>
-<section class="o-hero sm admin">
+<section class="ob-hero admin add no-print">
     <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">Carinderias</span>
-        <h1>Add a carinderia owner</h1>
-        <p>The account starts with no password. You get a private link to send, and the owner chooses their own password.</p>
-    </div>
+    <header class="ob-bar">
+        <div class="ob-id">
+            <h1>Add a carinderia</h1>
+            <span class="ob-sub">The owner starts with no password. You get a private link to send, and they choose their own.</span>
+        </div>
+    </header>
 </section>
 
-<div style="height:16px"></div>
 <form asp-action="CreateOwner" method="post">
     <div asp-validation-summary="ModelOnly" class="form-alert"></div>
 
-    <div class="card">
+    <div class="card adm-form">
         <label class="label" asp-for="StoreId">Carinderia</label>
         <select class="input" asp-for="StoreId" id="storePick">
             <option value="">+ A new carinderia</option>
@@ -32,7 +32,7 @@
             <label class="label" asp-for="CarinderiaName">New carinderia's name</label>
             <input class="input" asp-for="CarinderiaName" autocomplete="off" placeholder="e.g. Aling Nena's Carinderia" />
             <span class="error" asp-validation-for="CarinderiaName"></span>
-            <p class="muted" style="margin:.4rem 0 0">Each carinderia gets its own link and QR code, its own menu, orders and customers.</p>
+            
         </div>
 
         <label class="label" asp-for="FullName">Owner's full name</label>
@@ -48,8 +48,10 @@
         <span class="error" asp-validation-for="Phone"></span>
     </div>
 
-    <button class="btn">Create account and get the link</button>
-    <a class="link" asp-action="Index">Cancel</a>
+    <div class="adm-form-actions">
+        <button class="btn" style="margin:0">Create account and get the link</button>
+        <a class="link" asp-action="Index">Cancel</a>
+    </div>
 </form>
 
 @section Scripts {
