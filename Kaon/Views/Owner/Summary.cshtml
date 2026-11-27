@@ -1,98 +1,148 @@
 ﻿@model SummaryVm
 @using Kaon.Helpers
 @{
-    ViewData["Title"] = "End-of-day summary";
+    ViewData["Title"] = "Summary";
     ViewData["Wide"] = true;
-    var isToday = Model.Date.Date == DateTime.Today;
+    var today = DateTime.Today;
+    var periods = new[]
+    {
+        ("today", "Today"), ("yesterday", "Yesterday"), ("week", "This week"), ("month", "This month")
+    };
+    var byDay = Model.ByDay;
+    var maxDay = byDay.Count == 0 ? 0 : byDay.Max(d => d.Sales);
+    var topItems = Model.TopItems.ToList();
 }
 
-<section class="o-hero sm no-print">
+<section class="ob-hero no-print">
     <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">End-of-day summary</span>
-        <h1>@Model.Date.ToString("dddd, MMMM d")@(isToday ? " (today)" : "")</h1>
-        <p>@Model.Completed.Count completed order@(Model.Completed.Count == 1 ? "" : "s") · ₱@Model.Sales.ToString("N2") in sales</p>
-        <form method="get" class="date-form">
-            <input class="input" type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="this.form.submit()" aria-label="Pick a day" />
-            <button type="button" class="btn btn-sm btn-yellow" onclick="window.print()">Print</button>
-        </form>
-    </div>
+    <header class="ob-bar">
+        <div class="ob-id">
+            <h1>Sales summary</h1>
+            <span class="ob-sub">@Model.Store.Name &middot; @Model.Label</span>
+        </div>
+        <div class="ob-actions">
+            <button type="button" class="btn btn-sm ob-print-btn" onclick="window.print()">Print summary</button>
+        </div>
+    </header>
 </section>
-<div class="no-print" style="height:16px"></div>
 
-<div class="print-title"><strong>@Model.Store.Name</strong> · End-of-day summary · @Model.Date.ToString("MMMM d, yyyy")</div>
+<div class="print-title"><strong>@Model.Store.Name</strong> · Sales summary · @Model.Label</div>
 
-<div class="stats">
-    <div class="stat"><span class="stat-num">₱@Model.Sales.ToString("N2")</span><span class="stat-label">Sales (completed orders)</span></div>
-    <div class="stat"><span class="stat-num">@Model.Completed.Count</span><span class="stat-label">Completed</span></div>
-    <div class="stat"><span class="stat-num">@Model.PickupCount / @Model.DeliveryCount</span><span class="stat-label">Pickup / Delivery</span></div>
-    <div class="stat"><span class="stat-num">₱@Model.DeliveryFees.ToString("N2")</span><span class="stat-label">Delivery fees</span></div>
-    <div class="stat"><span class="stat-num">₱@Model.PaidTotal.ToString("N2")</span><span class="stat-label">Paid (confirmed)</span></div>
-    <div class="stat"><span class="stat-num">₱@Model.ToCollect.ToString("N2")</span><span class="stat-label">Still to collect</span></div>
+<form method="get" class="period-bar no-print" aria-label="Choose a period">
+    <div class="seg" role="group" aria-label="Period">
+        @foreach (var (key, text) in periods)
+        {
+            <a class="@(Model.Period == key ? "on" : "")" asp-action="Summary" asp-route-period="@key">@text</a>
+        }
+    </div>
+    <div class="range">
+        <input type="hidden" name="period" value="custom" />
+        <label class="range-field"><span>From</span>
+            <input class="input" type="date" name="from" value="@Model.Start.ToString("yyyy-MM-dd")" max="@today.ToString("yyyy-MM-dd")" required />
+        </label>
+        <label class="range-field"><span>To</span>
+            <input class="input" type="date" name="to" value="@Model.End.AddDays(-1).ToString("yyyy-MM-dd")" max="@today.ToString("yyyy-MM-dd")" required />
+        </label>
+        <button class="btn btn-sm @(Model.Period == "custom" ? "" : "btn-outline")" style="margin:0">Apply</button>
+    </div>
+</form>
+
+<div class="ob-stats sum-stats" role="group" aria-label="Key numbers">
+    <div class="ob-stat sum-main"><span class="n">₱@Model.Sales.ToString("N2")</span><span class="l">Sales (completed orders)</span></div>
+    <div class="ob-stat"><span class="n">@Model.Completed.Count</span><span class="l">Completed orders</span></div>
+    <div class="ob-stat"><span class="n">₱@Model.AverageOrder.ToString("N2")</span><span class="l">Average order</span></div>
+    <div class="ob-stat"><span class="n">@Model.CancelledCount</span><span class="l">Cancelled</span></div>
+    <div class="ob-stat"><span class="n">₱@Model.PaidTotal.ToString("N2")</span><span class="l">Paid (confirmed)</span></div>
+    <div class="ob-stat @(Model.ToCollect > 0 ? "is-alert" : "")"><span class="n">₱@Model.ToCollect.ToString("N2")</span><span class="l">Still to collect</span></div>
 </div>
+<p class="sum-note">Pickup @Model.PickupCount · Delivery @Model.DeliveryCount · Delivery fees ₱@Model.DeliveryFees.ToString("N2")</p>
 
 @if (Model.StillOpenCount > 0)
 {
-    <div class="banner">@Model.StillOpenCount order(s) are still open and not counted in sales yet.</div>
-}
-@if (Model.CancelledCount > 0)
-{
-    <p class="muted">@Model.CancelledCount cancelled order(s) are not counted.</p>
+    <div class="banner">@Model.StillOpenCount order@(Model.StillOpenCount == 1 ? " is" : "s are") still open and not counted in sales yet.</div>
 }
 
-<div class="two-col">
-    <div class="card">
-        <h2 class="section" style="margin-top:0">What sold</h2>
-        @if (!Model.TopItems.Any())
+@if (Model.IsRange)
+{
+    <div class="card sum-card">
+        <h2 class="section" style="margin-top:0">Sales by day</h2>
+        @if (byDay.Count == 0)
         {
-            <p class="muted">No completed orders for this day.</p>
+            <p class="muted">No completed orders in this period.</p>
         }
         else
         {
-            <table class="table">
-                <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Amount</th></tr></thead>
-                <tbody>
-                    @foreach (var t in Model.TopItems)
-                    {
-                        <tr><td>@t.Name</td><td class="num">@t.Qty</td><td class="num">₱@t.Amount.ToString("N2")</td></tr>
-                    }
-                </tbody>
-            </table>
+            <ul class="day-bars">
+                @foreach (var d in byDay)
+                {
+                    <li>
+                        <span class="db-day">@d.Day.ToString("ddd, MMM d")</span>
+                        <span class="db-track"><span class="db-fill" style="width:@((maxDay == 0 ? 0 : (int)Math.Round(d.Sales / maxDay * 100)))%"></span></span>
+                        <span class="db-orders">@d.Orders order@(d.Orders == 1 ? "" : "s")</span>
+                        <span class="db-amt">₱@d.Sales.ToString("N2")</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+<div class="sum-grid">
+    <div class="card sum-card">
+        <h2 class="section" style="margin-top:0">What sold</h2>
+        @if (!topItems.Any())
+        {
+            <p class="muted">No completed orders in this period.</p>
+        }
+        else
+        {
+            <div class="scroll-box">
+                <table class="table">
+                    <thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in topItems)
+                        {
+                            <tr><td>@t.Name</td><td>@t.Qty</td><td>₱@t.Amount.ToString("N2")</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </div>
 
-    <div class="card">
-        <h2 class="section" style="margin-top:0">All orders</h2>
+    <div class="card sum-card">
+        <h2 class="section" style="margin-top:0">All orders <span class="muted" style="font-weight:400">(@Model.Orders.Count)</span></h2>
         @if (!Model.Orders.Any())
         {
-            <p class="muted">No orders for this day.</p>
+            <p class="muted">No orders in this period.</p>
         }
         else
         {
-            <table class="table">
-                <thead><tr><th>#</th><th>Time</th><th>Customer</th><th>Type</th><th>Status</th><th>Payment</th><th class="num">Total</th><th></th></tr></thead>
-                <tbody>
-                    @foreach (var o in Model.Orders)
-                    {
-                        <tr>
-                            <td>@o.Id</td>
-                            <td>@o.CreatedAt.ToString("h:mm tt")</td>
-                            <td>@o.CustomerName</td>
-                            <td>@(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")</td>
-                            <td>
-                                <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
-                                @if (o.Status == OrderStatus.Cancelled && !string.IsNullOrWhiteSpace(o.CancelReason))
-                                {
-                                    <span class="cancel-note">@o.CancelReason</span>
-                                }
-                            </td>
-                            <td>@(o.PaymentMethod == PaymentMethod.Cash ? "Cash" : "GCash") · @OrderText.PayStatusLabel(o)</td>
-                            <td class="num">₱@o.Total.ToString("N2")</td>
-                            <td class="actions"><a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="scroll-box">
+                <table class="table">
+                    <thead><tr><th>#</th><th>@(Model.IsRange ? "Date" : "Time")</th><th>Customer</th><th>Status</th><th>Payment</th><th>Total</th><th class="no-print"></th></tr></thead>
+                    <tbody>
+                        @foreach (var o in Model.Orders)
+                        {
+                            <tr>
+                                <td>@o.Id</td>
+                                <td>@(Model.IsRange ? o.CreatedAt.ToString("MMM d, h:mm tt") : o.CreatedAt.ToString("h:mm tt"))</td>
+                                <td>@o.CustomerName<br /><span class="muted" style="font-size:.78rem">@(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")</span></td>
+                                <td>
+                                    <span class="chip chip-@o.Status.ToString().ToLower()">@OrderText.Label(o.Status)</span>
+                                    @if (o.Status == OrderStatus.Cancelled && !string.IsNullOrWhiteSpace(o.CancelReason))
+                                    {
+                                        <span class="cancel-note">@o.CancelReason</span>
+                                    }
+                                </td>
+                                <td>@(o.PaymentMethod == PaymentMethod.Cash ? "Cash" : "GCash")<br /><span class="muted" style="font-size:.78rem">@OrderText.PayStatusLabel(o)</span></td>
+                                <td>₱@o.Total.ToString("N2")</td>
+                                <td class="actions no-print"><a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </div>
 </div>

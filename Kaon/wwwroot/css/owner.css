@@ -1207,3 +1207,40 @@ main.page:has(.tab-panel, .board-fill) ~ .app-foot { margin-top: 8px; }
 .order-card .more-panel .cancel-box { grid-column: 1 / -1; margin: 2px 0 0; text-align: center; }
 .order-card .more-panel .cancel-box > summary { display: inline-block; padding: 4px 8px; font-size: .8rem; color: #b3261e; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; list-style: none; }
 .order-card .more-panel .cancel-box .cancel-form { text-align: left; }
+
+/* ---------- Summary page: period filter, key numbers, sales by day, tidy tables ---------- */
+.ob-print-btn { margin: 0; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.55); color: #fff; }
+.ob-print-btn:hover { background: #fff; color: var(--orange); }
+
+.period-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 0 0 14px; padding: 10px 12px; background: #fff; border: 1px solid #ebe3d6; border-radius: 16px; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: #f4efe8; border-radius: 999px; flex-wrap: wrap; }
+.seg a { padding: 8px 16px; border-radius: 999px; font-weight: 600; font-size: .88rem; color: #5b4a42; text-decoration: none; transition: background .15s, color .15s; }
+.seg a:hover { color: var(--brown); background: #fff; }
+.seg a.on { background: var(--brown); color: #fff; }
+.range { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.range-field { display: grid; gap: 2px; font-size: .72rem; font-weight: 600; color: #7a6a60; text-transform: uppercase; letter-spacing: .06em; }
+.range-field .input { margin: 0; padding: 8px 10px; font-size: .9rem; text-transform: none; letter-spacing: 0; color: var(--brown); }
+
+.sum-stats { grid-template-columns: repeat(3, 1fr); }
+.sum-stats .ob-stat { flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 18px; }
+.sum-stats .ob-stat .n { font-size: 1.5rem; }
+.sum-stats .sum-main { background: var(--brown); border-color: var(--brown); }
+.sum-stats .sum-main .n { color: #fff; font-size: 1.8rem; }
+.sum-stats .sum-main .l { color: rgba(255,255,255,.8); }
+.sum-note { margin: -4px 2px 14px; color: #7a6a60; font-size: .86rem; }
+@media (max-width: 700px) { .sum-stats { grid-template-columns: 1fr 1fr; } }
+
+.sum-card { margin-bottom: 14px; }
+.sum-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .sum-grid { grid-template-columns: 1fr; } }
+.scroll-box { max-height: 460px; overflow: auto; scrollbar-width: thin; scrollbar-color: #d5c8b6 transparent; }
+.scroll-box .table thead th { position: sticky; top: 0; z-index: 2; }
+.sum-card .table td, .sum-card .table th { text-align: left; }
+
+.day-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.day-bars li { display: grid; grid-template-columns: 110px 1fr 80px 110px; align-items: center; gap: 12px; font-size: .88rem; }
+.db-track { height: 12px; background: #f4efe8; border-radius: 99px; overflow: hidden; }
+.db-fill { display: block; height: 100%; background: var(--orange); border-radius: 99px; min-width: 3px; }
+.db-orders { color: #7a6a60; text-align: right; }
+.db-amt { font-weight: 700; text-align: right; }
+@media (max-width: 640px) { .day-bars li { grid-template-columns: 90px 1fr 90px; } .db-orders { display: none; } }

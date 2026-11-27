@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Kaon.Models;
 
@@ -21,6 +21,22 @@ public class BoardVm
 public class SummaryVm
 {
     public DateTime Date { get; set; }
+
+    // The period shown: Start is the first day, End is the day AFTER the last day
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
+    public string Period { get; set; } = "today";
+    public bool IsRange => (End - Start).TotalDays > 1;
+    public string Label => IsRange
+        ? Start.ToString("MMM d") + " - " + End.AddDays(-1).ToString("MMM d, yyyy")
+        : Start.ToString("dddd, MMMM d, yyyy");
+    public decimal AverageOrder => Completed.Count == 0 ? 0 : Sales / Completed.Count;
+
+    public List<(DateTime Day, int Orders, decimal Sales)> ByDay => Completed
+        .GroupBy(o => o.CreatedAt.Date)
+        .Select(g => (g.Key, g.Count(), g.Sum(o => o.Total)))
+        .OrderBy(x => x.Key)
+        .ToList();
     public List<Order> Orders { get; set; } = new();
     public StoreSettings Store { get; set; } = new();
 

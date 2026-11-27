@@ -1,4 +1,4 @@
-using Kaon.Data;
+﻿using Kaon.Data;
 using Kaon.Helpers;
 using Kaon.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -222,17 +222,44 @@ public class OwnerController : Controller
     }
 
     // Module 8: Order history and end-of-day summary
-    public async Task<IActionResult> Summary(DateTime? date)
+    public async Task<IActionResult> Summary(string? period, DateTime? from, DateTime? to, DateTime? date)
     {
-        var day = (date ?? DateTime.Today).Date;
+        var today = DateTime.Today;
+        DateTime start, end;
+        period = (period ?? "").ToLowerInvariant();
+
+        if (date != null && period == "")            // an older link with one day
+        {
+            start = date.Value.Date; end = start.AddDays(1); period = "custom"; from = start; to = start;
+        }
+        else if (period == "yesterday") { start = today.AddDays(-1); end = today; }
+        else if (period == "week")
+        {
+            start = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));   // Monday
+            end = start.AddDays(7);
+        }
+        else if (period == "month") { start = new DateTime(today.Year, today.Month, 1); end = start.AddMonths(1); }
+        else if (period == "custom" && from != null)
+        {
+            start = from.Value.Date;
+            var last = (to ?? from).Value.Date;
+            if (last < start) last = start;
+            if ((last - start).TotalDays > 365) last = start.AddDays(365);
+            end = last.AddDays(1);
+        }
+        else { period = "today"; start = today; end = today.AddDays(1); }
+
         var sid = await _stores.RequireAsync();
         var orders = (await _db.Orders.Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync())
-            .Where(o => o.CreatedAt >= day && o.CreatedAt < day.AddDays(1))
+            .Where(o => o.CreatedAt >= start && o.CreatedAt < end)
             .OrderBy(o => o.CreatedAt).ToList();
 
         return View(new SummaryVm
         {
-            Date = day,
+            Date = start,
+            Start = start,
+            End = end,
+            Period = period,
             Orders = orders,
             Store = await _stores.StoreAsync()
         });
