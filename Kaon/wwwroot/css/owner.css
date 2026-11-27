@@ -876,7 +876,7 @@ a.dd-item { text-decoration: none; }
 /* ---------- Calmer look for the app pages (easier on the eyes) ----------
    Plain soft background, quiet neutral columns with a thin colour line for the status,
    white cards with a hairline border, and orange kept for the main actions only. */
-body { background-color: #faf7f2; background-image: none; }
+body { background-color: #faf6ef; background-image: url("../img/pattern-cream.svg"); background-size: 150px 150px; }
 
 .board-col { background: #f4efe8; border: 1px solid #ece4d8; border-top: 3px solid var(--col, #d9cfc0); border-radius: 18px; }
 .col-pending, .col-preparing, .col-ready, .col-outfordelivery, .col-reserved { background: #f4efe8; }
