@@ -13,28 +13,39 @@ public static class OrderText
     public static string Message(Order o) => o.Status switch
     {
         OrderStatus.Pending => "We got your order. Waiting for the carinderia to accept it.",
+        OrderStatus.Confirmed => "Your food package is confirmed. We'll start preparing it closer to " + o.ScheduledFor?.ToString("MMM d") + ".",
         OrderStatus.Preparing => "Your order is being prepared.",
         OrderStatus.Ready => o.OrderType == OrderType.Pickup
             ? "Your order is Ready. Pick it up."
             : "Your order is Ready. A rider will pick it up soon.",
-        OrderStatus.OutForDelivery => "Your order is on its way.",
+        OrderStatus.OutForDelivery => string.IsNullOrWhiteSpace(o.RiderName)
+            ? "Your order is on its way."
+            : "Your order is on its way with " + o.RiderName + ".",
         OrderStatus.Cancelled => string.IsNullOrWhiteSpace(o.CancelReason)
             ? "This order was cancelled by the carinderia. Please contact them for details."
             : "This order was cancelled by the carinderia. Reason: " + o.CancelReason,
         _ => "Done. Thank you for ordering with Kaon."
     };
 
-    public static List<OrderStatus> Steps(OrderType type) => type == OrderType.Delivery
-        ? new() { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.OutForDelivery, OrderStatus.Completed }
-        : new() { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.Completed };
-
-    // The next status the owner can move an order to (null = nothing more to do)
-    public static OrderStatus? Next(Order o) => o.Status switch
+    public static List<OrderStatus> Steps(Order o)
     {
-        OrderStatus.Pending => OrderStatus.Preparing,
-        OrderStatus.Preparing => OrderStatus.Ready,
-        OrderStatus.Ready => o.OrderType == OrderType.Delivery ? OrderStatus.OutForDelivery : OrderStatus.Completed,
-        OrderStatus.OutForDelivery => OrderStatus.Completed,
+        var steps = o.OrderType == OrderType.Delivery
+            ? new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.OutForDelivery, OrderStatus.Completed }
+            : new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.Completed };
+        if (o.IsPackage) steps.Insert(1, OrderStatus.Confirmed);
+        return steps;
+    }
+
+    // The next status the owner can move an order to (null = nothing more to do).
+    // Food packages pause at Confirmed (the reserved queue) before moving into the kitchen.
+    public static OrderStatus? Next(Order o) => (o.IsPackage, o.Status) switch
+    {
+        (true, OrderStatus.Pending) => OrderStatus.Confirmed,
+        (true, OrderStatus.Confirmed) => OrderStatus.Preparing,
+        (_, OrderStatus.Pending) => OrderStatus.Preparing,
+        (_, OrderStatus.Preparing) => OrderStatus.Ready,
+        (_, OrderStatus.Ready) => o.OrderType == OrderType.Delivery ? OrderStatus.OutForDelivery : OrderStatus.Completed,
+        (_, OrderStatus.OutForDelivery) => OrderStatus.Completed,
         _ => null
     };
 
@@ -49,19 +60,21 @@ public static class OrderText
     };
 
     // Button text on the owner dashboard
-    public static string NextLabel(Order o) => o.Status switch
+    public static string NextLabel(Order o) => (o.IsPackage, o.Status) switch
     {
-        OrderStatus.Pending => "Start preparing",
-        OrderStatus.Preparing => "Mark Ready",
-        OrderStatus.Ready => o.OrderType == OrderType.Delivery ? "Out for delivery" : "Picked up",
-        OrderStatus.OutForDelivery => "Delivered",
+        (true, OrderStatus.Pending) => "Confirm order",
+        (true, OrderStatus.Confirmed) => "Start preparing",
+        (_, OrderStatus.Pending) => "Start preparing",
+        (_, OrderStatus.Preparing) => "Mark Ready",
+        (_, OrderStatus.Ready) => o.OrderType == OrderType.Delivery ? "Out for delivery" : "Picked up",
+        (_, OrderStatus.OutForDelivery) => "Delivered",
         _ => ""
     };
 
     // What the order tracker bar needs to know about an order
     public static object Snap(Order o)
     {
-        var steps = Steps(o.OrderType);
+        var steps = Steps(o);
         return new
         {
             id = o.Id,
@@ -81,7 +94,28 @@ public static class OrderText
     public static string PayStatusLabel(Order o) => o.PaymentStatus switch
     {
         PaymentStatus.Paid => "Paid",
+        PaymentStatus.DepositPaid => "Deposit paid, balance due",
         PaymentStatus.ProofSent => "Proof sent",
-        _ => o.PaymentMethod == PaymentMethod.Cash ? "Pay in person" : "Waiting for payment"
+        _ => o.DepositAmount != null
+            ? (o.PaymentMethod == PaymentMethod.Cash ? "Deposit due in person" : "Waiting for deposit")
+            : o.PaymentMethod == PaymentMethod.Cash ? "Pay in person" : "Waiting for payment"
     };
+
+    // Owner dashboard: the "Mark paid" button's text, which changes once a deposit has been collected
+    public static string MarkPaidLabel(Order o) => o.DepositAmount == null
+        ? "Mark paid"
+        : o.PaymentStatus == PaymentStatus.DepositPaid ? "Mark fully paid" : "Confirm deposit";
+
+    // Module 7: what is still to be collected in person when the order is handed over
+    public static decimal ToCollect(Order o) => o.PaymentStatus switch
+    {
+        PaymentStatus.Paid => 0,
+        PaymentStatus.DepositPaid => o.Total - (o.DepositAmount ?? 0),
+        _ => o.Total
+    };
+
+    // A short random code for a rider's private link (128 bits, cannot be guessed)
+    public static string NewRiderToken() =>
+        Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16))
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

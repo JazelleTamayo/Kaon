@@ -35,7 +35,9 @@ public class BillingController : Controller
         if (sub != null) return sub;
 
         // Owners created before billing existed get their free month the first time they open this page
-        sub = Billing.NewFor(MyId, await _db.PlatformSettings.AsNoTracking().FirstAsync(), DateTime.UtcNow);
+        // A second owner of a carinderia shares its plan instead of starting another free month
+        var storeId = await _db.Users.AsNoTracking().Where(u => u.Id == MyId).Select(u => u.StoreId).FirstOrDefaultAsync();
+        sub = await SubscriptionStart.ForOwnerAsync(_db, MyId, storeId, DateTime.UtcNow);
         _db.Subscriptions.Add(sub);
         await _db.SaveChangesAsync();
         return sub;

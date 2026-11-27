@@ -87,6 +87,9 @@ public class AdminController : Controller
         {
             store = await _db.StoreSettings.FirstOrDefaultAsync(s => s.Id == existingId);
             if (store == null) ModelState.AddModelError(nameof(form.StoreId), "Choose a carinderia from the list.");
+            // One email can be used only once per carinderia (the database refuses a second one)
+            else if (await _db.Users.AnyAsync(u => u.Email == email && u.StoreId == store.Id))
+                ModelState.AddModelError(nameof(form.Email), "A customer of this carinderia already uses that email. Please use a different email for the owner.");
         }
         else if (string.IsNullOrWhiteSpace(form.CarinderiaName))
         {
@@ -146,7 +149,7 @@ public class AdminController : Controller
         await _db.SaveChangesAsync();
 
         // Module 9: every new carinderia starts with the free trial month
-        _db.Subscriptions.Add(Billing.NewFor(owner.Id, await _db.PlatformSettings.AsNoTracking().FirstAsync(), DateTime.UtcNow));
+        _db.Subscriptions.Add(await SubscriptionStart.ForOwnerAsync(_db, owner.Id, owner.StoreId, DateTime.UtcNow));
         await _db.SaveChangesAsync();
         return owner;
     }
@@ -191,7 +194,7 @@ public class AdminController : Controller
             await _db.SaveChangesAsync();
             TempData["Saved"] = user.FullName + (user.IsActive ? " is switched on." : " is switched off. They can't log in.");
         }
-        return back == "users" ? RedirectToAction(nameof(Users)) : RedirectToAction(nameof(Index));
+        return back == "users" ? RedirectToAction(nameof(Users)) : BackHere(nameof(Index));
     }
 
     // The page the admin came from (so the link pop-up appears right there), or the given page
@@ -270,10 +273,44 @@ public class AdminController : Controller
             Owners = await _db.Users.AsNoTracking().Where(u => u.Role == "Owner" && u.StoreId == id).OrderBy(u => u.FullName).ToListAsync(),
             PendingLinks = pending.ToDictionary(x => x.UserId, x => x.Expires),
             Stats = (await StatsAsync(new List<StoreSettings> { store }))[id],
-            Activity = await _db.ActivityLogs.AsNoTracking().Where(a => a.StoreId == id).OrderByDescending(a => a.At).Take(10).ToListAsync()
+            Activity = await _db.ActivityLogs.AsNoTracking().Where(a => a.StoreId == id).OrderByDescending(a => a.At).Take(10).ToListAsync(),
+            Qr = await QrCodes.StatsAsync(_db, id),
+            Feedback = await FeedbackNumbers.ForStoreAsync(_db, id)
         };
         ViewBag.Series = MenuSeries.All;
         return View(vm);
+    }
+
+    // ---------- Module 12: the Kaon team prints a carinderia's QR materials during onboarding ----------
+    [HttpGet("admin/carinderia/{id:int}/qr")]
+    public async Task<IActionResult> StoreQr(int id, string? s, bool download = false)
+    {
+        var store = await _db.StoreSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (store == null) return NotFound();
+
+        var png = QrCodes.Png(Url.Action("Scan", "Store", new { slug = store.Slug, s = QrSources.Clean(s) }, Request.Scheme)!);
+        if (download) Response.Headers.ContentDisposition = "attachment; filename=\"" + store.Slug + "-qr.png\"";
+        Response.Headers["Cache-Control"] = "private, no-store";
+        return File(png, "image/png");
+    }
+
+    [HttpGet("admin/carinderia/{id:int}/print")]
+    public async Task<IActionResult> StorePrint(int id, string kind = "poster")
+    {
+        var store = await _db.StoreSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (store == null) return NotFound();
+
+        kind = QrSources.Printables.Any(p => p.Key == kind) ? kind : "poster";
+        return View("~/Views/Shared/Printable.cshtml", new PrintableVm
+        {
+            Store = store,
+            Kind = kind,
+            QrUrl = Url.Action(nameof(StoreQr), new { id, s = kind })!,
+            Link = Url.Action("Landing", "Store", new { slug = store.Slug }, Request.Scheme)!,
+            ScanUrl = Url.Action("Scan", "Store", new { slug = store.Slug, s = kind }, Request.Scheme)!,
+            BackUrl = Url.Action(nameof(Store), new { id })!,
+            BackText = "Back to " + store.Name
+        });
     }
 
     [HttpPost("admin/carinderia/{id:int}/rename"), ValidateAntiForgeryToken]

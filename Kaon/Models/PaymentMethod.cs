@@ -10,5 +10,8 @@ public enum PaymentStatus
 {
     Unpaid,
     ProofSent,  // cashless: customer sent a screenshot, waiting for the owner to confirm
-    Paid
+    Paid,
+    // Food packages only: the 50% deposit is confirmed, the rest is due at pickup/delivery.
+    // Appended at the end so existing stored values keep their numbers.
+    DepositPaid
 }

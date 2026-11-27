@@ -12,9 +12,17 @@
         (OrderStatus.OutForDelivery, "Out for Delivery", "On the way")
     };
 
+    var kitchenColumns = new[]
+    {
+        (OrderStatus.Preparing, "Preparing", "In the kitchen"),
+        (OrderStatus.Ready, "Ready", "Waiting for pickup or a rider"),
+        (OrderStatus.OutForDelivery, "Out for Delivery", "On the way")
+    };
+
     var hour = DateTime.Now.Hour;
     var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     var waiting = Model.Active.Count(o => o.Status == OrderStatus.Pending);
+    var onPackages = ViewBag.Tab as string == "packages";
 }
 
 <section class="o-hero">
@@ -30,6 +38,7 @@
                 </button>
             </form>
             <a class="alert-toggle" style="text-decoration:none" asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">Your QR code and link</a>
+            <a class="alert-toggle" style="text-decoration:none" asp-action="Slips" target="_blank" rel="noopener">Print order slips</a>
             <button type="button" class="alert-toggle" id="alertBtn">Turn on alerts</button>
         </div>
     </div>
@@ -97,112 +106,124 @@
     </a>
 </nav>
 
-<div class="board">
-    @foreach (var (status, title, hint) in columns)
-    {
-        var orders = Model.Active.Where(o => o.Status == status).ToList();
-        var cls = status.ToString().ToLower();
-        <section class="board-col col-@cls" aria-label="@title">
-            <div class="board-head">
-                <span class="bh-title"><span class="bh-dot"></span>@title</span>
-                <span class="chip chip-@cls">@orders.Count</span>
-            </div>
-            <div class="bh-hint">@hint</div>
+<div class="tab-switch">
+    <a class="tab @(!onPackages ? "active" : "")" asp-action="Index">Today's orders</a>
+    <a class="tab @(onPackages ? "active" : "")" asp-action="Index" asp-route-tab="packages">Food package pre-orders</a>
+</div>
 
-            @if (!orders.Any())
+@if (!onPackages)
+{
+    <div class="board">
+        @foreach (var (status, title, hint) in columns)
+        {
+            var orders = Model.Active.Where(o => o.Status == status).ToList();
+            var cls = status.ToString().ToLower();
+            <section class="board-col col-@cls" aria-label="@title">
+                <div class="board-head">
+                    <span class="bh-title"><span class="bh-dot"></span>@title</span>
+                    <span class="chip chip-@cls">@orders.Count</span>
+                </div>
+                <div class="bh-hint">@hint</div>
+
+                @if (!orders.Any())
+                {
+                    <div class="board-empty">
+                        <svg class="pot" viewBox="0 0 64 64" aria-hidden="true">
+                            <path class="steam s1" d="M24 18c-3-3 3-5 0-9"/><path class="steam s2" d="M32 18c-3-3 3-5 0-11"/><path class="steam s3" d="M40 18c-3-3 3-5 0-9"/>
+                            <rect x="14" y="26" width="36" height="6" rx="3"/><path d="M17 32h30a15 15 0 0 1-30 0z"/>
+                        </svg>
+                        <span>@(status == OrderStatus.Pending ? "No new orders yet" : "Nothing here")</span>
+                    </div>
+                }
+
+                @foreach (var o in orders)
+                {
+                    <partial name="_OrderCard" model="(o, Model.Riders)" />
+                }
+            </section>
+        }
+    </div>
+}
+else
+{
+    <div class="board">
+        <section class="board-col col-pending" aria-label="Pending">
+            <div class="board-head">
+                <span class="bh-title"><span class="bh-dot"></span>Pending</span>
+                <span class="chip chip-pending">@Model.PackagePending.Count</span>
+            </div>
+            <div class="bh-hint">Waiting for you to confirm</div>
+            @if (!Model.PackagePending.Any())
             {
                 <div class="board-empty">
                     <svg class="pot" viewBox="0 0 64 64" aria-hidden="true">
                         <path class="steam s1" d="M24 18c-3-3 3-5 0-9"/><path class="steam s2" d="M32 18c-3-3 3-5 0-11"/><path class="steam s3" d="M40 18c-3-3 3-5 0-9"/>
                         <rect x="14" y="26" width="36" height="6" rx="3"/><path d="M17 32h30a15 15 0 0 1-30 0z"/>
                     </svg>
-                    <span>@(status == OrderStatus.Pending ? "No new orders yet" : "Nothing here")</span>
+                    <span>No new pre-orders yet</span>
                 </div>
             }
-
-            @foreach (var o in orders)
+            @foreach (var o in Model.PackagePending)
             {
-                var mins = (int)(DateTime.Now - o.CreatedAt).TotalMinutes;
-                var slow = (status == OrderStatus.Pending || status == OrderStatus.Preparing);
-                var ageClass = slow && mins >= 15 ? "late" : slow && mins >= 8 ? "warn" : "";
-                <article class="order-card @(mins < 2 ? "fresh" : "")">
-                    <div class="row">
-                        <strong>#@o.Id @if (mins < 2) { <span class="new-badge">New</span> }</strong>
-                        <span class="tag @(o.OrderType == OrderType.Delivery ? "tag-delivery" : "tag-pickup")">
-                            @(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")
-                        </span>
-                    </div>
-                    <div class="order-who">@o.CustomerName · @o.Phone</div>
-                    @if (o.ScheduledFor != null)
-                    {
-                        var sameDay = o.ScheduledFor.Value.Date == o.CreatedAt.Date;
-                        <div class="order-when">@(sameDay ? (o.OrderType == OrderType.Delivery ? "Deliver at" : "Pickup at") : "Needed"): @o.ScheduledFor.Value.ToString(sameDay ? "h:mm tt" : "MMM d, h:mm tt")</div>
-                    }
-                    @if (o.OrderType == OrderType.Delivery && !string.IsNullOrWhiteSpace(o.Address))
-                    {
-                        <div class="order-addr">@o.Address</div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(o.Notes))
-                    {
-                        <div class="order-note"><strong>Note:</strong> @o.Notes</div>
-                    }
-                    <div class="pay-line">
-                        <span class="pay-method">@OrderText.PayMethodLabel(o)</span>
-                        <span class="chip @(o.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : o.PaymentStatus == PaymentStatus.ProofSent ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(o)</span>
-                        @if (!string.IsNullOrEmpty(o.PaymentProof))
-                        {
-                            <a href="/Payment/Proof/@o.Id" target="_blank" rel="noopener">View proof</a>
-                        }
-                        @if (!string.IsNullOrEmpty(o.PaymentRef))
-                        {
-                            <span class="muted">Ref: @o.PaymentRef</span>
-                        }
-                    </div>
-                    <ul class="order-lines">
-                        @foreach (var i in o.Items)
-                        {
-                            <li>
-                                @i.Quantity × @i.ItemName
-                                @if (i.TracksReadiness)
-                                {
-                                    <span class="chip chip-sm @(i.IsReadyToServe ? "chip-ready" : "chip-preparing")">@(i.IsReadyToServe ? "Ready" : "Preparing")</span>
-                                }
-                            </li>
-                        }
-                    </ul>
-                    <div class="row order-foot">
-                        <span class="age @ageClass">@(mins < 1 ? "Just now" : mins < 120 ? mins + " min ago" : o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
-                        <strong>₱@o.Total.ToString("N2")</strong>
-                    </div>
-                    <div class="order-actions">
-                        <form asp-action="Advance" asp-route-id="@o.Id" method="post">
-                            <button class="btn btn-sm">@OrderText.NextLabel(o)</button>
-                        </form>
-                        @if (o.PaymentStatus != PaymentStatus.Paid)
-                        {
-                            <form asp-action="MarkPaid" asp-route-id="@o.Id" method="post">
-                                <button class="btn-ghost">Mark paid</button>
-                            </form>
-                        }
-                    </div>
-                    <details class="cancel-box">
-                        <summary class="btn-ghost danger">Cancel</summary>
-                        <form asp-action="Cancel" asp-route-id="@o.Id" method="post" class="cancel-form">
-                            <span class="label">Why are you cancelling? The customer will see this.</span>
-                            @foreach (var r in OrderText.CancelReasons)
-                            {
-                                <label class="cancel-opt"><input type="radio" name="reason" value="@r" required /> @r</label>
-                            }
-                            <label class="cancel-opt"><input type="radio" name="reason" value="Other" /> Other</label>
-                            <input class="input" name="otherReason" maxlength="200" placeholder="Type the reason (for Other)" />
-                            <button class="btn btn-sm btn-danger">Cancel order #@o.Id</button>
-                        </form>
-                    </details>
-                </article>
+                <partial name="_OrderCard" model="(o, Model.Riders)" />
             }
         </section>
-    }
-</div>
+
+        <section class="board-col col-reserved" aria-label="Reserved">
+            <div class="board-head">
+                <span class="bh-title"><span class="bh-dot"></span>Reserved, by pickup date</span>
+                <span class="chip chip-reserved">@Model.PackageReserved.Count</span>
+            </div>
+            <div class="bh-hint">Confirmed, waiting for their date</div>
+            @if (!Model.PackageReserved.Any())
+            {
+                <div class="board-empty">
+                    <svg class="pot" viewBox="0 0 64 64" aria-hidden="true">
+                        <path class="steam s1" d="M24 18c-3-3 3-5 0-9"/><path class="steam s2" d="M32 18c-3-3 3-5 0-11"/><path class="steam s3" d="M40 18c-3-3 3-5 0-9"/>
+                        <rect x="14" y="26" width="36" height="6" rx="3"/><path d="M17 32h30a15 15 0 0 1-30 0z"/>
+                    </svg>
+                    <span>Nothing here</span>
+                </div>
+            }
+            @foreach (var o in Model.PackageReserved)
+            {
+                <partial name="_OrderCard" model="(o, Model.Riders)" />
+            }
+        </section>
+    </div>
+
+    <h2 class="section" style="margin-top:24px">In the kitchen</h2>
+    <div class="board">
+        @foreach (var (status, title, hint) in kitchenColumns)
+        {
+            var orders = Model.PackageKitchen.Where(o => o.Status == status).ToList();
+            var cls = status.ToString().ToLower();
+            <section class="board-col col-@cls" aria-label="@title">
+                <div class="board-head">
+                    <span class="bh-title"><span class="bh-dot"></span>@title</span>
+                    <span class="chip chip-@cls">@orders.Count</span>
+                </div>
+                <div class="bh-hint">@hint</div>
+
+                @if (!orders.Any())
+                {
+                    <div class="board-empty">
+                        <svg class="pot" viewBox="0 0 64 64" aria-hidden="true">
+                            <path class="steam s1" d="M24 18c-3-3 3-5 0-9"/><path class="steam s2" d="M32 18c-3-3 3-5 0-11"/><path class="steam s3" d="M40 18c-3-3 3-5 0-9"/>
+                            <rect x="14" y="26" width="36" height="6" rx="3"/><path d="M17 32h30a15 15 0 0 1-30 0z"/>
+                        </svg>
+                        <span>Nothing here</span>
+                    </div>
+                }
+
+                @foreach (var o in orders)
+                {
+                    <partial name="_OrderCard" model="(o, Model.Riders)" />
+                }
+            </section>
+        }
+    </div>
+}
 
 @section Scripts {
     <script>
@@ -247,6 +268,7 @@
         }
 
         const ids = sig => sig.split(',').filter(Boolean).map(x => x.split(':')[0]);
+        const soonIds = sig => sig.split(',').filter(Boolean).filter(x => x.split(':')[2] === '1').map(x => x.split(':')[0]);
 
         async function check() {
             try {
@@ -260,9 +282,13 @@
                 if (last !== null && d.sig !== last) {
                     const before = new Set(ids(last));
                     const fresh = ids(d.sig).filter(id => !before.has(id));
+                    const soonBefore = new Set(soonIds(last));
+                    const newlySoon = soonIds(d.sig).filter(id => !soonBefore.has(id));
                     await refresh();
                     if (fresh.length) {
                         kaonAlerts.notify('New order', 'New order' + (fresh.length > 1 ? 's' : '') + ': #' + fresh.join(', #'), { kind: 'ready', tag: 'new-order' });
+                    } else if (newlySoon.length) {
+                        kaonAlerts.notify('Prepare soon', 'Reserved order' + (newlySoon.length > 1 ? 's' : '') + ' coming up: #' + newlySoon.join(', #'), { kind: 'ready', tag: 'prep-soon' });
                     }
                 }
                 last = d.sig;

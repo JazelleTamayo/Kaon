@@ -38,6 +38,47 @@
     </div>
 </div>
 
+<h2 class="section">QR code and printables</h2>
+<div class="card">
+    <div class="scan-nums">
+        <div><strong>@Model.Qr.Today</strong><span>Scans today</span></div>
+        <div><strong>@Model.Qr.Last30Days</strong><span>Last 30 days</span></div>
+        <div><strong>@Model.Qr.Total</strong><span>All time</span></div>
+        <div><strong>@Model.Qr.SignUps</strong><span>Sign-ups after scanning</span></div>
+    </div>
+    @if (Model.Qr.BySource.Any())
+    {
+        <ul class="scan-sources">
+            @foreach (var (source, count) in Model.Qr.BySource) { <li><span>@source</span><strong>@count</strong></li> }
+        </ul>
+    }
+    <div class="share-actions">
+        @foreach (var p in QrSources.Printables)
+        {
+            <a class="btn btn-sm btn-outline" href="@Url.Action("StorePrint", new { id = st.Id, kind = p.Key })" target="_blank" rel="noopener">@p.Name</a>
+        }
+        <a class="btn btn-sm btn-outline" href="@Url.Action("StoreQr", new { id = st.Id, download = true })">Download QR (PNG)</a>
+    </div>
+    <p class="muted" style="margin:10px 0 0;font-size:.85rem">Pilot target: 10 to 15 customers scanning and signing up for each carinderia.</p>
+</div>
+
+<h2 class="section">Feedback</h2>
+@{ var fbk = Model.Feedback; }
+<div class="card">
+    <div class="scan-nums">
+        <div><strong>@(fbk.AverageRating == null ? "-" : fbk.AverageRating.Value.ToString("0.0"))</strong><span>Average rating (@fbk.Responses answer@(fbk.Responses == 1 ? "" : "s"))</span></div>
+        <div><strong>@(fbk.FeeYesPercent == null ? "-" : Math.Round(fbk.FeeYesPercent.Value) + "%")</strong><span>Delivery fee fair (@fbk.FeeAnswers answer@(fbk.FeeAnswers == 1 ? "" : "s"))</span></div>
+        <div><strong>@(fbk.AverageMinutesSaved == null ? "-" : "~" + Math.Round(fbk.AverageMinutesSaved.Value) + " min")</strong><span>Waiting time saved</span></div>
+        <div><strong>@(fbk.SeparationRating == null ? "-" : fbk.SeparationRating + " / 5")</strong><span>Owner: pickup and delivery apart helps</span></div>
+    </div>
+    <ul class="scan-sources">
+        <li><span>Orders that went wrong, a week before Kaon (owner's guess)</span><strong>@(fbk.ProblemsPerWeekBefore?.ToString() ?? "-")</strong></li>
+        <li><span>Orders that went wrong, a week now (last 4 weeks)</span><strong>@fbk.ProblemsPerWeekLast4Weeks.ToString("0.#")</strong></li>
+        @foreach (var (kind, count) in fbk.ProblemKindsLast30Days) { <li><span>@kind (last 30 days)</span><strong>@count</strong></li> }
+    </ul>
+    <p class="muted" style="margin:10px 0 0;font-size:.85rem">Pilot target: at least @FeedbackStats.FeeTargetPercent% say the delivery fee is fair. Comments stay with the owner.</p>
+</div>
+
 <h2 class="section">Plan</h2>
 <div class="card" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
     <div>

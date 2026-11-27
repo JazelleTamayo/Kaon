@@ -10,7 +10,7 @@ namespace Kaon.Helpers;
 // but can't use the order board, menu or store pages until the subscription is renewed.
 public class SubscriptionFilter : IAsyncActionFilter
 {
-    private static readonly HashSet<string> OwnerAreas = new() { "Owner", "OwnerMenu", "OwnerSettings" };
+    private static readonly HashSet<string> OwnerAreas = new() { "Owner", "OwnerMenu", "OwnerSettings", "OwnerFeedback" };
     private readonly KaonDbContext _db;
 
     public SubscriptionFilter(KaonDbContext db) => _db = db;

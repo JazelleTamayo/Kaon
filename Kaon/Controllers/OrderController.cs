@@ -24,6 +24,38 @@ public class OrderController : Controller
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+    // Module 14: a short survey after a completed order. One answer per order.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Feedback(int id, FeedbackForm form)
+    {
+        var uid = CurrentUserId;
+        var order = await _db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
+        if (order == null) return NotFound();
+
+        if (order.Status != OrderStatus.Completed)
+            TempData["Warn"] = "You can rate an order once you have received it.";
+        else if (await _db.OrderFeedbacks.AnyAsync(f => f.OrderId == id))
+            TempData["Saved"] = "You already rated this order. Thank you!";
+        else if (!ModelState.IsValid)
+            TempData["Warn"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct());
+        else
+        {
+            _db.OrderFeedbacks.Add(new OrderFeedback
+            {
+                OrderId = order.Id,
+                StoreId = order.StoreId,
+                Rating = form.Rating,
+                // The delivery-fee question is only asked for delivery orders
+                FeeReasonable = order.OrderType == OrderType.Delivery ? form.FeeReasonable : null,
+                TimeSaved = form.TimeSaved,
+                Comment = string.IsNullOrWhiteSpace(form.Comment) ? null : form.Comment.Trim()
+            });
+            await _db.SaveChangesAsync();
+            TempData["Saved"] = "Thank you for your feedback!";
+        }
+        return RedirectToAction(nameof(Status), new { id });
+    }
+
     // My orders, newest first
     public async Task<IActionResult> Index()
     {
@@ -34,29 +66,42 @@ public class OrderController : Controller
             .OrderByDescending(o => o.CreatedAt)
             .Take(50)
             .ToListAsync();
+        var ids = orders.Select(o => o.Id).ToList();
+        ViewBag.Rated = (await _db.OrderFeedbacks.AsNoTracking().Where(f => ids.Contains(f.OrderId)).Select(f => f.OrderId).ToListAsync()).ToHashSet();
         // One account, several carinderias: each order says where it was placed
         var storeIds = orders.Select(o => o.StoreId).Distinct().ToList();
         ViewBag.StoreNames = await _db.StoreSettings.AsNoTracking().Where(s => storeIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Name);
         return View(orders);
     }
 
-    private async Task FillCheckoutView()
+    // A checkout always targets exactly one group of cart lines: either "today's order"
+    // (the daily-menu lines) or one food-package box (the package lines that share a date).
+    private List<CartLine> LinesFor(List<CartLine> cart, string group, DateTime? groupKey) =>
+        group == "package"
+            ? cart.Where(c => c.IsPackage && c.ScheduledFor == groupKey).ToList()
+            : cart.Where(c => !c.IsPackage).ToList();
+
+    private async Task<List<CartLine>> FillCheckoutView(string group, DateTime? groupKey)
     {
         var store = await StoreGate.ForCustomersAsync(_db, await _stores.RequireAsync());
-        ViewBag.Cart = CartHelper.Get(HttpContext.Session);
+        var cart = CartHelper.Get(HttpContext.Session);
+        var lines = LinesFor(cart, group, groupKey);
+        ViewBag.Lines = lines;
         ViewBag.Store = store;
         ViewBag.DeliveryFee = store.DeliveryFee;
-        ViewBag.HasPackage = ((List<CartLine>)ViewBag.Cart).Any(c => c.IsPackage);
+        ViewBag.IsPackage = group == "package";
+        ViewBag.Group = group;
+        ViewBag.GroupKey = groupKey;
+        return lines;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Checkout()
+    public async Task<IActionResult> Checkout(string group, DateTime? groupKey)
     {
-        var cart = CartHelper.Get(HttpContext.Session);
-        if (!cart.Any()) return RedirectToAction("Index", "Menu");
+        var lines = await FillCheckoutView(group, groupKey);
+        if (!lines.Any()) return RedirectToAction("Index", "Cart");
 
         var user = await _db.Users.FindAsync(CurrentUserId);
-        await FillCheckoutView();
         var store = (StoreSettings)ViewBag.Store;
 
         return View(new CheckoutForm
@@ -65,15 +110,18 @@ public class OrderController : Controller
             Phone = user?.Phone ?? "",
             Address = user?.Address,
             OrderType = store.PickupEnabled ? OrderType.Pickup : OrderType.Delivery,
-            PaymentMethod = store.AcceptsCash ? PaymentMethod.Cash : PaymentMethod.Cashless
+            PaymentMethod = store.AcceptsCash ? PaymentMethod.Cash : PaymentMethod.Cashless,
+            ScheduledFor = group == "package" ? groupKey : null
         });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Checkout(CheckoutForm form)
+    public async Task<IActionResult> Checkout(CheckoutForm form, string group, DateTime? groupKey)
     {
         var cart = CartHelper.Get(HttpContext.Session);
-        if (!cart.Any()) return RedirectToAction("Index", "Menu");
+        var isPackage = group == "package";
+        var lines = LinesFor(cart, group, groupKey);
+        if (!lines.Any()) return RedirectToAction("Index", "Cart");
 
         var sid = await _stores.RequireAsync();
         var store = await StoreGate.ForCustomersAsync(_db, sid);
@@ -94,7 +142,7 @@ public class OrderController : Controller
         if (form.PaymentMethod == PaymentMethod.Cashless && !cashlessOk)
             ModelState.AddModelError("", "Pay in advance is not available right now. Please choose cash.");
 
-        var ids = cart.Select(c => c.MenuItemId).ToList();
+        var ids = lines.Select(c => c.MenuItemId).ToList();
         var menu = await _db.MenuItems
             .Include(m => m.Options)
             .Where(m => m.StoreId == sid && ids.Contains(m.Id))
@@ -103,15 +151,20 @@ public class OrderController : Controller
         // Daily meals: only orderable if the owner picked them for today's menu.
         // Food packages keep using their own on/off switch.
         var today = DateTime.Today;
-        var todayEntries = await _db.DailyMenuEntries
-            .Where(e => e.Date == today && ids.Contains(e.MenuItemId))
-            .ToDictionaryAsync(e => e.MenuItemId);
+        var todayEntries = isPackage
+            ? new Dictionary<int, DailyMenuEntry>()
+            : (await _db.DailyMenuEntries
+                .Where(e => e.Date == today && ids.Contains(e.MenuItemId))
+                .OrderBy(e => e.Id)
+                .ToListAsync())
+                .GroupBy(e => e.MenuItemId)
+                .ToDictionary(g => g.Key, g => g.First());
 
         bool CanOrderLine(int menuItemId, MenuItem mi) => mi.IsPackage
             ? mi.CanOrder
             : todayEntries.TryGetValue(menuItemId, out var te) && te.CanOrder;
 
-        var unavailable = cart
+        var unavailable = lines
             .Where(c => !menu.ContainsKey(c.MenuItemId) || !CanOrderLine(c.MenuItemId, menu[c.MenuItemId]))
             .ToList();
         if (unavailable.Any())
@@ -121,7 +174,7 @@ public class OrderController : Controller
                 " is sold out. Please remove it from your cart.");
         }
 
-        foreach (var line in cart.Except(unavailable))
+        foreach (var line in lines.Except(unavailable))
         {
             var m = menu[line.MenuItemId];
             var stockLeft = m.IsPackage ? null : todayEntries[line.MenuItemId].Stock;
@@ -132,7 +185,7 @@ public class OrderController : Controller
         }
 
         // Sections the carinderia has switched off can't be ordered
-        foreach (var line in cart)
+        foreach (var line in lines)
         {
             if (!menu.TryGetValue(line.MenuItemId, out var mi)) continue;
             if (mi.IsPackage ? !store.OffersPackages : !store.OffersDailyMenu)
@@ -140,19 +193,25 @@ public class OrderController : Controller
                     " not offered right now. Please remove " + mi.Name + " from your cart.");
         }
 
-        // Food packages are made ahead: the customer must say when they need them
-        var hasPackage = cart.Any(c => menu.TryGetValue(c.MenuItemId, out var mi) && mi.IsPackage);
-        if (hasPackage)
+        // Food packages are made ahead: the customer must say when they need them,
+        // far enough out for the owner to source ingredients for the biggest item in this box.
+        decimal? depositAmount = null;
+        if (isPackage)
         {
+            var leadDays = lines.Max(c => PackageLeadTime.DaysFor(c.Price));
+            var earliest = DateTime.Today.AddDays(leadDays);
+
             if (form.ScheduledFor == null)
                 ModelState.AddModelError(nameof(form.ScheduledFor), "Please tell us when you need your food package.");
-            else if (form.ScheduledFor < DateTime.Now.AddHours(24))
-                ModelState.AddModelError(nameof(form.ScheduledFor), "Food packages need at least 1 day notice.");
+            else if (form.ScheduledFor < earliest)
+                ModelState.AddModelError(nameof(form.ScheduledFor), "Food packages need at least " + leadDays + " days' notice.");
+
+            depositAmount = Math.Round(lines.Sum(c => c.Price * c.Quantity) * 0.5m, 2);
         }
 
-        // Ordinary meals: an optional preferred time later today (packages use their own date above)
+        // Ordinary meals: an optional preferred time later today
         DateTime? preferredAt = null;
-        if (!hasPackage && form.PreferredTime != null)
+        if (!isPackage && form.PreferredTime != null)
         {
             preferredAt = DateTime.Today.Add(form.PreferredTime.Value);
             if (preferredAt < DateTime.Now.AddMinutes(-5))
@@ -161,7 +220,7 @@ public class OrderController : Controller
 
         if (!ModelState.IsValid)
         {
-            await FillCheckoutView();
+            await FillCheckoutView(group, groupKey);
             return View(form);
         }
 
@@ -173,7 +232,7 @@ public class OrderController : Controller
             if (error != null)
             {
                 ModelState.AddModelError(nameof(form.Proof), error);
-                await FillCheckoutView();
+                await FillCheckoutView(group, groupKey);
                 return View(form);
             }
             proofName = name;
@@ -190,44 +249,67 @@ public class OrderController : Controller
             DeliveryFee = form.OrderType == OrderType.Delivery ? store.DeliveryFee : 0,
             Status = OrderStatus.Pending,
             CreatedAt = DateTime.Now,
-            ScheduledFor = hasPackage ? form.ScheduledFor : preferredAt,
+            ScheduledFor = isPackage ? form.ScheduledFor : preferredAt,
             Notes = string.IsNullOrWhiteSpace(form.Notes) ? null : form.Notes.Trim(),
             PaymentMethod = form.PaymentMethod,
             PaymentProof = proofName,
             PaymentRef = form.PaymentMethod == PaymentMethod.Cashless && !string.IsNullOrWhiteSpace(form.PaymentRef) ? form.PaymentRef.Trim() : null,
-            PaymentStatus = proofName != null ? PaymentStatus.ProofSent : PaymentStatus.Unpaid
+            PaymentStatus = proofName != null ? PaymentStatus.ProofSent : PaymentStatus.Unpaid,
+            DepositAmount = depositAmount
         };
 
-        foreach (var line in cart)
+        // Portions to take from today's menu (only dishes with a limit; packages never use it)
+        var takes = new List<(int EntryId, int Qty, string Name)>();
+        foreach (var line in lines)
         {
             var m = menu[line.MenuItemId];
             var opt = m.Options.FirstOrDefault(o => o.Id == line.OptionId);
-            var tracksReadiness = !m.IsPackage;
-            var entry = tracksReadiness ? todayEntries[m.Id] : null;
+            var entry = isPackage ? null : todayEntries[m.Id];
             order.Items.Add(new OrderItem
             {
                 MenuItemId = m.Id,
                 ItemName = opt != null ? m.Name + " - " + opt.Label : m.Name,
                 UnitPrice = opt?.Price ?? m.Price,   // always the price from the database
                 Quantity = line.Quantity,
-                TracksReadiness = tracksReadiness,
+                TracksReadiness = !isPackage,
                 IsReadyToServe = entry?.ReadyState == DishReadyState.ReadyToServe,
                 DailyMenuEntryId = entry?.Id
             });
-            if (entry?.Stock != null) entry.Stock -= line.Quantity;
+            if (entry?.Stock != null) takes.Add((entry.Id, line.Quantity, m.Name));
         }
 
         // Remember the delivery address on the customer's profile for next time
         if (form.OrderType == OrderType.Delivery && form.SaveAddress)
         {
             var user = await _db.Users.FindAsync(CurrentUserId);
-            if (user != null) user.Address = order.Address;
+            if (user != null) user.Address = form.Address!.Trim();
+        }
+
+        // Take the portions and save the order together. Each portion count is lowered in the
+        // database only if enough are still left, so two customers ordering at the same moment
+        // can never both get the last serving.
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        foreach (var take in takes)
+        {
+            var taken = await _db.DailyMenuEntries
+                .Where(e => e.Id == take.EntryId && e.Stock != null && e.Stock >= take.Qty)
+                .ExecuteUpdateAsync(s => s.SetProperty(e => e.Stock, e => e.Stock - take.Qty));
+            if (taken == 0)
+            {
+                await tx.RollbackAsync();
+                ProofStorage.Delete(_env, proofName);
+                ModelState.AddModelError("", "Sorry, " + take.Name + " just sold out or has fewer portions left. Please lower the quantity in your cart.");
+                await FillCheckoutView(group, groupKey);
+                return View(form);
+            }
         }
 
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
+        await tx.CommitAsync();
 
-        CartHelper.Clear(HttpContext.Session);
+        // Only this box leaves the cart; any other boxes the customer hasn't checked out stay put.
+        CartHelper.Save(HttpContext.Session, cart.Except(lines).ToList());
         HttpContext.Session.SetInt32("lastOrderId", order.Id);
 
         return RedirectToAction(nameof(Status), new { id = order.Id });
@@ -241,6 +323,7 @@ public class OrderController : Controller
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == uid);
         if (order == null) return NotFound();
         ViewBag.Store = await _db.StoreSettings.AsNoTracking().FirstAsync(s => s.Id == order.StoreId);
+        ViewBag.Feedback = await _db.OrderFeedbacks.AsNoTracking().FirstOrDefaultAsync(f => f.OrderId == order.Id);
         return View(order);
     }
 
@@ -285,7 +368,9 @@ public class OrderController : Controller
     {
         var uid = CurrentUserId;
         var list = await _db.Orders.AsNoTracking()
-            .Where(o => o.UserId == uid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+            // Confirmed food packages sit in the reserved queue, often for days or weeks, so they
+            // don't belong in the sitewide floating bar the way a same-day order does.
+            .Where(o => o.UserId == uid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled && o.Status != OrderStatus.Confirmed)
             .OrderByDescending(o => o.CreatedAt)
             .Take(5)
             .ToListAsync();

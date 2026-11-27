@@ -46,7 +46,7 @@ public class MenuController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Add(int id, int? optionId, int qty = 1, string? returnTo = null)
+    public async Task<IActionResult> Add(int id, int? optionId, int qty = 1, string? returnTo = null, DateTime? scheduledFor = null)
     {
         var back = returnTo == "Packages" ? nameof(Packages) : nameof(Index);
         var sid = await _stores.RequireAsync();
@@ -55,6 +55,8 @@ public class MenuController : Controller
         var item = await _db.MenuItems.Include(m => m.Options).FirstOrDefaultAsync(m => m.Id == id && m.StoreId == sid);
         if (!store.IsOpen || item == null)
             return RedirectToAction(back);
+
+        var cart = CartHelper.Get(HttpContext.Session);
 
         // Daily meals: only orderable if the owner picked them for today's menu.
         // Food packages keep using their own on/off switch.
@@ -89,8 +91,30 @@ public class MenuController : Controller
             }
         }
 
-        var cart = CartHelper.Get(HttpContext.Session);
-        var line = cart.FirstOrDefault(c => c.MenuItemId == id && c.OptionId == option?.Id);
+        // Food packages are a pre-order: the customer must say when they need it, far enough
+        // ahead for the owner to source ingredients. Each date the customer picks is its own box;
+        // picking the same date as an existing package just joins that box.
+        if (item.IsPackage)
+        {
+            var price = option?.Price ?? item.Price;
+            var leadDays = PackageLeadTime.DaysFor(price);
+            var earliest = DateTime.Today.AddDays(leadDays);
+
+            if (scheduledFor == null)
+            {
+                TempData["Warn"] = "Please tell us when you need " + item.Name + ".";
+                return RedirectToAction(back);
+            }
+            if (scheduledFor < earliest)
+            {
+                TempData["Warn"] = item.Name + " needs at least " + leadDays + " days' notice. Please choose a later date.";
+                return RedirectToAction(back);
+            }
+        }
+
+        // Matched on the chosen date too, so quantities only merge within the same box
+        // (daily-menu lines always have a null ScheduledFor, so this is a no-op for them).
+        var line = cart.FirstOrDefault(c => c.MenuItemId == id && c.OptionId == option?.Id && c.ScheduledFor == scheduledFor);
         if (line == null)
         {
             cart.Add(new CartLine
@@ -101,7 +125,8 @@ public class MenuController : Controller
                 Quantity = qty,
                 OptionId = option?.Id,
                 OptionLabel = option?.Label,
-                IsPackage = item.IsPackage
+                IsPackage = item.IsPackage,
+                ScheduledFor = item.IsPackage ? scheduledFor : null
             });
         }
         else

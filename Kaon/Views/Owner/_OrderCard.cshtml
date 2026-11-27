@@ -1,0 +1,96 @@
+@model (Order Order, List<Rider> Riders)
+@using Kaon.Helpers
+@{
+    var o = Model.Order;
+    var mins = (int)(DateTime.Now - o.CreatedAt).TotalMinutes;
+    var slow = (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Preparing);
+    var ageClass = slow && mins >= 15 ? "late" : slow && mins >= 8 ? "warn" : "";
+    var prepSoon = o.IsPackage && o.Status == OrderStatus.Confirmed && PackageLeadTime.IsPrepareSoon(o);
+}
+<article class="order-card @(mins < 2 ? "fresh" : "")">
+    <div class="row">
+        <strong>#@o.Id @if (mins < 2) { <span class="new-badge">New</span> }</strong>
+        <span class="tag @(o.OrderType == OrderType.Delivery ? "tag-delivery" : "tag-pickup")">
+            @(o.OrderType == OrderType.Delivery ? "Delivery" : "Pickup")
+        </span>
+    </div>
+    @if (prepSoon)
+    {
+        <div class="prep-soon"><span class="prep-soon-dot" aria-hidden="true"></span>Prepare soon</div>
+    }
+    <div class="order-who">@o.CustomerName · @o.Phone</div>
+    @if (o.ScheduledFor != null)
+    {
+        var sameDay = o.ScheduledFor.Value.Date == o.CreatedAt.Date;
+        <div class="order-when">@(sameDay ? (o.OrderType == OrderType.Delivery ? "Deliver at" : "Pickup at") : "Needed"): @o.ScheduledFor.Value.ToString(sameDay ? "h:mm tt" : "MMM d, h:mm tt")</div>
+    }
+    @if (o.OrderType == OrderType.Delivery && !string.IsNullOrWhiteSpace(o.Address))
+    {
+        <div class="order-addr">@o.Address</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(o.Notes))
+    {
+        <div class="order-note"><strong>Note:</strong> @o.Notes</div>
+    }
+    <div class="pay-line">
+        <span class="pay-method">@OrderText.PayMethodLabel(o)</span>
+        <span class="chip @(o.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : o.PaymentStatus is PaymentStatus.ProofSent or PaymentStatus.DepositPaid ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(o)</span>
+        @if (!string.IsNullOrEmpty(o.PaymentProof))
+        {
+            <a href="/Payment/Proof/@o.Id" target="_blank" rel="noopener">View proof</a>
+        }
+        @if (!string.IsNullOrEmpty(o.PaymentRef))
+        {
+            <span class="muted">Ref: @o.PaymentRef</span>
+        }
+    </div>
+    @if (o.DepositAmount != null)
+    {
+        <div class="muted" style="font-size:.85rem">Deposit ₱@o.DepositAmount.Value.ToString("N2") · Balance ₱@((o.Total - o.DepositAmount.Value).ToString("N2")) due at @(o.OrderType == OrderType.Delivery ? "delivery" : "pickup")</div>
+    }
+    <ul class="order-lines">
+        @foreach (var i in o.Items)
+        {
+            <li>
+                @i.Quantity × @i.ItemName
+                @if (i.TracksReadiness)
+                {
+                    <span class="chip chip-sm @(i.IsReadyToServe ? "chip-ready" : "chip-preparing")">@(i.IsReadyToServe ? "Ready" : "Preparing")</span>
+                }
+            </li>
+        }
+    </ul>
+    <div class="row order-foot">
+        <span class="age @ageClass">@(mins < 1 ? "Just now" : mins < 120 ? mins + " min ago" : o.CreatedAt.ToString("MMM d, h:mm tt"))</span>
+        <strong>₱@o.Total.ToString("N2")</strong>
+    </div>
+    @if (o.OrderType == OrderType.Delivery)
+    {
+        <partial name="_RiderBox" model="(o, Model.Riders)" />
+    }
+    <div class="order-actions">
+        <form asp-action="Advance" asp-route-id="@o.Id" method="post">
+            <button class="btn btn-sm">@OrderText.NextLabel(o)</button>
+        </form>
+        @if (o.PaymentStatus != PaymentStatus.Paid)
+        {
+            <form asp-action="MarkPaid" asp-route-id="@o.Id" method="post">
+                <button class="btn-ghost">@OrderText.MarkPaidLabel(o)</button>
+            </form>
+        }
+        <a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a>
+    </div>
+    <details class="cancel-box">
+        <summary class="btn-ghost danger">Cancel</summary>
+        <form asp-action="Cancel" asp-route-id="@o.Id" method="post" class="cancel-form">
+            <span class="label">Why are you cancelling? The customer will see this.</span>
+            @foreach (var r in OrderText.CancelReasons)
+            {
+                <label class="cancel-opt"><input type="radio" name="reason" value="@r" required /> @r</label>
+            }
+            <label class="cancel-opt"><input type="radio" name="reason" value="Other" /> Other</label>
+            <input class="input" name="otherReason" maxlength="200" placeholder="Type the reason (for Other)" />
+            <button class="btn btn-sm btn-danger">Cancel order #@o.Id</button>
+        </form>
+    </details>
+</article>

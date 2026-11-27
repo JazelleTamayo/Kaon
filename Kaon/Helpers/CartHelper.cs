@@ -13,6 +13,9 @@ public class CartLine
     public int? OptionId { get; set; }
     public string? OptionLabel { get; set; }
     public bool IsPackage { get; set; }
+
+    // Food packages only: when the customer needs it, chosen when the package was added to the cart
+    public DateTime? ScheduledFor { get; set; }
 }
 
 public static class CartHelper

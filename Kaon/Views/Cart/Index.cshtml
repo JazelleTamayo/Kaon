@@ -1,8 +1,11 @@
 @model List<Kaon.Helpers.CartLine>
 @{
     ViewData["Title"] = "Your cart";
-    var subtotal = Model.Sum(c => c.Price * c.Quantity);
+    ViewData["Wide"] = true;
     var fee = (decimal)ViewBag.DeliveryFee;
+    var meals = Model.Where(c => !c.IsPackage).ToList();
+    // Each distinct date the customer picked is its own box; it becomes its own order at checkout.
+    var boxes = Model.Where(c => c.IsPackage).GroupBy(c => c.ScheduledFor!.Value).OrderBy(g => g.Key).ToList();
 }
 
 <h1>Your cart</h1>
@@ -14,37 +17,89 @@
 }
 else
 {
-    foreach (var line in Model)
-    {
-        <div class="card item">
-            <div>
-                <div class="item-name">@line.Name</div>
-                @if (!string.IsNullOrEmpty(line.OptionLabel)) { <div class="muted">@line.OptionLabel</div> }
-                <div class="price">₱@((line.Price * line.Quantity).ToString("N2"))</div>
-            </div>
-            <div class="qty">
-                <form asp-action="Change" method="post">
-                    <input type="hidden" name="id" value="@line.MenuItemId" />
-                    <input type="hidden" name="optionId" value="@line.OptionId" />
-                    <input type="hidden" name="delta" value="-1" />
-                    <button aria-label="Less">−</button>
-                </form>
-                <strong>@line.Quantity</strong>
-                <form asp-action="Change" method="post">
-                    <input type="hidden" name="id" value="@line.MenuItemId" />
-                    <input type="hidden" name="optionId" value="@line.OptionId" />
-                    <input type="hidden" name="delta" value="1" />
-                    <button aria-label="More">+</button>
-                </form>
-            </div>
+    <div class="two-col">
+        <div>
+            @if (meals.Any())
+            {
+                <h2 class="section">Today's order</h2>
+                @foreach (var line in meals)
+                {
+                    <div class="card item">
+                        <div>
+                            <div class="item-name">@line.Name</div>
+                            @if (!string.IsNullOrEmpty(line.OptionLabel)) { <div class="muted">@line.OptionLabel</div> }
+                            <div class="price">₱@((line.Price * line.Quantity).ToString("N2"))</div>
+                        </div>
+                        <div class="qty">
+                            <form asp-action="Change" method="post">
+                                <input type="hidden" name="id" value="@line.MenuItemId" />
+                                <input type="hidden" name="optionId" value="@line.OptionId" />
+                                <input type="hidden" name="delta" value="-1" />
+                                <button aria-label="Less">−</button>
+                            </form>
+                            <strong>@line.Quantity</strong>
+                            <form asp-action="Change" method="post">
+                                <input type="hidden" name="id" value="@line.MenuItemId" />
+                                <input type="hidden" name="optionId" value="@line.OptionId" />
+                                <input type="hidden" name="delta" value="1" />
+                                <button aria-label="More">+</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                var mealSubtotal = meals.Sum(c => c.Price * c.Quantity);
+                <div class="card">
+                    <div class="row"><span>Subtotal</span><strong>₱@mealSubtotal.ToString("N2")</strong></div>
+                    <div class="row muted"><span>Delivery fee (only if you choose delivery)</span><span>₱@fee.ToString("N2")</span></div>
+                </div>
+                <a class="btn" asp-controller="Order" asp-action="Checkout" asp-route-group="meal">Checkout today's order</a>
+            }
         </div>
-    }
 
-    <div class="card">
-        <div class="row"><span>Subtotal</span><strong>₱@subtotal.ToString("N2")</strong></div>
-        <div class="row muted"><span>Delivery fee (only if you choose delivery)</span><span>₱@fee.ToString("N2")</span></div>
+        <div>
+            @if (boxes.Any())
+            {
+                <h2 class="section">Food package pre-order</h2>
+                @foreach (var box in boxes)
+                {
+                    @foreach (var line in box)
+                    {
+                        <div class="card item">
+                            <div>
+                                <div class="item-name">@line.Name</div>
+                                @if (!string.IsNullOrEmpty(line.OptionLabel)) { <div class="muted">@line.OptionLabel</div> }
+                                <div class="price">₱@((line.Price * line.Quantity).ToString("N2"))</div>
+                            </div>
+                            <div class="qty">
+                                <form asp-action="Change" method="post">
+                                    <input type="hidden" name="id" value="@line.MenuItemId" />
+                                    <input type="hidden" name="optionId" value="@line.OptionId" />
+                                    <input type="hidden" name="delta" value="-1" />
+                                    <button aria-label="Less">−</button>
+                                </form>
+                                <strong>@line.Quantity</strong>
+                                <form asp-action="Change" method="post">
+                                    <input type="hidden" name="id" value="@line.MenuItemId" />
+                                    <input type="hidden" name="optionId" value="@line.OptionId" />
+                                    <input type="hidden" name="delta" value="1" />
+                                    <button aria-label="More">+</button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                    var boxSubtotal = box.Sum(c => c.Price * c.Quantity);
+                    var boxKey = box.Key.ToString("yyyy-MM-ddTHH:mm");
+                    <div class="card">
+                        <div class="row"><span>Needed by</span><strong>@box.Key.ToString("MMM d, h:mm tt")</strong></div>
+                        <div class="row"><span>Subtotal</span><strong>₱@boxSubtotal.ToString("N2")</strong></div>
+                        <div class="row"><span>Deposit due now (50%)</span><strong>₱@((boxSubtotal * 0.5m).ToString("N2"))</strong></div>
+                        <div class="row muted"><span>Balance due at pickup/delivery</span><span>₱@((boxSubtotal * 0.5m).ToString("N2"))</span></div>
+                    </div>
+                    <a class="btn" style="margin-bottom:20px" asp-controller="Order" asp-action="Checkout" asp-route-group="package" asp-route-groupKey="@boxKey">Checkout this package</a>
+                }
+            }
+        </div>
     </div>
 
-    <a class="btn" asp-controller="Order" asp-action="Checkout">Checkout</a>
     <a class="link" asp-controller="Menu" asp-action="Index">+ Add more items</a>
 }

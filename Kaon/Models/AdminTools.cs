@@ -24,6 +24,12 @@ public class StoreDetailVm
     public StoreStats Stats { get; set; } = new();
 
     public List<ActivityLog> Activity { get; set; } = new();
+
+    // Module 12: printed QR code scans and the sign-ups that followed
+    public QrStats Qr { get; set; } = new();
+
+    // Module 14: feedback numbers only (no customer names or comments)
+    public FeedbackStats Feedback { get; set; } = new();
 }
 
 // What the carinderia's customer page shows, for the owner or admin to look at (nothing can be ordered)

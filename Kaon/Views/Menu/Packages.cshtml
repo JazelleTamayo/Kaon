@@ -5,7 +5,9 @@
     ViewData["Wide"] = true;
     var store = (StoreSettings)ViewBag.Store;
     var cart = CartHelper.Get(Context.Session);
-    var cartTotal = cart.Sum(c => c.Price * c.Quantity);
+    // The sticky cart bar here only ever reflects food package pre-orders, never today's order
+    var pkgCart = cart.Where(c => c.IsPackage).ToList();
+    var cartTotal = pkgCart.Sum(c => c.Price * c.Quantity);
     var seriesList = Model.GroupBy(m => m.SeriesName).OrderBy(g => Array.IndexOf(MenuSeries.All, g.Key)).ToList();
 }
 
@@ -15,7 +17,7 @@
     <div class="hero-bg alt" aria-hidden="true"></div>
     <div class="hero-in">
         <h1>Food packages</h1>
-        <p>Party trays and lechon from @store.Name. Choose a size, then tell us when you need it at checkout. Please order at least 1 day ahead.</p>
+        <p>Party trays and lechon from @store.Name. These are pre-orders: choose a size and tell us when you need it, and pay a 50% deposit to confirm — bigger packages need more advance notice.</p>
     </div>
 </section>
 
@@ -61,7 +63,7 @@ else
 
                     @if (canBuy)
                     {
-                        <form asp-action="Add" method="post" class="pkg-form" data-pkg>
+                        <form asp-action="Add" method="post" class="pkg-form" data-pkg data-name="@item.Name">
                             <input type="hidden" name="id" value="@item.Id" />
                             <input type="hidden" name="returnTo" value="Packages" />
 
@@ -69,9 +71,11 @@ else
                             <select class="size-select" id="size-@item.Id" name="optionId">
                                 @foreach (var o in opts)
                                 {
-                                    <option value="@o.Id" data-price="@o.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-label="@o.Label" data-money="₱@o.Price.ToString("N0")">@o.Label · ₱@o.Price.ToString("N0")</option>
+                                    <option value="@o.Id" data-price="@o.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-label="@o.Label" data-money="₱@o.Price.ToString("N0")" data-lead="@PackageLeadTime.DaysFor(o.Price)">@o.Label · ₱@o.Price.ToString("N0")</option>
                                 }
                             </select>
+
+                            <input type="hidden" name="scheduledFor" data-schedule-value />
 
                             <div class="pkg-buy">
                                 <div class="stepper" aria-label="Quantity">
@@ -90,13 +94,24 @@ else
     <p class="muted filter-empty" data-empty hidden>Nothing in this series.</p>
 }
 
-@if (cart.Any())
+@if (pkgCart.Any())
 {
     <a class="cartbar" asp-controller="Cart" asp-action="Index">
-        <span>@cart.Sum(c => c.Quantity) item(s)</span>
+        <span>@pkgCart.Sum(c => c.Quantity) item(s)</span>
         <span>View cart · ₱@cartTotal.ToString("N2")</span>
     </a>
 }
+
+@{
+    // Every distinct date already picked for a package in the cart, so the "when do you need
+    // it?" popup can offer "Same as before" instead of asking the customer to retype it.
+    var existingSchedules = cart.Where(c => c.IsPackage && c.ScheduledFor != null)
+        .Select(c => c.ScheduledFor!.Value).Distinct().OrderBy(d => d)
+        .Select(d => new { value = d.ToString("yyyy-MM-ddTHH:mm"), label = d.ToString("MMM d, h:mm tt") });
+}
+<script type="application/json" id="existingSchedules">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(existingSchedules))</script>
+
+<partial name="_ScheduleModal" />
 
 @section Scripts {
     <script src="~/js/menu.js" asp-append-version="true"></script>

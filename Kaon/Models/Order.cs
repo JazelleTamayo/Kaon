@@ -36,6 +36,11 @@ public class Order
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
 
+    // Food packages only: 50% of the package subtotal, due up front. The rest is
+    // collected in person at pickup/delivery. Null for ordinary meal orders.
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal? DepositAmount { get; set; }
+
     [StringLength(60)]
     public string? PaymentRef { get; set; }
 
@@ -55,8 +60,29 @@ public class Order
     [StringLength(200)]
     public string? CancelReason { get; set; }
 
+    // Module 7: the rider taking a delivery order. A copy of the name and number is kept on the order,
+    // so the order still shows who delivered it if the rider is later removed.
+    [StringLength(60)]
+    public string? RiderName { get; set; }
+
+    [StringLength(20)]
+    public string? RiderPhone { get; set; }
+
+    // The secret part of the rider's private link (/r/{token}). Cleared when the rider is removed from the order.
+    [StringLength(64)]
+    public string? RiderToken { get; set; }
+
+    public DateTime? RiderAssignedAt { get; set; }
+
+    // When the order was handed over (delivered, or picked up by the customer)
+    public DateTime? CompletedAt { get; set; }
+
     public List<OrderItem> Items { get; set; } = new();
 
     [NotMapped]
     public decimal Total => Items.Sum(i => i.UnitPrice * i.Quantity) + DeliveryFee;
+
+    // A food-package pre-order always carries a deposit; an ordinary meal order never does.
+    [NotMapped]
+    public bool IsPackage => DepositAmount != null;
 }

@@ -1,0 +1,60 @@
+@model Order
+@{
+    var given = ViewBag.Feedback as OrderFeedback;
+    var store = (StoreSettings)ViewBag.Store;
+}
+@* Module 14: a short survey once the order is received *@
+@if (given != null)
+{
+    <div class="card survey-done">
+        <strong>Thanks for your feedback!</strong>
+        <div class="stars-show" aria-label="You gave @given.Rating out of 5 stars">
+            @for (var i = 1; i <= 5; i++) { <span class="@(i <= given.Rating ? "on" : "")">★</span> }
+        </div>
+        @if (!string.IsNullOrEmpty(given.Comment)) { <p class="muted" style="margin:4px 0 0">"@given.Comment"</p> }
+    </div>
+}
+else
+{
+    <form asp-action="Feedback" asp-route-id="@Model.Id" method="post" class="card survey">
+        <strong class="survey-title">How was your order from @store.Name?</strong>
+        <p class="muted" style="margin:2px 0 10px">It takes 20 seconds and helps the carinderia.</p>
+
+        <fieldset class="survey-q">
+            <legend>Your rating</legend>
+            <div class="stars-pick">
+                @for (var i = 5; i >= 1; i--)
+                {
+                    <input type="radio" id="star@(i)" name="Rating" value="@i" required />
+                    <label for="star@(i)" title="@i star@(i == 1 ? "" : "s")">★</label>
+                }
+            </div>
+        </fieldset>
+
+        @if (Model.OrderType == OrderType.Delivery)
+        {
+            <fieldset class="survey-q">
+                <legend>Was the ₱@Model.DeliveryFee.ToString("N0") delivery fee reasonable?</legend>
+                <div class="pill-pick">
+                    <label><input type="radio" name="FeeReasonable" value="true" /> <span>Yes</span></label>
+                    <label><input type="radio" name="FeeReasonable" value="false" /> <span>No, too high</span></label>
+                </div>
+            </fieldset>
+        }
+
+        <fieldset class="survey-q">
+            <legend>How much waiting time did ordering ahead save you?</legend>
+            <div class="pill-pick">
+                @foreach (var o in TimeSaved.Options)
+                {
+                    <label><input type="radio" name="TimeSaved" value="@o.Code" /> <span>@o.Text</span></label>
+                }
+            </div>
+        </fieldset>
+
+        <label class="label" for="Comment">Anything to tell the carinderia? (optional)</label>
+        <textarea class="input" id="Comment" name="Comment" maxlength="500" rows="2"></textarea>
+
+        <button class="btn" style="margin-top:12px">Send feedback</button>
+    </form>
+}

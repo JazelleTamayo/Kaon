@@ -17,8 +17,8 @@ public class OwnerController : Controller
     private static bool IsActive(Order o) =>
         o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled;
 
-    // Module 5: Owner order dashboard
-    public async Task<IActionResult> Index()
+    // Module 5: Owner order dashboard. "tab=packages" switches to the food-package pre-order board.
+    public async Task<IActionResult> Index(string? tab)
     {
         var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
@@ -26,23 +26,66 @@ public class OwnerController : Controller
         var todays = all.Where(o => o.CreatedAt >= today && o.CreatedAt < today.AddDays(1)).ToList();
 
         ViewBag.DishCount = await _db.MenuItems.CountAsync(m => m.StoreId == sid);
+        ViewBag.Tab = tab;
+        var active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList();
         return View(new BoardVm
         {
-            Active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList(),
+            Active = active.Where(o => !o.IsPackage).ToList(),
             OrdersToday = todays.Count(o => o.Status != OrderStatus.Cancelled),
             SalesToday = todays.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.Total),
-            Store = await _stores.StoreAsync()
+            Store = await _stores.StoreAsync(),
+            Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync(),
+            PackagePending = active.Where(o => o.IsPackage && o.Status == OrderStatus.Pending).ToList(),
+            PackageReserved = active.Where(o => o.IsPackage && o.Status == OrderStatus.Confirmed)
+                .OrderBy(o => o.ScheduledFor).ToList(),
+            PackageKitchen = active.Where(o => o.IsPackage && o.Status is OrderStatus.Preparing or OrderStatus.Ready or OrderStatus.OutForDelivery).ToList()
         });
     }
 
-    // The dashboard checks this every few seconds and reloads when something changed
+    // The dashboard checks this every few seconds and reloads when something changed.
+    // Also reports which reserved packages just entered their "prepare soon" window, so the
+    // owner gets nudged even if they're not staring at the Reserved list.
     public async Task<IActionResult> BoardState()
     {
         var sid = await _stores.RequireAsync();
-        var rows = (await _db.Orders.Where(o => o.StoreId == sid).Select(o => new { o.Id, o.Status }).ToListAsync())
+        var rows = (await _db.Orders.Where(o => o.StoreId == sid)
+                .Select(o => new { o.Id, o.Status, o.ScheduledFor, o.DepositAmount, Prices = o.Items.Select(i => i.UnitPrice) })
+                .ToListAsync())
             .Where(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
-            .Select(o => o.Id + ":" + (int)o.Status);
+            .Select(o =>
+            {
+                var soon = o.DepositAmount != null && o.Status == OrderStatus.Confirmed && o.ScheduledFor != null &&
+                    o.Prices.Any() &&
+                    (o.ScheduledFor.Value.Date - DateTime.Today).TotalDays <= Math.Max(1, o.Prices.Max(PackageLeadTime.DaysFor) / 2);
+                return o.Id + ":" + (int)o.Status + ":" + (soon ? 1 : 0);
+            });
         return Json(new { sig = string.Join(",", rows) });
+    }
+
+    // Module 12: printable order slips for the kitchen, the counter, or the rider.
+    // One order (Slip/5), or every order still on the board (Slips).
+    [HttpGet]
+    public async Task<IActionResult> Slip(int id)
+    {
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.AsNoTracking().Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
+        if (order == null) return NotFound();
+        ViewBag.Store = await _stores.StoreAsync();
+        ViewBag.Single = true;
+        return View("Slip", new List<Order> { order });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Slips(OrderType? type)
+    {
+        var sid = await _stores.RequireAsync();
+        var orders = (await _db.Orders.AsNoTracking().Include(o => o.Items).Where(o => o.StoreId == sid).ToListAsync())
+            .Where(IsActive)
+            .Where(o => type == null || o.OrderType == type)
+            .OrderBy(o => o.CreatedAt).ToList();
+        ViewBag.Store = await _stores.StoreAsync();
+        ViewBag.Type = type;
+        return View("Slip", orders);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -54,12 +97,75 @@ public class OwnerController : Controller
         if (order != null && next != null)
         {
             order.Status = next.Value;
+            if (next == OrderStatus.Completed) order.CompletedAt = DateTime.Now;
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
     }
 
-    // The owner confirms the money was received (cash collected, or GCash proof checked)
+    // Module 7: give a delivery order to a rider. Pick a saved rider, or type a new one (saved for next time).
+    // The rider gets a private link with the address, the items and the amount to collect.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignRider(int id, int? riderId, string? name, string? phone)
+    {
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
+        if (order == null || order.OrderType != OrderType.Delivery || !IsActive(order)) return RedirectToAction(nameof(Index));
+
+        Rider? rider = null;
+        if (riderId != null)
+        {
+            rider = await _db.Riders.FirstOrDefaultAsync(r => r.Id == riderId && r.StoreId == sid && r.IsActive);
+        }
+        else if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(phone))
+        {
+            name = name.Trim(); phone = phone.Trim();
+            if (name.Length > 60) name = name[..60];
+            if (phone.Length > 20) phone = phone[..20];
+            rider = await _db.Riders.FirstOrDefaultAsync(r => r.StoreId == sid && r.IsActive && r.Phone == phone);
+            if (rider == null)
+            {
+                rider = new Rider { StoreId = sid, Name = name, Phone = phone };
+                _db.Riders.Add(rider);
+            }
+        }
+        if (rider == null)
+        {
+            TempData["Warn"] = "Choose a rider, or type the rider's name and number.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // A different rider gets a new link, so the old rider's link stops working
+        if (order.RiderToken == null || order.RiderPhone != rider.Phone)
+            order.RiderToken = OrderText.NewRiderToken();
+        order.RiderName = rider.Name;
+        order.RiderPhone = rider.Phone;
+        order.RiderAssignedAt = DateTime.Now;
+        await _db.SaveChangesAsync();
+
+        TempData["Saved"] = "Order #" + order.Id + " is with " + rider.Name + ". Send them the rider link.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // Take the rider off an order. Their link stops working right away.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveRider(int id)
+    {
+        var sid = await _stores.RequireAsync();
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
+        if (order != null && IsActive(order))
+        {
+            order.RiderName = null;
+            order.RiderPhone = null;
+            order.RiderToken = null;
+            order.RiderAssignedAt = null;
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    // The owner confirms money was received (cash collected, or a GCash proof checked).
+    // Food packages pay in two steps: the deposit first, then the balance at pickup/delivery.
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkPaid(int id)
     {
@@ -67,7 +173,13 @@ public class OwnerController : Controller
         var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id && o.StoreId == sid);
         if (order != null && order.Status != OrderStatus.Cancelled)
         {
-            order.PaymentStatus = PaymentStatus.Paid;
+            order.PaymentStatus = order.DepositAmount == null
+                ? PaymentStatus.Paid
+                : order.PaymentStatus switch
+                {
+                    PaymentStatus.DepositPaid or PaymentStatus.Paid => PaymentStatus.Paid,
+                    _ => PaymentStatus.DepositPaid
+                };
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
@@ -81,6 +193,7 @@ public class OwnerController : Controller
         if (order != null && IsActive(order))
         {
             order.Status = OrderStatus.Cancelled;
+            order.RiderToken = null;   // the rider's link stops working
 
             // The reason the customer will see: a quick choice, or the owner's own words for "Other"
             var why = (reason == "Other" ? otherReason : reason)?.Trim();

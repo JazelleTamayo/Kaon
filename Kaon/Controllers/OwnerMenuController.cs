@@ -78,8 +78,13 @@ public class OwnerMenuController : Controller
         FillForm();
         return View(new MenuForm
         {
-            Id = m.Id, Name = m.Name, Description = m.Description, Price = m.Price,
-            Category = m.Category, Series = m.SeriesName, IsAvailable = m.IsAvailable,
+            Id = m.Id,
+            Name = m.Name,
+            Description = m.Description,
+            Price = m.Price,
+            Category = m.Category,
+            Series = m.SeriesName,
+            IsAvailable = m.IsAvailable,
             ExistingImageUrl = m.ImageUrl,
             Options = m.Options.OrderBy(o => o.SortOrder)
                 .Select(o => new OptionForm { Label = o.Label, Price = o.Price }).ToList()
@@ -92,6 +97,12 @@ public class OwnerMenuController : Controller
         var isPackage = form.Category == MenuItem.PackageCategory;
         var options = form.Options.Where(o => !string.IsNullOrWhiteSpace(o.Label)).ToList();
 
+        // Size rows are checked below with messages the owner can see. A blank row (or a hidden row
+        // left over from switching the type) would otherwise fail on its empty price and stop the
+        // save with no visible message.
+        foreach (var key in ModelState.Keys.Where(k => k.StartsWith("Options[")).ToList())
+            ModelState.Remove(key);
+
         if (!Categories.Contains(form.Category))
             ModelState.AddModelError(nameof(form.Category), "Choose Meal or Food package.");
         if (!string.IsNullOrEmpty(form.Series) && !MenuSeries.All.Contains(form.Series))
@@ -103,6 +114,8 @@ public class OwnerMenuController : Controller
                 ModelState.AddModelError("", "Add at least one size or portion with a price.");
             else if (options.Any(o => o.Price <= 0))
                 ModelState.AddModelError("", "Every size needs a price above 0.");
+            else if (options.Any(o => o.Label!.Trim().Length > 80))
+                ModelState.AddModelError("", "Keep each size name under 80 characters.");
         }
         else if (form.Price <= 0)
         {

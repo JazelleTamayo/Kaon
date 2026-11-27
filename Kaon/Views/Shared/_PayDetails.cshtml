@@ -4,7 +4,7 @@
     @if (!string.IsNullOrEmpty(Model.PaymentQr))
     {
         <figure class="pay-qr">
-            <img src="@Url.Action("Qr", "Payment", new { storeId = Model.Id })?v=@Uri.EscapeDataString(Model.PaymentQr)" alt="QR code to scan and pay" loading="lazy" />
+            <img src="@Url.Action("Qr", "Payment", new { storeId = Model.Id, v = Model.PaymentQr })" alt="QR code to scan and pay" loading="lazy" />
             <figcaption>Scan to pay</figcaption>
             <a href="@Url.Action("Qr", "Payment", new { storeId = Model.Id })" download="kaon-payment-qr">Save QR</a>
         </figure>
@@ -14,7 +14,10 @@
         {
             <div class="pay-account">
                 <span class="pa-title">GCash</span>
-                @if (!string.IsNullOrWhiteSpace(Model.GCashName)) { <div class="pa-name">@Model.GCashName</div> }
+                @if (!string.IsNullOrWhiteSpace(Model.GCashName))
+                {
+                    <div class="pa-name">@Model.GCashName</div>
+                }
                 <div class="pa-num">
                     <strong>@Model.GCashNumber</strong>
                     <button type="button" class="copy-btn" data-copy="@Model.GCashNumber">Copy</button>
@@ -25,7 +28,10 @@
         {
             <div class="pay-account">
                 <span class="pa-title">@(string.IsNullOrWhiteSpace(Model.BankName) ? "Bank" : Model.BankName)</span>
-                @if (!string.IsNullOrWhiteSpace(Model.BankAccountName)) { <div class="pa-name">@Model.BankAccountName</div> }
+                @if (!string.IsNullOrWhiteSpace(Model.BankAccountName))
+                {
+                    <div class="pa-name">@Model.BankAccountName</div>
+                }
                 <div class="pa-num">
                     <strong>@Model.BankAccountNumber</strong>
                     <button type="button" class="copy-btn" data-copy="@Model.BankAccountNumber">Copy</button>

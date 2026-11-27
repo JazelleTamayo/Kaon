@@ -2,7 +2,7 @@
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Order #" + Model.Id;
-    var steps = OrderText.Steps(Model.OrderType);
+    var steps = OrderText.Steps(Model);
     var currentIndex = steps.IndexOf(Model.Status);
 }
 
@@ -25,6 +25,26 @@
     <p class="status-msg">@OrderText.Message(Model)</p>
 </div>
 
+@* Module 7: once the order is on its way, the customer can reach the rider *@
+@if (Model.OrderType == OrderType.Delivery && Model.Status == OrderStatus.OutForDelivery && !string.IsNullOrWhiteSpace(Model.RiderName))
+{
+    <div class="card rider-box" style="margin-top:0">
+        <strong>Your rider: @Model.RiderName</strong>
+        @if (!string.IsNullOrWhiteSpace(Model.RiderPhone))
+        {
+            <div class="rider-actions">
+                <a class="btn btn-sm" href="tel:@Model.RiderPhone">Call @Model.RiderPhone</a>
+                <a class="btn-ghost" href="sms:@Model.RiderPhone">Text</a>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.Status == OrderStatus.Completed)
+{
+    <partial name="_Survey" model="Model" />
+}
+
 @if (!string.IsNullOrWhiteSpace(Model.Notes))
 {
     <div class="card">
@@ -45,24 +65,38 @@
     </div>
 </div>
 
-@{ var store = (StoreSettings)ViewBag.Store; }
+@{
+    var store = (StoreSettings)ViewBag.Store;
+}
 <div class="card pay-card">
     <div class="row">
         <strong>Payment</strong>
-        <span class="chip @(Model.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : Model.PaymentStatus == PaymentStatus.ProofSent ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(Model)</span>
+        <span class="chip @(Model.PaymentStatus == PaymentStatus.Paid ? "chip-ready" : Model.PaymentStatus is PaymentStatus.ProofSent or PaymentStatus.DepositPaid ? "chip-pending" : "chip-soldout")">@OrderText.PayStatusLabel(Model)</span>
     </div>
     <div class="muted">@OrderText.PayMethodLabel(Model) · ₱@Model.Total.ToString("N2")</div>
-
-    @if (Model.PaymentMethod == PaymentMethod.Cashless && Model.PaymentStatus != PaymentStatus.Paid && Model.Status != OrderStatus.Cancelled)
+    @if (Model.DepositAmount != null)
     {
+        <div class="muted">Deposit now: ₱@Model.DepositAmount.Value.ToString("N2") · Balance (at @(Model.OrderType == OrderType.Delivery ? "delivery" : "pickup")): ₱@((Model.Total - Model.DepositAmount.Value).ToString("N2"))</div>
+    }
+
+    @{
+        var depositStillDue = Model.DepositAmount != null && Model.PaymentStatus is PaymentStatus.Unpaid or PaymentStatus.ProofSent;
+        var showPayBox = Model.PaymentMethod == PaymentMethod.Cashless && Model.Status != OrderStatus.Cancelled &&
+            (Model.DepositAmount == null ? Model.PaymentStatus != PaymentStatus.Paid : depositStillDue);
+    }
+    @if (showPayBox)
+    {
+        var amountDue = Model.DepositAmount ?? Model.Total;
         <div class="pay-box">
-            <div class="pay-send">Send <strong>₱@Model.Total.ToString("N2")</strong> to:</div>
+            <div class="pay-send">Send <strong>₱@amountDue.ToString("N2")</strong> to:</div>
             <partial name="_PayDetails" model="store" />
 
             @if (Model.PaymentStatus == PaymentStatus.ProofSent)
             {
-                <p class="pay-ok">We got your screenshot. Waiting for the carinderia to confirm.
-                    <a href="/Payment/Proof/@Model.Id" target="_blank" rel="noopener">View my proof</a></p>
+                <p class="pay-ok">
+                    We got your screenshot. Waiting for the carinderia to confirm.
+                    <a href="/Payment/Proof/@Model.Id" target="_blank" rel="noopener">View my proof</a>
+                </p>
             }
 
             <form asp-action="UploadProof" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
@@ -103,7 +137,7 @@
 @section Scripts {
     <script>
         const current = '@Model.Status';
-        if (current !== 'Completed') {
+        if (current !== 'Completed' && current !== 'Cancelled') {
             setInterval(async () => {
                 try {
                     const r = await fetch('@Url.Action("StatusJson", new { id = Model.Id })');

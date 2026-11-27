@@ -92,6 +92,7 @@ public class AdminBillingController : Controller
         if (p is { Status: SubscriptionPaymentStatus.Pending })
         {
             Billing.Confirm(p.Subscription!, p, DateTime.UtcNow);
+            await SubscriptionStart.SyncCoOwnersAsync(_db, p.Subscription!);
             AdminLog.Add(_db, User, "Confirmed a payment of ₱" + p.Amount.ToString("N0") + " (" + p.Months + " mo)", await StoreOfSubscription(p.Subscription!.OwnerId));
             await _db.SaveChangesAsync();
             await Notify.ToAsync(_email, _log, p.Subscription!.Owner?.Email ?? (await _db.Users.AsNoTracking().Where(u => u.Id == p.Subscription.OwnerId).Select(u => u.Email).FirstAsync()),
@@ -141,6 +142,7 @@ public class AdminBillingController : Controller
         };
         _db.SubscriptionPayments.Add(p);
         Billing.Confirm(sub, p, DateTime.UtcNow);
+        await SubscriptionStart.SyncCoOwnersAsync(_db, sub);
         AdminLog.Add(_db, User, "Recorded a payment in person (" + months + " mo, ₱" + p.Amount.ToString("N0") + ")", await StoreOfSubscription(ownerId));
         await _db.SaveChangesAsync();
         TempData["Saved"] = "Recorded " + months + " month(s) for " + sub.Owner!.FullName + ".";
@@ -156,6 +158,7 @@ public class AdminBillingController : Controller
 
         var now = DateTime.UtcNow;
         sub.TrialEndsAt = (sub.TrialEndsAt > now ? sub.TrialEndsAt : now).AddDays(days);
+        await SubscriptionStart.SyncCoOwnersAsync(_db, sub);
         AdminLog.Add(_db, User, "Added " + days + " free days", await StoreOfSubscription(ownerId));
         await _db.SaveChangesAsync();
         TempData["Saved"] = sub.Owner!.FullName + " now has free access until " + sub.TrialEndsAt.ToLocalTime().ToString("MMM d, yyyy") + ".";
@@ -198,7 +201,7 @@ public class AdminBillingController : Controller
         var sub = await _db.Subscriptions.Include(s => s.Owner).FirstOrDefaultAsync(s => s.OwnerId == ownerId);
         if (sub != null) return sub;
 
-        sub = Billing.NewFor(ownerId, await _db.PlatformSettings.AsNoTracking().FirstAsync(), DateTime.UtcNow);
+        sub = await SubscriptionStart.ForOwnerAsync(_db, ownerId, owner.StoreId, DateTime.UtcNow);
         _db.Subscriptions.Add(sub);
         await _db.SaveChangesAsync();
         sub.Owner = owner;

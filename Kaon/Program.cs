@@ -5,6 +5,8 @@ using Kaon.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews(options =>
 {
+    // Every form post must carry the hidden security token the page put in it (stops other
+    // websites from submitting forms, such as log out or place order, in a user's name)
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     options.Filters.Add<MustChangePasswordFilter>();
     options.Filters.Add<StoreFilter>();
     options.Filters.Add<SubscriptionFilter>();
@@ -29,6 +34,19 @@ if (!builder.Environment.IsDevelopment())
 }
 
 builder.Services.AddHttpContextAccessor();
+
+// Hosting behind a proxy: use the real https address and visitor IP it passes on, so QR codes,
+// invitation links and reset links show the right address. On hosts like Render, Railway, Fly.io,
+// Azure (Linux) or Docker, set Kaon:BehindProxy = true.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    if (builder.Configuration.GetValue<bool>("Kaon:BehindProxy"))
+    {
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
+});
 builder.Services.AddHostedService<AutomationService>();
 builder.Services.AddScoped<StoreContext>();
 
@@ -199,6 +217,8 @@ using (var scope = app.Services.CreateScope())
         db.Subscriptions.Add(Billing.NewFor(id, platform, DateTime.UtcNow));
     db.SaveChanges();
 }
+
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
