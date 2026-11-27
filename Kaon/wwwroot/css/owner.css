@@ -1077,3 +1077,10 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 .tab-panel[data-panel="dishes"] td.actions { white-space: nowrap; width: 1%; }
 .tab-panel[data-panel="dishes"] td.actions .btn-ghost.danger { border-color: transparent; background: transparent; color: #8a786c; }
 .tab-panel[data-panel="dishes"] td.actions .btn-ghost.danger:hover { background: #fdeceb; color: #b3261e; border-color: #e0b0ab; }
+
+/* Column labels sit in the middle of their column, over the content (the first column, the dish, stays on the left) */
+.tab-panel .scroll-area table th:not(:first-child),
+.tab-panel .scroll-area table td:not(:first-child) { text-align: center; }
+.tab-panel .scroll-area .ready-form { justify-content: center; }
+.tab-panel .scroll-area .stock-form, .tab-panel .scroll-area .add-today { margin-left: auto; margin-right: auto; }
+.tab-panel .scroll-area td .chip { display: inline-block; }
