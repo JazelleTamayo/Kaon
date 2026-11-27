@@ -1,4 +1,4 @@
-@model SummaryVm
+﻿@model SummaryVm
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "End-of-day summary";
@@ -70,7 +70,7 @@
         else
         {
             <table class="table">
-                <thead><tr><th>#</th><th>Time</th><th>Customer</th><th>Type</th><th>Status</th><th>Payment</th><th class="num">Total</th></tr></thead>
+                <thead><tr><th>#</th><th>Time</th><th>Customer</th><th>Type</th><th>Status</th><th>Payment</th><th class="num">Total</th><th></th></tr></thead>
                 <tbody>
                     @foreach (var o in Model.Orders)
                     {
@@ -88,6 +88,7 @@
                             </td>
                             <td>@(o.PaymentMethod == PaymentMethod.Cash ? "Cash" : "GCash") · @OrderText.PayStatusLabel(o)</td>
                             <td class="num">₱@o.Total.ToString("N2")</td>
+                            <td class="actions"><a class="btn-ghost" asp-action="Slip" asp-route-id="@o.Id" target="_blank" rel="noopener">Print slip</a></td>
                         </tr>
                     }
                 </tbody>
