@@ -17,32 +17,29 @@
     var expired = Model.Rows.Count(r => r.Subscription?.StatusAt(now) == SubscriptionStatus.Expired);
 }
 
-<section class="o-hero sm admin">
+<section class="ob-hero no-print">
     <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">Billing</span>
-        <h1>Subscriptions and billing</h1>
-        <p>₱@Model.Platform.MonthlyFee.ToString("N0") a month · @Model.Platform.TrialDays free days for each new carinderia</p>
-        <div class="o-hero-actions">
-            <a class="btn btn-sm btn-yellow" asp-action="Settings">Fee and GCash settings</a>
+    <header class="ob-bar">
+        <div class="ob-id">
+            <h1>Billing</h1>
+            <span class="ob-sub">₱@Model.Platform.MonthlyFee.ToString("N0") a month · @Model.Platform.TrialDays free days for each new carinderia</span>
         </div>
-    </div>
+        <div class="ob-actions">
+            <a class="btn btn-sm btn-yellow" style="margin:0" asp-action="Settings">Fee and GCash settings</a>
+        </div>
+    </header>
 </section>
 
-<div class="stats o-stats">
-    <div class="stat c-yellow"><span class="stat-num">@trials</span><span class="stat-label">On free trial</span></div>
-    <div class="stat c-green"><span class="stat-num">@active</span><span class="stat-label">Paying</span></div>
-    <div class="stat c-orange"><span class="stat-num">@expired</span><span class="stat-label">Ended</span></div>
-    <div class="stat c-teal"><span class="stat-num">₱@Model.ConfirmedTotal.ToString("N0")</span><span class="stat-label">Confirmed payments</span></div>
+<div class="ob-stats" role="group" aria-label="Billing at a glance">
+    <div class="ob-stat"><span class="n">@trials</span><span class="l">On free trial</span></div>
+    <div class="ob-stat"><span class="n">@active</span><span class="l">Paying</span></div>
+    <div class="ob-stat @(expired > 0 ? "is-alert" : "")"><span class="n">@expired</span><span class="l">Plan ended</span></div>
+    <div class="ob-stat"><span class="n">₱@Model.ConfirmedTotal.ToString("N0")</span><span class="l">Confirmed payments</span></div>
 </div>
 
-<div class="card auto-note">
-    <div>
-        <strong>Kaon does this for you</strong>
-        <p class="muted" style="margin:4px 0 0">Reminders go to each owner by email 7, 3 and 1 day before their plan ends, and once when it ends. You are emailed when a request or a payment arrives. Owners are emailed when you confirm or reject a payment. Nothing to do here.</p>
-    </div>
-    <form asp-action="RunAutomation" method="post"><button class="btn btn-sm btn-outline" style="margin:0">Run checks now</button></form>
-</div>
+<p class="muted adm-auto">Owners get reminder emails 7, 3 and 1 day before their plan ends, and when it ends. Nothing to do here.
+    <form asp-action="RunAutomation" method="post" style="display:inline"><button class="link-btn">Run checks now</button></form>
+</p>
 
 <h2 class="section">Payments to confirm</h2>
 @if (!Model.PendingPayments.Any())

@@ -1449,3 +1449,17 @@ main.page { padding-bottom: 0; }
 /* Tracker: breathing room above it (away from the dish cards), no extra gap between it and the footer */
 .tracker { margin-top: 28px; }
 main.page:has(.tracker) ~ .app-foot { margin-top: 0; }
+
+/* Tracker: a small gap above the footer */
+main.page:has(.tracker) ~ .app-foot { margin-top: 14px; }
+
+/* Admin pages */
+.adm-list .adm-name { font-weight: 700; font-size: 1.02rem; color: var(--brown); text-decoration: none; }
+.adm-list .adm-name:hover { color: var(--orange); }
+.adm-list td .chip { margin-left: 6px; }
+.adm-list td .chip:first-child { margin-left: 0; }
+.adm-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.adm-row form { margin: 0; }
+.adm-auto { font-size: .86rem; margin: 0 0 14px; }
+.adm-auto form { display: inline; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--orange); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
