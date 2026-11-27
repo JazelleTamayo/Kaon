@@ -1445,3 +1445,7 @@ main.page { padding-bottom: 8px; }
 .tracker { bottom: 0; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }
 .has-track .cartbar { bottom: calc(var(--track-h, 104px) + 8px); }
 main.page { padding-bottom: 0; }
+
+/* Tracker: breathing room above it (away from the dish cards), no extra gap between it and the footer */
+.tracker { margin-top: 28px; }
+main.page:has(.tracker) ~ .app-foot { margin-top: 0; }
