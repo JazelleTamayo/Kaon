@@ -1,4 +1,4 @@
-@model BoardVm
+﻿@model BoardVm
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Orders";
@@ -19,61 +19,42 @@
         (OrderStatus.OutForDelivery, "Out for Delivery", "On the way")
     };
 
-    var hour = DateTime.Now.Hour;
-    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-    var waiting = Model.Active.Count(o => o.Status == OrderStatus.Pending);
+        var waiting = Model.Active.Count(o => o.Status == OrderStatus.Pending);
     var onPackages = ViewBag.Tab as string == "packages";
 }
 
-<section class="o-hero">
-    <div class="o-hero-bg" aria-hidden="true"></div>
-    <div class="o-hero-in">
-        <span class="o-kicker">@greeting!</span>
-        <h1>@Model.Store.Name</h1>
-        <p>@DateTime.Today.ToString("dddd, MMMM d") · @(waiting > 0 ? waiting + " order" + (waiting == 1 ? "" : "s") + " waiting for you" : "You're all caught up")</p>
-        <div class="o-hero-actions">
-            @* Two real on/off switches. The rest of the shortcuts are in the row below the numbers. *@
-            <form asp-action="ToggleOpen" method="post" class="hero-switch @(Model.Store.IsOpen ? "is-on" : "")">
-                <label class="switch">
-                    <input type="checkbox" @(Model.Store.IsOpen ? "checked" : "") onchange="this.form.submit()" role="switch" aria-label="Open for orders" />
-                    <span class="slider"></span>
-                </label>
-                <span class="hs-text">
-                    <strong>@(Model.Store.IsOpen ? "Open for orders" : "Closed")</strong>
-                    <small>@(Model.Store.IsOpen ? "Customers can order now" : "Customers can't order. Switch on to open.")</small>
-                </span>
-            </form>
-            <div class="hero-switch" id="alertSwitch">
-                <label class="switch">
-                    <input type="checkbox" id="alertBtn" role="switch" aria-label="Sound and pop-up alerts for new orders" />
-                    <span class="slider"></span>
-                </label>
-                <span class="hs-text">
-                    <strong id="alertTitle">Order alerts off</strong>
-                    <small id="alertHint">Switch on for a sound when an order comes in</small>
-                </span>
-            </div>
+<header class="ob-bar">
+    <div class="ob-id">
+        <h1>Orders</h1>
+        <span class="ob-sub">@Model.Store.Name &middot; @DateTime.Today.ToString("dddd, MMMM d")</span>
+    </div>
+    <div class="ob-actions">
+        <form asp-action="ToggleOpen" method="post" class="mini-switch @(Model.Store.IsOpen ? "is-on" : "")" title="@(Model.Store.IsOpen ? "Customers can order now. Switch off to stop new orders." : "Customers can't order. Switch on to open.")">
+            <label class="switch">
+                <input type="checkbox" @(Model.Store.IsOpen ? "checked" : "") onchange="this.form.submit()" role="switch" aria-label="Open for orders" />
+                <span class="slider"></span>
+            </label>
+            <span class="ms-label">@(Model.Store.IsOpen ? "Open for orders" : "Closed")</span>
+        </form>
+        <div class="mini-switch" id="alertSwitch" title="Play a sound when a new order comes in">
+            <label class="switch">
+                <input type="checkbox" id="alertBtn" role="switch" aria-label="Sound alerts for new orders" />
+                <span class="slider"></span>
+            </label>
+            <span class="ms-label" id="alertTitle">Sound alerts</span>
         </div>
+        <a class="btn btn-sm btn-outline ob-print" asp-action="Slips" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg>
+            Print slips
+        </a>
     </div>
-</section>
+</header>
 
-<div class="stats o-stats">
-    <div class="stat c-orange">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>
-        <span class="stat-num" data-count="@Model.Active.Count">@Model.Active.Count</span><span class="stat-label">Active orders now</span>
-    </div>
-    <div class="stat c-yellow">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-        <span class="stat-num" data-count="@waiting">@waiting</span><span class="stat-label">Waiting to accept</span>
-    </div>
-    <div class="stat c-teal">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8 8a4 4 0 0 1 8 0"/></svg></span>
-        <span class="stat-num" data-count="@Model.OrdersToday">@Model.OrdersToday</span><span class="stat-label">Orders today</span>
-    </div>
-    <div class="stat c-green">
-        <span class="stat-ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M16.5 7.5c-.8-1.4-2.4-2-4.5-2-2.6 0-4.2 1.2-4.2 3 0 4.4 9 2 9 6.5 0 1.9-1.8 3.2-4.8 3.2-2.3 0-4-.8-5-2.3"/></svg></span>
-        <span class="stat-num" data-count="@((int)Model.SalesToday)" data-prefix="₱">₱@Model.SalesToday.ToString("N0")</span><span class="stat-label">Sales (completed)</span>
-    </div>
+<div class="ob-stats" role="group" aria-label="Orders at a glance">
+    <div class="ob-stat"><span class="n" data-count="@Model.Active.Count">@Model.Active.Count</span><span class="l">Active orders</span></div>
+    <div class="ob-stat @(waiting > 0 ? "is-alert" : "")"><span class="n" data-count="@waiting">@waiting</span><span class="l">Waiting to accept</span></div>
+    <div class="ob-stat"><span class="n" data-count="@Model.OrdersToday">@Model.OrdersToday</span><span class="l">Orders today</span></div>
+    <div class="ob-stat"><span class="n" data-count="@((int)Model.SalesToday)" data-prefix="₱">₱@Model.SalesToday.ToString("N0")</span><span class="l">Sales (completed)</span></div>
 </div>
 
 @if ((int)ViewBag.DishCount == 0)
@@ -103,27 +84,6 @@
         </ol>
     </section>
 }
-
-<nav class="quick" aria-label="Quick actions">
-    <a asp-controller="OwnerMenu" asp-action="Create">
-        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Add a food
-    </a>
-    <a asp-controller="OwnerMenu" asp-action="Index">
-        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 7c-1-1 1-2 0-3M14 7c-1-1 1-2 0-3"/></svg></span>Today's menu
-    </a>
-    <a asp-controller="Owner" asp-action="Summary">
-        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>End-of-day summary
-    </a>
-    <a asp-controller="OwnerSettings" asp-action="Index">
-        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg></span>Store &amp; payments
-    </a>
-    <a asp-controller="OwnerSettings" asp-action="Index" asp-fragment="share">
-        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h3v3h-3zM20 14v6h-3"/></svg></span>QR code &amp; link
-    </a>
-    <a asp-action="Slips" target="_blank" rel="noopener">
-        <span class="q-ico"><svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></span>Print order slips
-    </a>
-</nav>
 
 <div class="tab-switch">
     <a class="tab @(!onPackages ? "active" : "")" asp-action="Index">Today's orders</a>
@@ -254,13 +214,13 @@ else
         // The alerts switch mirrors what is saved in this browser
         function paintAlertBtn() {
             const on = kaonAlerts.enabled();
-            const blocked = on && kaonAlerts.permission() === 'denied';
             alertBtn.checked = on;
-            document.getElementById('alertSwitch').classList.toggle('is-on', on);
-            document.getElementById('alertTitle').textContent = on ? 'Order alerts on' : 'Order alerts off';
-            document.getElementById('alertHint').textContent = blocked
-                ? 'Sound is on. Pop-ups are blocked in this browser.'
-                : on ? 'You will hear a sound when an order comes in' : 'Switch on for a sound when an order comes in';
+            const box = document.getElementById('alertSwitch');
+            box.classList.toggle('is-on', on);
+            document.getElementById('alertTitle').textContent = on ? 'Sound alerts on' : 'Sound alerts off';
+            box.title = on && kaonAlerts.permission() === 'denied'
+                ? 'Sound is on. Pop-up notifications are blocked in this browser.'
+                : 'Play a sound when a new order comes in';
         }
         alertBtn.addEventListener('change', () => { alertBtn.checked ? kaonAlerts.enable() : kaonAlerts.disable(); });
         kaonAlerts.onChange(paintAlertBtn);
@@ -285,7 +245,7 @@ else
         async function refresh() {
             const html = await (await fetch(location.href, { cache: 'no-store', credentials: 'same-origin' })).text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            ['.stats', '.board'].forEach(sel => {
+            ['.ob-stats', '.board'].forEach(sel => {
                 const fresh = doc.querySelector(sel), old = document.querySelector(sel);
                 if (fresh && old) old.replaceWith(fresh);
             });

@@ -834,3 +834,27 @@ a.dd-item { text-decoration: none; }
 .problem-list .chip-sm { margin-left: 0; }
 .problem-list form { margin: 0; }
 @media (max-width: 560px) { .bar-row { grid-template-columns: 1fr 2rem; } .bar-row .bar { grid-column: 1 / -1; grid-row: 2; } }
+
+/* ---------- Orders page: slim title bar, one-line numbers, then the orders ---------- */
+.ob-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin: 4px 0 14px; }
+.ob-id h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
+.ob-sub { display: block; color: var(--muted); font-size: .88rem; margin-top: 2px; }
+.ob-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ob-actions form { margin: 0; }
+.mini-switch { display: flex; align-items: center; gap: 10px; margin: 0; background: #fff; border: 1px solid #eadfce; border-radius: 999px; padding: 6px 16px 6px 8px; font-weight: 600; font-size: .88rem; color: var(--brown); transition: background .2s, border-color .2s; }
+.mini-switch .switch { width: 44px; height: 24px; flex: 0 0 44px; }
+.mini-switch .slider::before { width: 18px; height: 18px; left: 3px; top: 3px; }
+.mini-switch .switch input:checked + .slider::before { transform: translateX(20px); }
+.mini-switch.is-on { background: #f1faf4; border-color: rgba(46,158,91,.5); }
+.ob-print { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.ob-print svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.ob-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 16px; }
+.ob-stat { display: flex; align-items: baseline; gap: 10px; background: #fff; border-radius: 14px; padding: 10px 16px; box-shadow: 0 1px 4px rgba(43,24,16,.08); min-width: 0; }
+.ob-stat .n { font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; }
+.ob-stat .l { color: var(--muted); font-size: .82rem; font-weight: 500; }
+.ob-stat.is-alert .n { color: var(--orange); }
+@media (max-width: 700px) {
+    .ob-stats { grid-template-columns: 1fr 1fr; }
+    .ob-actions { width: 100%; }
+}
