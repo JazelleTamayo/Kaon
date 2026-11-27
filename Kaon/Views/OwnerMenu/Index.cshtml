@@ -89,7 +89,7 @@
                             <td data-label="Status">
                                 <form asp-action="ToggleReady" asp-route-entryId="@entry.Id" method="post" class="ready-form">
                                     <span class="chip @(entry.ReadyState == DishReadyState.Preparing ? "chip-preparing" : "chip-ready")">@(entry.ReadyState == DishReadyState.Preparing ? "Preparing" : "Ready to serve")</span>
-                                    <button type="submit" class="btn-ghost">@(entry.ReadyState == DishReadyState.Preparing ? "Mark as ready" : "Back to preparing")</button>
+                                    <button type="submit" class="btn-ghost @(entry.ReadyState == DishReadyState.Preparing ? "btn-go-ready" : "")">@(entry.ReadyState == DishReadyState.Preparing ? "Mark as ready" : "Back to preparing")</button>
                                 </form>
                             </td>
                             <td class="actions">
@@ -147,7 +147,7 @@
                                 else
                                 {
                                     <form asp-action="AddToday" asp-route-menuItemId="@m.Id" method="post" class="add-today">
-                                        <input class="input" name="stock" type="number" min="1" max="9999" inputmode="numeric" placeholder="How many?" required aria-label="How many servings of @m.Name are available today" />
+                                        <input class="input" name="stock" type="number" min="1" max="9999" inputmode="numeric" placeholder="Servings" required aria-label="How many servings of @m.Name are available today" />
                                         <button class="btn-ghost">+ Add to daily menu</button>
                                     </form>
                                 }

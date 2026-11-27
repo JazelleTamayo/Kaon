@@ -1045,3 +1045,35 @@ body { background-color: #faf6ef; background-image: url("../img/pattern-cream.sv
 /* Status label + a real button next to it (instead of a label that secretly is a button) */
 .ready-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; }
 .ready-form .btn-ghost { padding: 7px 14px; font-size: .82rem; }
+
+/* ---------- Today's menu rows: tidy, aligned, and clear about what each control does ---------- */
+.tab-panel[data-panel="today"] .table td { vertical-align: middle; }
+.tab-panel[data-panel="today"] .table tbody tr:hover { background: #fffaf2; }
+
+/* Servings box and Save joined into one control */
+.stock-form { display: inline-flex; align-items: stretch; margin: 0; border: 1.5px solid #c9b9a3; border-radius: 12px; overflow: hidden; background: #fff; }
+.stock-form .input.stock-in { width: 84px; border: 0; border-radius: 0; box-shadow: none; text-align: center; padding: 9px 8px; background: #fff; }
+.stock-form .btn-ghost { border: 0; border-left: 1.5px solid #c9b9a3; border-radius: 0; background: #f6f0e6; padding: 0 16px; font-size: .82rem; }
+.stock-form .btn-ghost:hover { background: var(--brown); color: #fff; }
+
+/* Status: a clear label, then the one action that moves it on */
+.ready-form { gap: 12px; flex-wrap: nowrap; }
+.ready-form .chip { padding: 6px 12px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.ready-form .btn-ghost { white-space: nowrap; border-radius: 10px; padding: 8px 14px; font-size: .82rem; }
+.ready-form .btn-go-ready { background: var(--green); border-color: var(--green); color: #fff; }
+.ready-form .btn-go-ready:hover { background: #247e48; border-color: #247e48; color: #fff; }
+
+/* Remove: quiet until you hover */
+.tab-panel[data-panel="today"] .table td.actions .btn-ghost.danger { border-color: transparent; background: transparent; color: #8a786c; }
+.tab-panel[data-panel="today"] .table td.actions .btn-ghost.danger:hover { background: #fdeceb; color: #b3261e; border-color: #e0b0ab; }
+
+/* ---------- My dishes rows: one joined "servings + add" control, quiet Delete, even spacing ---------- */
+.tab-panel[data-panel="dishes"] .table td { vertical-align: middle; }
+.tab-panel[data-panel="dishes"] .table tbody tr:hover { background: #fffaf2; }
+.add-today { display: inline-flex; align-items: stretch; gap: 0; margin: 0; border: 1.5px solid var(--orange); border-radius: 12px; overflow: hidden; background: #fff; }
+.add-today .input { width: 104px; border: 0; border-radius: 0; box-shadow: none; text-align: center; padding: 9px 8px; background: #fff; font-size: .9rem; }
+.add-today .btn-ghost { width: auto; border: 0; border-radius: 0; background: var(--orange); color: #fff; padding: 0 16px; font-size: .82rem; white-space: nowrap; }
+.add-today .btn-ghost:hover { background: #c93f13; color: #fff; }
+.tab-panel[data-panel="dishes"] td.actions { white-space: nowrap; width: 1%; }
+.tab-panel[data-panel="dishes"] td.actions .btn-ghost.danger { border-color: transparent; background: transparent; color: #8a786c; }
+.tab-panel[data-panel="dishes"] td.actions .btn-ghost.danger:hover { background: #fdeceb; color: #b3261e; border-color: #e0b0ab; }
