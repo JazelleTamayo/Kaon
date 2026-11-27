@@ -81,4 +81,8 @@ public class Order
 
     [NotMapped]
     public decimal Total => Items.Sum(i => i.UnitPrice * i.Quantity) + DeliveryFee;
+
+    // A food-package pre-order always carries a deposit; an ordinary meal order never does.
+    [NotMapped]
+    public bool IsPackage => DepositAmount != null;
 }

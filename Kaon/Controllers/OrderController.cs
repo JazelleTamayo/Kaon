@@ -368,7 +368,9 @@ public class OrderController : Controller
     {
         var uid = CurrentUserId;
         var list = await _db.Orders.AsNoTracking()
-            .Where(o => o.UserId == uid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+            // Confirmed food packages sit in the reserved queue, often for days or weeks, so they
+            // don't belong in the sitewide floating bar the way a same-day order does.
+            .Where(o => o.UserId == uid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled && o.Status != OrderStatus.Confirmed)
             .OrderByDescending(o => o.CreatedAt)
             .Take(5)
             .ToListAsync();

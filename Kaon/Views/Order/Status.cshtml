@@ -2,7 +2,7 @@
 @using Kaon.Helpers
 @{
     ViewData["Title"] = "Order #" + Model.Id;
-    var steps = OrderText.Steps(Model.OrderType);
+    var steps = OrderText.Steps(Model);
     var currentIndex = steps.IndexOf(Model.Status);
 }
 

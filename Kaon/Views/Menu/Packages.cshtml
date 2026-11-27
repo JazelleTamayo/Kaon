@@ -5,7 +5,9 @@
     ViewData["Wide"] = true;
     var store = (StoreSettings)ViewBag.Store;
     var cart = CartHelper.Get(Context.Session);
-    var cartTotal = cart.Sum(c => c.Price * c.Quantity);
+    // The sticky cart bar here only ever reflects food package pre-orders, never today's order
+    var pkgCart = cart.Where(c => c.IsPackage).ToList();
+    var cartTotal = pkgCart.Sum(c => c.Price * c.Quantity);
     var seriesList = Model.GroupBy(m => m.SeriesName).OrderBy(g => Array.IndexOf(MenuSeries.All, g.Key)).ToList();
 }
 
@@ -92,10 +94,10 @@ else
     <p class="muted filter-empty" data-empty hidden>Nothing in this series.</p>
 }
 
-@if (cart.Any())
+@if (pkgCart.Any())
 {
     <a class="cartbar" asp-controller="Cart" asp-action="Index">
-        <span>@cart.Sum(c => c.Quantity) item(s)</span>
+        <span>@pkgCart.Sum(c => c.Quantity) item(s)</span>
         <span>View cart · ₱@cartTotal.ToString("N2")</span>
     </a>
 }

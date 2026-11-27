@@ -508,9 +508,15 @@ input[type="file"].input { padding: 9px 12px; }
 .q-ico { flex: 0 0 38px; height: 38px; border-radius: 12px; background: #fff1de; display: grid; place-items: center; }
 .q-ico svg { width: 20px; height: 20px; fill: none; stroke: var(--orange); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
+/* Today's orders vs. food package pre-orders */
+.tab-switch { display: flex; gap: 8px; margin: 0 0 18px; }
+.tab-switch .tab { display: inline-block; background: #fff; color: var(--brown); font-weight: 600; font-size: .9rem; padding: 9px 18px; border-radius: 999px; text-decoration: none; box-shadow: 0 1px 4px rgba(43,24,16,.08); }
+.tab-switch .tab.active { background: var(--orange); color: #fff; }
+
 /* Board columns: each status has its own color */
 .board-col { transition: background .2s; }
 .col-pending { background: #fff3d1; } .col-preparing { background: #ffe5d8; } .col-ready { background: #e2f4e9; } .col-outfordelivery { background: #dcf0f4; }
+.col-reserved { background: #f6ede2; }
 .bh-title { display: inline-flex; align-items: center; gap: 8px; }
 .bh-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--yellow); }
 .col-preparing .bh-dot { background: var(--orange); } .col-ready .bh-dot { background: var(--green); } .col-outfordelivery .bh-dot { background: var(--teal); }
@@ -529,6 +535,10 @@ input[type="file"].input { padding: 9px 12px; }
 .age { font-size: .75rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: #e6f5ec; color: #1f7a45; }
 .age.warn { background: #fff1cc; color: #8a6d3b; }
 .age.late { background: #fbe9e7; color: #b3261e; }
+
+/* Reserved food package whose pickup/delivery date is coming up */
+.prep-soon { display: inline-flex; align-items: center; gap: 6px; background: #fff1cc; color: #8a6d3b; font-size: .78rem; font-weight: 600; padding: 4px 12px; border-radius: 999px; margin: 6px 0 2px; }
+.prep-soon-dot { width: 8px; height: 8px; border-radius: 50%; background: #8a6d3b; }
 
 @media (prefers-reduced-motion: reduce) { .o-hero-bg, .pot .steam, .new-badge, .order-card.fresh { animation: none !important; } }
 

@@ -17,8 +17,8 @@ public class OwnerController : Controller
     private static bool IsActive(Order o) =>
         o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled;
 
-    // Module 5: Owner order dashboard
-    public async Task<IActionResult> Index()
+    // Module 5: Owner order dashboard. "tab=packages" switches to the food-package pre-order board.
+    public async Task<IActionResult> Index(string? tab)
     {
         var sid = await _stores.RequireAsync();
         var today = DateTime.Today;
@@ -26,23 +26,39 @@ public class OwnerController : Controller
         var todays = all.Where(o => o.CreatedAt >= today && o.CreatedAt < today.AddDays(1)).ToList();
 
         ViewBag.DishCount = await _db.MenuItems.CountAsync(m => m.StoreId == sid);
+        ViewBag.Tab = tab;
+        var active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList();
         return View(new BoardVm
         {
-            Active = all.Where(IsActive).OrderBy(o => o.CreatedAt).ToList(),
+            Active = active.Where(o => !o.IsPackage).ToList(),
             OrdersToday = todays.Count(o => o.Status != OrderStatus.Cancelled),
             SalesToday = todays.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.Total),
             Store = await _stores.StoreAsync(),
-            Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync()
+            Riders = await _db.Riders.AsNoTracking().Where(r => r.StoreId == sid && r.IsActive).OrderBy(r => r.Name).ToListAsync(),
+            PackagePending = active.Where(o => o.IsPackage && o.Status == OrderStatus.Pending).ToList(),
+            PackageReserved = active.Where(o => o.IsPackage && o.Status == OrderStatus.Confirmed)
+                .OrderBy(o => o.ScheduledFor).ToList(),
+            PackageKitchen = active.Where(o => o.IsPackage && o.Status is OrderStatus.Preparing or OrderStatus.Ready or OrderStatus.OutForDelivery).ToList()
         });
     }
 
-    // The dashboard checks this every few seconds and reloads when something changed
+    // The dashboard checks this every few seconds and reloads when something changed.
+    // Also reports which reserved packages just entered their "prepare soon" window, so the
+    // owner gets nudged even if they're not staring at the Reserved list.
     public async Task<IActionResult> BoardState()
     {
         var sid = await _stores.RequireAsync();
-        var rows = (await _db.Orders.Where(o => o.StoreId == sid).Select(o => new { o.Id, o.Status }).ToListAsync())
+        var rows = (await _db.Orders.Where(o => o.StoreId == sid)
+                .Select(o => new { o.Id, o.Status, o.ScheduledFor, o.DepositAmount, Prices = o.Items.Select(i => i.UnitPrice) })
+                .ToListAsync())
             .Where(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
-            .Select(o => o.Id + ":" + (int)o.Status);
+            .Select(o =>
+            {
+                var soon = o.DepositAmount != null && o.Status == OrderStatus.Confirmed && o.ScheduledFor != null &&
+                    o.Prices.Any() &&
+                    (o.ScheduledFor.Value.Date - DateTime.Today).TotalDays <= Math.Max(1, o.Prices.Max(PackageLeadTime.DaysFor) / 2);
+                return o.Id + ":" + (int)o.Status + ":" + (soon ? 1 : 0);
+            });
         return Json(new { sig = string.Join(",", rows) });
     }
 

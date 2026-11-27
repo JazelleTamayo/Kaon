@@ -7,7 +7,11 @@ public enum OrderStatus
     Ready,
     OutForDelivery,
     Completed,
-    Cancelled
+    Cancelled,
+    // Food packages only: the owner has reviewed and accepted the pre-order, which now
+    // waits in the reserved queue until its pickup/delivery date. Appended at the end
+    // so existing stored values keep their numbers.
+    Confirmed
 }
 
 public enum OrderType

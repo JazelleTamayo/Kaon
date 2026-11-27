@@ -30,7 +30,9 @@
     if (isCustomer && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var trackUid))
     {
         var activeOrders = Db.Orders.AsNoTracking()
-            .Where(o => o.UserId == trackUid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+            // Confirmed food packages wait in the owner's reserved queue, often for days or weeks,
+            // so they don't belong in the sitewide floating bar the way a same-day order does.
+            .Where(o => o.UserId == trackUid && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled && o.Status != OrderStatus.Confirmed)
             .OrderByDescending(o => o.CreatedAt).Take(5).ToList();
         trackInitial = System.Text.Json.JsonSerializer.Serialize(activeOrders.Select(OrderText.Snap));
     }

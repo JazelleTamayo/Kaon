@@ -13,6 +13,7 @@ public static class OrderText
     public static string Message(Order o) => o.Status switch
     {
         OrderStatus.Pending => "We got your order. Waiting for the carinderia to accept it.",
+        OrderStatus.Confirmed => "Your food package is confirmed. We'll start preparing it closer to " + o.ScheduledFor?.ToString("MMM d") + ".",
         OrderStatus.Preparing => "Your order is being prepared.",
         OrderStatus.Ready => o.OrderType == OrderType.Pickup
             ? "Your order is Ready. Pick it up."
@@ -26,17 +27,25 @@ public static class OrderText
         _ => "Done. Thank you for ordering with Kaon."
     };
 
-    public static List<OrderStatus> Steps(OrderType type) => type == OrderType.Delivery
-        ? new() { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.OutForDelivery, OrderStatus.Completed }
-        : new() { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.Completed };
-
-    // The next status the owner can move an order to (null = nothing more to do)
-    public static OrderStatus? Next(Order o) => o.Status switch
+    public static List<OrderStatus> Steps(Order o)
     {
-        OrderStatus.Pending => OrderStatus.Preparing,
-        OrderStatus.Preparing => OrderStatus.Ready,
-        OrderStatus.Ready => o.OrderType == OrderType.Delivery ? OrderStatus.OutForDelivery : OrderStatus.Completed,
-        OrderStatus.OutForDelivery => OrderStatus.Completed,
+        var steps = o.OrderType == OrderType.Delivery
+            ? new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.OutForDelivery, OrderStatus.Completed }
+            : new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Preparing, OrderStatus.Ready, OrderStatus.Completed };
+        if (o.IsPackage) steps.Insert(1, OrderStatus.Confirmed);
+        return steps;
+    }
+
+    // The next status the owner can move an order to (null = nothing more to do).
+    // Food packages pause at Confirmed (the reserved queue) before moving into the kitchen.
+    public static OrderStatus? Next(Order o) => (o.IsPackage, o.Status) switch
+    {
+        (true, OrderStatus.Pending) => OrderStatus.Confirmed,
+        (true, OrderStatus.Confirmed) => OrderStatus.Preparing,
+        (_, OrderStatus.Pending) => OrderStatus.Preparing,
+        (_, OrderStatus.Preparing) => OrderStatus.Ready,
+        (_, OrderStatus.Ready) => o.OrderType == OrderType.Delivery ? OrderStatus.OutForDelivery : OrderStatus.Completed,
+        (_, OrderStatus.OutForDelivery) => OrderStatus.Completed,
         _ => null
     };
 
@@ -51,19 +60,21 @@ public static class OrderText
     };
 
     // Button text on the owner dashboard
-    public static string NextLabel(Order o) => o.Status switch
+    public static string NextLabel(Order o) => (o.IsPackage, o.Status) switch
     {
-        OrderStatus.Pending => "Start preparing",
-        OrderStatus.Preparing => "Mark Ready",
-        OrderStatus.Ready => o.OrderType == OrderType.Delivery ? "Out for delivery" : "Picked up",
-        OrderStatus.OutForDelivery => "Delivered",
+        (true, OrderStatus.Pending) => "Confirm order",
+        (true, OrderStatus.Confirmed) => "Start preparing",
+        (_, OrderStatus.Pending) => "Start preparing",
+        (_, OrderStatus.Preparing) => "Mark Ready",
+        (_, OrderStatus.Ready) => o.OrderType == OrderType.Delivery ? "Out for delivery" : "Picked up",
+        (_, OrderStatus.OutForDelivery) => "Delivered",
         _ => ""
     };
 
     // What the order tracker bar needs to know about an order
     public static object Snap(Order o)
     {
-        var steps = Steps(o.OrderType);
+        var steps = Steps(o);
         return new
         {
             id = o.Id,
