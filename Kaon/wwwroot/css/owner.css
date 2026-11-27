@@ -858,3 +858,40 @@ a.dd-item { text-decoration: none; }
     .ob-stats { grid-template-columns: 1fr 1fr; }
     .ob-actions { width: 100%; }
 }
+
+/* Photo banner for the orders page: keeps the picture, but slim so the orders stay in view */
+.ob-hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 22px; margin: 4px 0 14px; padding: 20px 26px; color: #fff; min-height: 118px; display: flex; align-items: center; box-shadow: 0 10px 26px rgba(43,24,16,.18); }
+.ob-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(43,24,16,.9) 0%, rgba(43,24,16,.68) 48%, rgba(43,24,16,.22) 100%); }
+.ob-hero .ob-bar { margin: 0; width: 100%; }
+.ob-hero .ob-id h1 { color: #fff; font-size: 1.7rem; }
+.ob-hero .ob-sub { color: rgba(255,255,255,.88); }
+.ob-hero .mini-switch { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.42); color: #fff; backdrop-filter: blur(6px); }
+.ob-hero .mini-switch.is-on { background: rgba(46,158,91,.4); border-color: rgba(130,235,170,.75); }
+.ob-hero .slider { background: rgba(255,255,255,.4); }
+.ob-hero .switch input:checked + .slider { background: var(--green); }
+.ob-hero .ob-print { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.55); color: #fff; }
+.ob-hero .ob-print:hover { background: #fff; color: var(--orange); }
+@media (max-width: 700px) { .ob-hero { padding: 16px 18px; border-radius: 18px; } }
+
+/* ---------- Calmer look for the app pages (easier on the eyes) ----------
+   Plain soft background, quiet neutral columns with a thin colour line for the status,
+   white cards with a hairline border, and orange kept for the main actions only. */
+body { background-color: #faf7f2; background-image: none; }
+
+.board-col { background: #f4efe8; border: 1px solid #ece4d8; border-top: 3px solid var(--col, #d9cfc0); border-radius: 18px; }
+.col-pending, .col-preparing, .col-ready, .col-outfordelivery, .col-reserved { background: #f4efe8; }
+.col-pending { --col: #f0b43c; }
+.col-preparing { --col: var(--orange); }
+.col-ready { --col: var(--green); }
+.col-outfordelivery { --col: var(--teal); }
+.col-reserved { --col: #b89b78; }
+
+.board-head { font-weight: 600; }
+.board-head .chip { background: #fff; color: var(--brown); border: 1px solid #e4dacb; font-weight: 600; min-width: 28px; text-align: center; }
+.bh-hint { color: #8a786c; font-weight: 400; }
+.board-empty { opacity: .75; }
+
+.order-card { border: 1px solid #ebe3d6; box-shadow: none; }
+.ob-stat { box-shadow: none; border: 1px solid #ebe3d6; }
+.ob-hero { box-shadow: none; }
+.tab-switch .tab:not(.active) { border: 1px solid #e4dacb; background: #fff; }

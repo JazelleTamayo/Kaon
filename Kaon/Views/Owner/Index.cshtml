@@ -23,6 +23,8 @@
     var onPackages = ViewBag.Tab as string == "packages";
 }
 
+<section class="ob-hero">
+<div class="o-hero-bg" aria-hidden="true"></div>
 <header class="ob-bar">
     <div class="ob-id">
         <h1>Orders</h1>
@@ -49,6 +51,7 @@
         </a>
     </div>
 </header>
+</section>
 
 <div class="ob-stats" role="group" aria-label="Orders at a glance">
     <div class="ob-stat"><span class="n" data-count="@Model.Active.Count">@Model.Active.Count</span><span class="l">Active orders</span></div>
